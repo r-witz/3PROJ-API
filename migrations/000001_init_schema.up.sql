@@ -7,6 +7,7 @@ CREATE TYPE collection_visibility AS ENUM ('public', 'private');
 CREATE TYPE notification_type AS ENUM ('like_review', 'like_comment', 'new_comment', 'new_follow', 'system');
 CREATE TYPE report_reason AS ENUM ('spam', 'harassment', 'spoiler', 'inappropriate', 'other');
 CREATE TYPE report_status_type AS ENUM ('pending', 'resolved', 'dismissed');
+CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added');
 
 -- USERS TABLE
 CREATE TABLE users (
@@ -103,7 +104,6 @@ CREATE TABLE comments (
 CREATE TABLE comment_likes (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, comment_id)
 );
 
@@ -169,9 +169,26 @@ CREATE TABLE notifications (
     )
 );
 
+-- ACTIVITIES
+CREATE TABLE activities (
+    id UUID PRIMARY KEY DEFAULT uuidv7(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type activity_type NOT NULL,
+    review_id UUID REFERENCES reviews(id) ON DELETE CASCADE,
+    collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
+    tmdb_id INT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT activity_data_integrity CHECK (
+        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND tmdb_id IS NULL     ) OR
+        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND tmdb_id IS NULL     ) OR
+        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND tmdb_id IS NOT NULL )
+    )
+);
+
 -- INDEXES
 CREATE INDEX idx_reviews_tmdb_id ON reviews(tmdb_id);
 CREATE INDEX idx_collections_user_id ON collections(user_id);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_messages_sender_receiver ON messages(sender_id, receiver_id);
-
+CREATE INDEX idx_activities_user_created ON activities(user_id, created_at DESC);
