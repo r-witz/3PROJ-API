@@ -1,0 +1,29 @@
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS reports;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS follows;
+DROP TABLE IF EXISTS comment_likes;
+DROP TABLE IF EXISTS review_likes;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS collection_items;
+DROP TABLE IF EXISTS collections;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS oauth_accounts;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS report_status_type;
+DROP TYPE IF EXISTS report_reason;
+DROP TYPE IF EXISTS notification_type;
+DROP TYPE IF EXISTS collection_visibility;
+DROP TYPE IF EXISTS collection_type;
+DROP TYPE IF EXISTS user_locale;
+DROP TYPE IF EXISTS user_theme;
+DROP TYPE IF EXISTS user_role;
+
+
+
+
+
+
+
+
+
