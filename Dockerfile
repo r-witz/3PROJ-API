@@ -16,7 +16,6 @@ FROM gcr.io/distroless/static-debian13
 WORKDIR /
 
 COPY --from=build /app/main /main
-COPY --from=build /app/migrations /migrations
 
 EXPOSE 8080
 USER nonroot:nonroot

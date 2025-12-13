@@ -155,7 +155,7 @@ CREATE TABLE notifications (
     actor_id UUID REFERENCES users(id) ON DELETE CASCADE,
     type notification_type NOT NULL,
     review_id UUID REFERENCES reviews(id) ON DELETE CASCADE,
-    comment_id UUID REFERENCES review_comments(id) ON DELETE CASCADE,
+    comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
     message TEXT,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
