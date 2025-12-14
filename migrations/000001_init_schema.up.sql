@@ -7,7 +7,7 @@ CREATE TYPE collection_visibility AS ENUM ('public', 'private');
 CREATE TYPE notification_type AS ENUM ('like_review', 'like_comment', 'new_comment', 'new_follow', 'system');
 CREATE TYPE report_reason AS ENUM ('spam', 'harassment', 'spoiler', 'inappropriate', 'other');
 CREATE TYPE report_status_type AS ENUM ('pending', 'resolved', 'dismissed');
-CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added');
+CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added', 'review_liked', 'comment_liked');
 
 -- USERS TABLE
 CREATE TABLE users (
@@ -49,13 +49,14 @@ CREATE TABLE sessions (
 CREATE TABLE collections (
     id UUID PRIMARY KEY DEFAULT uuidv7(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
     type collection_type NOT NULL DEFAULT 'custom',
     visibility collection_visibility NOT NULL DEFAULT 'public',
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, slug)
 );
 
 -- COLLECTION ITEMS
@@ -76,7 +77,7 @@ CREATE TABLE reviews (
     rating NUMERIC(2,1) NOT NULL CHECK (rating >= 0.5 AND rating <= 5.0 AND (rating * 10) % 5 = 0),
     content TEXT,
     contains_spoilers BOOLEAN NOT NULL DEFAULT FALSE,
-    is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+    featured_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, tmdb_id)
@@ -86,6 +87,7 @@ CREATE TABLE reviews (
 CREATE TABLE review_likes (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, review_id)
 );
 
@@ -104,6 +106,7 @@ CREATE TABLE comments (
 CREATE TABLE comment_likes (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     comment_id UUID NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, comment_id)
 );
 
@@ -122,7 +125,7 @@ CREATE TABLE messages (
     sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CHECK (sender_id != receiver_id)
 );
@@ -157,15 +160,15 @@ CREATE TABLE notifications (
     review_id UUID REFERENCES reviews(id) ON DELETE CASCADE,
     comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
     message TEXT,
-    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT notification_data_integrity CHECK (
-        (type = 'like_review'   AND actor_id IS NOT NULL AND review_id IS NOT NULL AND comment_id IS NULL AND message IS NULL) OR
-        (type = 'like_comment'  AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL AND message IS NULL) OR
-        (type = 'new_comment'   AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL AND message IS NULL) OR
-        (type = 'new_follow'    AND actor_id IS NOT NULL AND review_id IS NULL     AND comment_id IS NULL AND message IS NULL) OR
-        (type = 'system'        AND actor_id IS NULL     AND review_id IS NULL     AND comment_id IS NULL AND message IS NOT NULL)
+        (type = 'like_review'   AND actor_id IS NOT NULL AND review_id IS NOT NULL  AND comment_id IS NULL  AND message IS NULL) OR
+        (type = 'like_comment'  AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL   AND message IS NULL) OR
+        (type = 'new_comment'   AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL   AND message IS NULL) OR
+        (type = 'new_follow'    AND actor_id IS NOT NULL AND review_id IS NULL      AND comment_id IS NULL  AND message IS NULL) OR
+        (type = 'system'        AND actor_id IS NULL     AND review_id IS NULL      AND comment_id IS NULL  AND message IS NOT NULL)
     )
 );
 
@@ -176,19 +179,16 @@ CREATE TABLE activities (
     type activity_type NOT NULL,
     review_id UUID REFERENCES reviews(id) ON DELETE CASCADE,
     collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
+    comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
     tmdb_id INT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT activity_data_integrity CHECK (
-        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND tmdb_id IS NULL     ) OR
-        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND tmdb_id IS NULL     ) OR
-        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND tmdb_id IS NOT NULL )
+        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
+        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
+        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL)    OR
+        (type = 'review_liked'          AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
+        (type = 'comment_liked'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL)
     )
 );
 
--- INDEXES
-CREATE INDEX idx_reviews_tmdb_id ON reviews(tmdb_id);
-CREATE INDEX idx_collections_user_id ON collections(user_id);
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_messages_sender_receiver ON messages(sender_id, receiver_id);
-CREATE INDEX idx_activities_user_created ON activities(user_id, created_at DESC);

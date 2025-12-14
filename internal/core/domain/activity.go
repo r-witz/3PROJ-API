@@ -12,6 +12,8 @@ const (
 	ActivityTypeReviewCreated       ActivityType = "review_created"
 	ActivityTypeCollectionCreated   ActivityType = "collection_created"
 	ActivityTypeCollectionItemAdded ActivityType = "collection_item_added"
+	ActivityTypeReviewLiked         ActivityType = "review_liked"
+	ActivityTypeCommentLiked        ActivityType = "comment_liked"
 )
 
 type Activity struct {
@@ -20,6 +22,7 @@ type Activity struct {
 	Type         ActivityType `json:"type" db:"type"`
 	ReviewID     *uuid.UUID   `json:"review_id,omitempty" db:"review_id"`
 	CollectionID *uuid.UUID   `json:"collection_id,omitempty" db:"collection_id"`
+	CommentID    *uuid.UUID   `json:"comment_id,omitempty" db:"comment_id"`
 	TMDBID       *int         `json:"tmdb_id,omitempty" db:"tmdb_id"`
 	CreatedAt    time.Time    `json:"created_at" db:"created_at"`
 }

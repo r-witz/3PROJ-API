@@ -1,9 +1,3 @@
-DROP INDEX IF EXISTS idx_activities_user_created;
-DROP INDEX IF EXISTS idx_messages_sender_receiver;
-DROP INDEX IF EXISTS idx_sessions_user_id;
-DROP INDEX IF EXISTS idx_collections_user_id;
-DROP INDEX IF EXISTS idx_reviews_tmdb_id;
-
 DROP TABLE IF EXISTS activities;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS reports;

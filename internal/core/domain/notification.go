@@ -24,6 +24,6 @@ type Notification struct {
 	ReviewID  *uuid.UUID       `json:"review_id,omitempty" db:"review_id"`
 	CommentID *uuid.UUID       `json:"comment_id,omitempty" db:"comment_id"`
 	Message   *string          `json:"message,omitempty" db:"message"`
-	IsRead    bool             `json:"is_read" db:"is_read"`
+	ReadAt    *time.Time       `json:"read_at,omitempty" db:"read_at"`
 	CreatedAt time.Time        `json:"created_at" db:"created_at"`
 }
