@@ -1,0 +1,91 @@
+package repositories
+
+import (
+	"context"
+	"errors"
+
+	"duskforge-api/internal/core/domain"
+	"duskforge-api/pkg/database"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+)
+
+type CommentRepository struct {
+	db *database.DB
+}
+
+func NewCommentRepository(db *database.DB) *CommentRepository {
+	return &CommentRepository{db: db}
+}
+
+func (r *CommentRepository) Create(ctx context.Context, comment *domain.Comment) error {
+	query := `
+		INSERT INTO comments (id, user_id, review_id, content, contains_spoilers, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	_, err := r.db.Pool.Exec(ctx, query,
+		comment.ID, comment.UserID, comment.ReviewID, comment.Content,
+		comment.ContainsSpoilers, comment.CreatedAt, comment.UpdatedAt,
+	)
+	return err
+}
+
+func (r *CommentRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Comment, error) {
+	query := `
+		SELECT id, user_id, review_id, content, contains_spoilers, created_at, updated_at
+		FROM comments WHERE id = $1
+	`
+	comment := &domain.Comment{}
+	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
+		&comment.ID, &comment.UserID, &comment.ReviewID, &comment.Content,
+		&comment.ContainsSpoilers, &comment.CreatedAt, &comment.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	return comment, err
+}
+
+func (r *CommentRepository) GetByReviewID(ctx context.Context, reviewID uuid.UUID) ([]*domain.Comment, error) {
+	query := `
+		SELECT id, user_id, review_id, content, contains_spoilers, created_at, updated_at
+		FROM comments WHERE review_id = $1 ORDER BY created_at
+	`
+	rows, err := r.db.Pool.Query(ctx, query, reviewID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []*domain.Comment
+	for rows.Next() {
+		comment := &domain.Comment{}
+		if err := rows.Scan(
+			&comment.ID, &comment.UserID, &comment.ReviewID, &comment.Content,
+			&comment.ContainsSpoilers, &comment.CreatedAt, &comment.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+	return comments, rows.Err()
+}
+
+func (r *CommentRepository) Update(ctx context.Context, comment *domain.Comment) error {
+	query := `
+		UPDATE comments
+		SET content = $2, contains_spoilers = $3, updated_at = $4
+		WHERE id = $1
+	`
+	_, err := r.db.Pool.Exec(ctx, query,
+		comment.ID, comment.Content, comment.ContainsSpoilers, comment.UpdatedAt,
+	)
+	return err
+}
+
+func (r *CommentRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM comments WHERE id = $1`
+	_, err := r.db.Pool.Exec(ctx, query, id)
+	return err
+}
