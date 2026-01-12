@@ -20,6 +20,19 @@ func NewUserHandler(userService portservices.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
+type UserResponse struct {
+	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Email     string  `json:"email" example:"user@example.com"`
+	Username  string  `json:"username" example:"johndoe"`
+	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
+	Bio       *string `json:"bio,omitempty" example:"Movie enthusiast"`
+	Website   *string `json:"website,omitempty" example:"https://example.com"`
+	Role      string  `json:"role" example:"user"`
+	Theme     string  `json:"theme" example:"system"`
+	Locale    string  `json:"locale" example:"en"`
+	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
 type PublicUserResponse struct {
 	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Username  string  `json:"username" example:"johndoe"`
@@ -142,6 +155,21 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	}
 
 	response.Success(c, toPublicUserResponse(user))
+}
+
+func toUserResponse(user *domain.User) UserResponse {
+	return UserResponse{
+		ID:        user.ID.String(),
+		Email:     user.Email,
+		Username:  user.Username,
+		AvatarURL: user.AvatarURL,
+		Bio:       user.Bio,
+		Website:   user.Website,
+		Role:      string(user.Role),
+		Theme:     string(user.Theme),
+		Locale:    string(user.Locale),
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+	}
 }
 
 func toPublicUserResponse(user *domain.User) PublicUserResponse {

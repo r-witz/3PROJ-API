@@ -53,7 +53,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -233,7 +233,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -623,17 +623,6 @@
         }
     },
     "definitions": {
-        "handlers.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "tokens": {
-                    "$ref": "#/definitions/handlers.TokensResponse"
-                },
-                "user": {
-                    "$ref": "#/definitions/handlers.UserResponse"
-                }
-            }
-        },
         "handlers.LoginRequest": {
             "type": "object",
             "required": [

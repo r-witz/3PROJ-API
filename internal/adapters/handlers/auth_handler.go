@@ -1,10 +1,7 @@
 package handlers
 
 import (
-	"time"
-
 	"duskforge-api/internal/adapters/response"
-	"duskforge-api/internal/core/domain"
 	portservices "duskforge-api/internal/core/ports/services"
 
 	"github.com/gin-gonic/gin"
@@ -37,28 +34,10 @@ type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
-type AuthResponse struct {
-	User   UserResponse   `json:"user"`
-	Tokens TokensResponse `json:"tokens"`
-}
-
 type TokensResponse struct {
 	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	ExpiresIn    int64  `json:"expires_in" example:"900"`
-}
-
-type UserResponse struct {
-	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Email     string  `json:"email" example:"user@example.com"`
-	Username  string  `json:"username" example:"johndoe"`
-	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
-	Bio       *string `json:"bio,omitempty" example:"Movie enthusiast"`
-	Website   *string `json:"website,omitempty" example:"https://example.com"`
-	Role      string  `json:"role" example:"user"`
-	Theme     string  `json:"theme" example:"system"`
-	Locale    string  `json:"locale" example:"en"`
-	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
 // @Summary      Register a new user
@@ -67,7 +46,7 @@ type UserResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        request body RegisterRequest true "Registration details"
-// @Success      201 {object} response.Response{data=AuthResponse}
+// @Success      201 {object} response.Response{data=TokensResponse}
 // @Failure      400 {object} response.Response
 // @Failure      409 {object} response.Response
 // @Failure      500 {object} response.Response
@@ -79,7 +58,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, tokens, err := h.authService.Register(c.Request.Context(), portservices.RegisterInput{
+	_, tokens, err := h.authService.Register(c.Request.Context(), portservices.RegisterInput{
 		Email:    req.Email,
 		Username: req.Username,
 		Password: req.Password,
@@ -89,13 +68,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, AuthResponse{
-		User: toUserResponse(user),
-		Tokens: TokensResponse{
-			AccessToken:  tokens.AccessToken,
-			RefreshToken: tokens.RefreshToken,
-			ExpiresIn:    tokens.ExpiresIn,
-		},
+	response.Created(c, TokensResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresIn:    tokens.ExpiresIn,
 	})
 }
 
@@ -105,7 +81,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body LoginRequest true "Login credentials"
-// @Success      200 {object} response.Response{data=AuthResponse}
+// @Success      200 {object} response.Response{data=TokensResponse}
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
 // @Failure      403 {object} response.Response
@@ -118,7 +94,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, tokens, err := h.authService.Login(c.Request.Context(), portservices.LoginInput{
+	_, tokens, err := h.authService.Login(c.Request.Context(), portservices.LoginInput{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -127,13 +103,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, AuthResponse{
-		User: toUserResponse(user),
-		Tokens: TokensResponse{
-			AccessToken:  tokens.AccessToken,
-			RefreshToken: tokens.RefreshToken,
-			ExpiresIn:    tokens.ExpiresIn,
-		},
+	response.Success(c, TokensResponse{
+		AccessToken:  tokens.AccessToken,
+		RefreshToken: tokens.RefreshToken,
+		ExpiresIn:    tokens.ExpiresIn,
 	})
 }
 
@@ -191,19 +164,4 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Logged out successfully"})
-}
-
-func toUserResponse(user *domain.User) UserResponse {
-	return UserResponse{
-		ID:        user.ID.String(),
-		Email:     user.Email,
-		Username:  user.Username,
-		AvatarURL: user.AvatarURL,
-		Bio:       user.Bio,
-		Website:   user.Website,
-		Role:      string(user.Role),
-		Theme:     string(user.Theme),
-		Locale:    string(user.Locale),
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
-	}
 }

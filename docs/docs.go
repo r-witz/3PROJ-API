@@ -60,7 +60,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -240,7 +240,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/handlers.AuthResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -630,17 +630,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "tokens": {
-                    "$ref": "#/definitions/handlers.TokensResponse"
-                },
-                "user": {
-                    "$ref": "#/definitions/handlers.UserResponse"
-                }
-            }
-        },
         "handlers.LoginRequest": {
             "type": "object",
             "required": [

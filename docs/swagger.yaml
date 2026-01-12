@@ -1,12 +1,5 @@
 basePath: /api/v1
 definitions:
-  handlers.AuthResponse:
-    properties:
-      tokens:
-        $ref: '#/definitions/handlers.TokensResponse'
-      user:
-        $ref: '#/definitions/handlers.UserResponse'
-    type: object
   handlers.LoginRequest:
     properties:
       email:
@@ -223,7 +216,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handlers.AuthResponse'
+                  $ref: '#/definitions/handlers.TokensResponse'
               type: object
         "400":
           description: Bad Request
@@ -335,7 +328,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/handlers.AuthResponse'
+                  $ref: '#/definitions/handlers.TokensResponse'
               type: object
         "400":
           description: Bad Request
