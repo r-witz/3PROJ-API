@@ -20,6 +20,43 @@ definitions:
     required:
     - refresh_token
     type: object
+  handlers.OAuthLinkRequest:
+    properties:
+      code:
+        type: string
+      state:
+        type: string
+    required:
+    - code
+    - state
+    type: object
+  handlers.OAuthRedirectResponse:
+    properties:
+      authorization_url:
+        example: https://github.com/login/oauth/authorize?...
+        type: string
+      state:
+        example: abc123...
+        type: string
+    type: object
+  handlers.OAuthTokensResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 900
+        type: integer
+      is_new_user:
+        example: true
+        type: boolean
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
   handlers.PublicUserResponse:
     properties:
       avatar_url:
@@ -270,6 +307,276 @@ paths:
       summary: Logout user
       tags:
       - auth
+  /auth/oauth/github:
+    get:
+      description: Get the GitHub authorization URL to redirect the user for OAuth
+        authentication
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get GitHub OAuth URL
+      tags:
+      - oauth
+  /auth/oauth/github/callback:
+    get:
+      description: Handle the GitHub OAuth callback and return authentication tokens
+      parameters:
+      - description: Authorization code from GitHub
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter for CSRF protection
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthTokensResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: GitHub OAuth callback
+      tags:
+      - oauth
+  /auth/oauth/github/link:
+    post:
+      consumes:
+      - application/json
+      description: Link a GitHub account to the current authenticated user
+      parameters:
+      - description: OAuth code and state
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OAuthLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Link GitHub account
+      tags:
+      - oauth
+  /auth/oauth/github/unlink:
+    delete:
+      description: Remove the linked GitHub account from the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unlink GitHub account
+      tags:
+      - oauth
+  /auth/oauth/google:
+    get:
+      description: Get the Google authorization URL to redirect the user for OAuth
+        authentication
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get Google OAuth URL
+      tags:
+      - oauth
+  /auth/oauth/google/callback:
+    get:
+      description: Handle the Google OAuth callback and return authentication tokens
+      parameters:
+      - description: Authorization code from Google
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: State parameter for CSRF protection
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthTokensResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Google OAuth callback
+      tags:
+      - oauth
+  /auth/oauth/google/link:
+    post:
+      consumes:
+      - application/json
+      description: Link a Google account to the current authenticated user
+      parameters:
+      - description: OAuth code and state
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OAuthLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Link Google account
+      tags:
+      - oauth
+  /auth/oauth/google/unlink:
+    delete:
+      description: Remove the linked Google account from the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unlink Google account
+      tags:
+      - oauth
   /auth/refresh:
     post:
       consumes:
