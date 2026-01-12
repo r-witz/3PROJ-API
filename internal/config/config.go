@@ -25,6 +25,15 @@ func LoadConfig() (config Config, err error) {
 
 	viper.AutomaticEnv()
 
+	viper.BindEnv("SERVER_PORT")
+	viper.BindEnv("DATABASE_URL")
+	viper.BindEnv("TMDB_API_KEY")
+	viper.BindEnv("LOG_LEVEL")
+	viper.BindEnv("ACCESS_TOKEN_SECRET")
+	viper.BindEnv("ACCESS_TOKEN_EXPIRY")
+	viper.BindEnv("REFRESH_TOKEN_SECRET")
+	viper.BindEnv("REFRESH_TOKEN_EXPIRY")
+
 	viper.SetDefault("SERVER_PORT", "8080")
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("ACCESS_TOKEN_EXPIRY", 15*time.Minute)
