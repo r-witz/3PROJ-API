@@ -80,6 +80,9 @@ definitions:
       refresh_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
+      token_type:
+        example: Bearer
+        type: string
     type: object
   handlers.UpdateUserRequest:
     properties:
@@ -573,10 +576,4 @@ paths:
       summary: Update current user
       tags:
       - users
-securityDefinitions:
-  BearerAuth:
-    description: 'Enter your bearer token in the format: Bearer {token}'
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

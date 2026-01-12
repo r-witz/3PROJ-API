@@ -37,6 +37,7 @@ type LogoutRequest struct {
 type TokensResponse struct {
 	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	TokenType    string `json:"token_type" example:"Bearer"`
 	ExpiresIn    int64  `json:"expires_in" example:"900"`
 }
 
@@ -71,6 +72,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Created(c, TokensResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
+		TokenType:    "Bearer",
 		ExpiresIn:    tokens.ExpiresIn,
 	})
 }
@@ -106,6 +108,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.Success(c, TokensResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
+		TokenType:    "Bearer",
 		ExpiresIn:    tokens.ExpiresIn,
 	})
 }
@@ -137,6 +140,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	response.Success(c, TokensResponse{
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
+		TokenType:    "Bearer",
 		ExpiresIn:    tokens.ExpiresIn,
 	})
 }

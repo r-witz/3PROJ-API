@@ -34,10 +34,7 @@ import (
 
 // @BasePath  /api/v1
 
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Enter your bearer token in the format: Bearer {token}
+// @securityDefinitions.bearer BearerAuth
 
 func main() {
 	cfg, err := config.LoadConfig()
