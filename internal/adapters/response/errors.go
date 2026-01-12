@@ -31,6 +31,13 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrUserNotFound:          {http.StatusNotFound, "USER_NOT_FOUND", "User not found"},
 	domain.ErrMovieNotFound:         {http.StatusNotFound, "MOVIE_NOT_FOUND", "Movie not found"},
 	domain.ErrTMDBError:             {http.StatusBadGateway, "EXTERNAL_SERVICE_ERROR", "Movie service is temporarily unavailable"},
+
+	// OAuth errors
+	domain.ErrOAuthAccountNotFound:      {http.StatusNotFound, "OAUTH_NOT_FOUND", "OAuth account not found"},
+	domain.ErrOAuthAccountAlreadyLinked: {http.StatusConflict, "OAUTH_ALREADY_LINKED", "OAuth account is already linked to another user"},
+	domain.ErrOAuthProviderNotSupported: {http.StatusBadRequest, "OAUTH_PROVIDER_INVALID", "OAuth provider not supported"},
+	domain.ErrOAuthStateMismatch:        {http.StatusBadRequest, "OAUTH_STATE_INVALID", "Invalid OAuth state parameter"},
+	domain.ErrCannotUnlinkOnlyAuth:      {http.StatusBadRequest, "CANNOT_UNLINK", "Cannot remove the only authentication method"},
 }
 
 func HandleError(c *gin.Context, err error) {

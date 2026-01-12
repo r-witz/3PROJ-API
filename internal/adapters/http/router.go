@@ -20,6 +20,7 @@ type Router struct {
 	engine       *gin.Engine
 	config       RouterConfig
 	authHandler  *handlers.AuthHandler
+	oauthHandler *handlers.OAuthHandler
 	userHandler  *handlers.UserHandler
 	movieHandler *handlers.MovieHandler
 }
@@ -27,6 +28,7 @@ type Router struct {
 func NewRouter(
 	config RouterConfig,
 	authHandler *handlers.AuthHandler,
+	oauthHandler *handlers.OAuthHandler,
 	userHandler *handlers.UserHandler,
 	movieHandler *handlers.MovieHandler,
 ) *Router {
@@ -34,6 +36,7 @@ func NewRouter(
 		engine:       gin.Default(),
 		config:       config,
 		authHandler:  authHandler,
+		oauthHandler: oauthHandler,
 		userHandler:  userHandler,
 		movieHandler: movieHandler,
 	}
@@ -64,6 +67,22 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 		auth.POST("/login", r.authHandler.Login)
 		auth.POST("/refresh", r.authHandler.Refresh)
 		auth.POST("/logout", r.authHandler.Logout)
+
+		// OAuth routes
+		oauth := auth.Group("/oauth")
+		{
+			// GitHub OAuth
+			oauth.GET("/github", r.oauthHandler.GitHubRedirect)
+			oauth.GET("/github/callback", r.oauthHandler.GitHubCallback)
+			oauth.POST("/github/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGitHub)
+			oauth.DELETE("/github/unlink", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.UnlinkGitHub)
+
+			// Google OAuth
+			oauth.GET("/google", r.oauthHandler.GoogleRedirect)
+			oauth.GET("/google/callback", r.oauthHandler.GoogleCallback)
+			oauth.POST("/google/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGoogle)
+			oauth.DELETE("/google/unlink", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.UnlinkGoogle)
+		}
 	}
 }
 

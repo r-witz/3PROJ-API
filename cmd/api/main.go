@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"duskforge-api/internal/adapters/handlers"
 	"duskforge-api/internal/adapters/http"
@@ -13,6 +14,7 @@ import (
 	"duskforge-api/internal/core/services"
 	"duskforge-api/pkg/database"
 	"duskforge-api/pkg/logger"
+	"duskforge-api/pkg/oauth"
 	"duskforge-api/pkg/tmdb"
 
 	_ "duskforge-api/docs" // Import generated docs
@@ -62,6 +64,7 @@ func main() {
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
+	oauthRepo := repositories.NewOAuthAccountRepository(db)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -72,7 +75,40 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	movieService := services.NewMovieService(tmdbClient)
 
+	// Initialize OAuth providers
+	providers := make(map[oauth.OAuthProvider]oauth.Provider)
+	if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {
+		providers[oauth.ProviderGitHub] = oauth.NewGitHubProvider(cfg.GitHubClientID, cfg.GitHubClientSecret)
+		logger.Logger.Info("GitHub OAuth provider initialized")
+	}
+	if cfg.GoogleClientID != "" && cfg.GoogleClientSecret != "" {
+		providers[oauth.ProviderGoogle] = oauth.NewGoogleProvider(cfg.GoogleClientID, cfg.GoogleClientSecret)
+		logger.Logger.Info("Google OAuth provider initialized")
+	}
+
+	// Initialize OAuth state manager
+	stateSecret := cfg.OAuthStateSecret
+	if stateSecret == "" {
+		stateSecret = cfg.AccessTokenSecret // Fallback to access token secret
+	}
+	stateManager := oauth.NewStateManager(stateSecret, 10*time.Minute)
+
+	oauthService := services.NewOAuthService(
+		userRepo,
+		oauthRepo,
+		sessionRepo,
+		stateManager,
+		providers,
+		services.OAuthServiceConfig{
+			AccessTokenSecret:  cfg.AccessTokenSecret,
+			AccessTokenExpiry:  cfg.AccessTokenExpiry,
+			RefreshTokenSecret: cfg.RefreshTokenSecret,
+			RefreshTokenExpiry: cfg.RefreshTokenExpiry,
+		},
+	)
+
 	authHandler := handlers.NewAuthHandler(authService)
+	oauthHandler := handlers.NewOAuthHandler(oauthService, cfg.OAuthRedirectBase)
 	userHandler := handlers.NewUserHandler(userService)
 	movieHandler := handlers.NewMovieHandler(movieService)
 
@@ -81,6 +117,7 @@ func main() {
 			AccessTokenSecret: cfg.AccessTokenSecret,
 		},
 		authHandler,
+		oauthHandler,
 		userHandler,
 		movieHandler,
 	)

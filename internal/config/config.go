@@ -16,6 +16,14 @@ type Config struct {
 	AccessTokenExpiry  time.Duration `mapstructure:"ACCESS_TOKEN_EXPIRY"`
 	RefreshTokenSecret string        `mapstructure:"REFRESH_TOKEN_SECRET"`
 	RefreshTokenExpiry time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRY"`
+
+	// OAuth Configuration
+	GitHubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
+	GitHubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET"`
+	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
+	OAuthRedirectBase  string `mapstructure:"OAUTH_REDIRECT_BASE"`
+	OAuthStateSecret   string `mapstructure:"OAUTH_STATE_SECRET"`
 }
 
 func LoadConfig() (config Config, err error) {
@@ -34,10 +42,19 @@ func LoadConfig() (config Config, err error) {
 	viper.BindEnv("REFRESH_TOKEN_SECRET")
 	viper.BindEnv("REFRESH_TOKEN_EXPIRY")
 
+	// OAuth configuration bindings
+	viper.BindEnv("GITHUB_CLIENT_ID")
+	viper.BindEnv("GITHUB_CLIENT_SECRET")
+	viper.BindEnv("GOOGLE_CLIENT_ID")
+	viper.BindEnv("GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("OAUTH_REDIRECT_BASE")
+	viper.BindEnv("OAUTH_STATE_SECRET")
+
 	viper.SetDefault("SERVER_PORT", "8080")
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("ACCESS_TOKEN_EXPIRY", 15*time.Minute)
 	viper.SetDefault("REFRESH_TOKEN_EXPIRY", 7*24*time.Hour)
+	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 
 	err = viper.ReadInConfig()
 	if err != nil {
