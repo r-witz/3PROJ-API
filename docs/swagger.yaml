@@ -1,0 +1,590 @@
+basePath: /api/v1
+definitions:
+  handlers.AuthResponse:
+    properties:
+      tokens:
+        $ref: '#/definitions/handlers.TokensResponse'
+      user:
+        $ref: '#/definitions/handlers.UserResponse'
+    type: object
+  handlers.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: securepassword123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.LogoutRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.PublicUserResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      bio:
+        example: Movie enthusiast
+        type: string
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      username:
+        example: johndoe
+        type: string
+      website:
+        example: https://example.com
+        type: string
+    type: object
+  handlers.RefreshRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  handlers.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: securepassword123
+        maxLength: 72
+        minLength: 8
+        type: string
+      username:
+        example: johndoe
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  handlers.TokensResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 900
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      avatar_url:
+        example: https://example.com/new-avatar.jpg
+        type: string
+      bio:
+        example: Updated bio
+        maxLength: 500
+        type: string
+      locale:
+        enum:
+        - en
+        - fr
+        - es
+        example: fr
+        type: string
+      theme:
+        enum:
+        - light
+        - dark
+        - system
+        example: dark
+        type: string
+      username:
+        example: newusername
+        maxLength: 30
+        minLength: 3
+        type: string
+      website:
+        example: https://newwebsite.com
+        type: string
+    type: object
+  handlers.UserResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      bio:
+        example: Movie enthusiast
+        type: string
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      locale:
+        example: en
+        type: string
+      role:
+        example: user
+        type: string
+      theme:
+        example: system
+        type: string
+      username:
+        example: johndoe
+        type: string
+      website:
+        example: https://example.com
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  response.PaginatedResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/response.Pagination'
+      success:
+        type: boolean
+    type: object
+  response.Pagination:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@duskforge.io
+    name: API Support
+    url: https://github.com/duskforge/api
+  description: A movie collection and review API powered by TMDB
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Duskforge API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidate the refresh token and end the session
+      parameters:
+      - description: Refresh token to invalidate
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Logout user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access and refresh tokens using a valid refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.TokensResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Refresh tokens
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account and return authentication tokens
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Register a new user
+      tags:
+      - auth
+  /movies/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a movie by its TMDB ID
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: en-US
+        description: Language code
+        in: query
+        name: language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Movie details
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Invalid movie ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Movie not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get movie details
+      tags:
+      - movies
+  /movies/popular:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of currently popular movies
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: en-US
+        description: Language code
+        in: query
+        name: language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Popular movies
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get popular movies
+      tags:
+      - movies
+  /movies/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for movies by title
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by release year
+        in: query
+        name: year
+        type: integer
+      - default: en-US
+        description: Language code
+        in: query
+        name: language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "400":
+          description: Query parameter is required
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Search movies
+      tags:
+      - movies
+  /users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get the public profile of a user by their ID
+      parameters:
+      - description: User ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User public profile
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.PublicUserResponse'
+              type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get user by ID
+      tags:
+      - users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get the profile of the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: Update the profile of the currently authenticated user
+      parameters:
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.UserResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Username already taken
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update current user
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your bearer token in the format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
