@@ -49,15 +49,22 @@ type OAuthLinkRequest struct {
 }
 
 // @Summary      Get GitHub OAuth URL
-// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication
+// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
 // @Tags         oauth
 // @Produce      json
-// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback"
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
+// @Failure      400 {object} response.Response "Invalid redirect_uri"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github [get]
 func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 	frontendRedirectURI := c.Query("redirect_uri")
+
+	if err := validateRedirectURI(frontendRedirectURI, getRequestOrigin(c)); err != nil {
+		response.BadRequest(c, err.Error(), nil)
+		return
+	}
+
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
 	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI)
 	if err != nil {
@@ -119,15 +126,22 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 }
 
 // @Summary      Get Google OAuth URL
-// @Description  Get the Google authorization URL to redirect the user for OAuth authentication
+// @Description  Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
 // @Tags         oauth
 // @Produce      json
-// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback"
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
+// @Failure      400 {object} response.Response "Invalid redirect_uri"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google [get]
 func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 	frontendRedirectURI := c.Query("redirect_uri")
+
+	if err := validateRedirectURI(frontendRedirectURI, getRequestOrigin(c)); err != nil {
+		response.BadRequest(c, err.Error(), nil)
+		return
+	}
+
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
 	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI)
 	if err != nil {
@@ -337,4 +351,47 @@ func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *portservices.O
 
 	redirectURL := fmt.Sprintf("%s#%s", result.FrontendRedirectURI, fragment.Encode())
 	c.Redirect(http.StatusFound, redirectURL)
+}
+
+// getRequestOrigin extracts the origin from the request's Origin or Referer header
+func getRequestOrigin(c *gin.Context) string {
+	if origin := c.GetHeader("Origin"); origin != "" {
+		return origin
+	}
+
+	if referer := c.GetHeader("Referer"); referer != "" {
+		if parsed, err := url.Parse(referer); err == nil {
+			return fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
+		}
+	}
+
+	return ""
+}
+
+// validateRedirectURI checks that the redirect URI matches the request origin
+func validateRedirectURI(redirectURI, requestOrigin string) error {
+	if redirectURI == "" {
+		return nil
+	}
+
+	parsed, err := url.Parse(redirectURI)
+	if err != nil {
+		return fmt.Errorf("invalid redirect_uri format")
+	}
+
+	if parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("redirect_uri must be an absolute URL")
+	}
+
+	redirectOrigin := fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
+
+	if requestOrigin == "" {
+		return fmt.Errorf("could not determine request origin (missing Origin or Referer header)")
+	}
+
+	if redirectOrigin != requestOrigin {
+		return fmt.Errorf("redirect_uri origin does not match request origin")
+	}
+
+	return nil
 }

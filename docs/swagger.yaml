@@ -363,9 +363,11 @@ paths:
   /auth/oauth/github:
     get:
       description: Get the GitHub authorization URL to redirect the user for OAuth
-        authentication
+        authentication. The redirect_uri must match the origin of the request (Origin
+        or Referer header).
       parameters:
-      - description: Frontend URL to redirect to after OAuth callback
+      - description: Frontend URL to redirect to after OAuth callback (must match
+          request origin)
         in: query
         name: redirect_uri
         type: string
@@ -381,6 +383,10 @@ paths:
                 data:
                   $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
+        "400":
+          description: Invalid redirect_uri
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
@@ -507,9 +513,11 @@ paths:
   /auth/oauth/google:
     get:
       description: Get the Google authorization URL to redirect the user for OAuth
-        authentication
+        authentication. The redirect_uri must match the origin of the request (Origin
+        or Referer header).
       parameters:
-      - description: Frontend URL to redirect to after OAuth callback
+      - description: Frontend URL to redirect to after OAuth callback (must match
+          request origin)
         in: query
         name: redirect_uri
         type: string
@@ -525,6 +533,10 @@ paths:
                 data:
                   $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
+        "400":
+          description: Invalid redirect_uri
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:

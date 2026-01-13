@@ -142,7 +142,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github": {
             "get": {
-                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication",
+                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
                 "produces": [
                     "application/json"
                 ],
@@ -153,7 +153,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Frontend URL to redirect to after OAuth callback",
+                        "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
                         "in": "query"
                     }
@@ -175,6 +175,12 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid redirect_uri",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
@@ -369,7 +375,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google": {
             "get": {
-                "description": "Get the Google authorization URL to redirect the user for OAuth authentication",
+                "description": "Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
                 "produces": [
                     "application/json"
                 ],
@@ -380,7 +386,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Frontend URL to redirect to after OAuth callback",
+                        "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
                         "in": "query"
                     }
@@ -402,6 +408,12 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid redirect_uri",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
