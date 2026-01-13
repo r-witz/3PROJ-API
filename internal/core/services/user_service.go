@@ -89,3 +89,19 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 
 	return user, nil
 }
+
+func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if user == nil {
+		return domain.ErrUserNotFound
+	}
+
+	if err := s.userRepo.Delete(ctx, userID); err != nil {
+		return domain.ErrInternal
+	}
+
+	return nil
+}

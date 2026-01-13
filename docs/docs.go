@@ -150,6 +150,14 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Get GitHub OAuth URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Frontend URL to redirect to after OAuth callback",
+                        "name": "redirect_uri",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -180,7 +188,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github/callback": {
             "get": {
-                "description": "Handle the GitHub OAuth callback and return authentication tokens",
+                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.",
                 "produces": [
                     "application/json"
                 ],
@@ -222,6 +230,9 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "302": {
+                        "description": "Redirects to frontend with tokens in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -366,6 +377,14 @@ const docTemplate = `{
                     "oauth"
                 ],
                 "summary": "Get Google OAuth URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Frontend URL to redirect to after OAuth callback",
+                        "name": "redirect_uri",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -396,7 +415,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google/callback": {
             "get": {
-                "description": "Handle the Google OAuth callback and return authentication tokens",
+                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.",
                 "produces": [
                     "application/json"
                 ],
@@ -438,6 +457,9 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "302": {
+                        "description": "Redirects to frontend with tokens in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -902,6 +924,47 @@ const docTemplate = `{
                                 }
                             ]
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permanently delete the currently authenticated user's account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete current user",
+                "responses": {
+                    "204": {
+                        "description": "Account deleted successfully"
                     },
                     "401": {
                         "description": "Unauthorized",

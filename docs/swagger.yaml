@@ -349,6 +349,11 @@ paths:
     get:
       description: Get the GitHub authorization URL to redirect the user for OAuth
         authentication
+      parameters:
+      - description: Frontend URL to redirect to after OAuth callback
+        in: query
+        name: redirect_uri
+        type: string
       produces:
       - application/json
       responses:
@@ -370,7 +375,9 @@ paths:
       - oauth
   /auth/oauth/github/callback:
     get:
-      description: Handle the GitHub OAuth callback and return authentication tokens
+      description: Handle the GitHub OAuth callback. If a redirect_uri was provided
+        during authorization, redirects to that URL with tokens in the fragment. Otherwise
+        returns JSON.
       parameters:
       - description: Authorization code from GitHub
         in: query
@@ -394,6 +401,8 @@ paths:
                 data:
                   $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
+        "302":
+          description: Redirects to frontend with tokens in URL fragment
         "400":
           description: Bad Request
           schema:
@@ -484,6 +493,11 @@ paths:
     get:
       description: Get the Google authorization URL to redirect the user for OAuth
         authentication
+      parameters:
+      - description: Frontend URL to redirect to after OAuth callback
+        in: query
+        name: redirect_uri
+        type: string
       produces:
       - application/json
       responses:
@@ -505,7 +519,9 @@ paths:
       - oauth
   /auth/oauth/google/callback:
     get:
-      description: Handle the Google OAuth callback and return authentication tokens
+      description: Handle the Google OAuth callback. If a redirect_uri was provided
+        during authorization, redirects to that URL with tokens in the fragment. Otherwise
+        returns JSON.
       parameters:
       - description: Authorization code from Google
         in: query
@@ -529,6 +545,8 @@ paths:
                 data:
                   $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
+        "302":
+          description: Redirects to frontend with tokens in URL fragment
         "400":
           description: Bad Request
           schema:
@@ -847,6 +865,32 @@ paths:
       tags:
       - users
   /users/me:
+    delete:
+      consumes:
+      - application/json
+      description: Permanently delete the currently authenticated user's account
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Account deleted successfully
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete current user
+      tags:
+      - users
     get:
       consumes:
       - application/json

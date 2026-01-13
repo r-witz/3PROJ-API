@@ -28,15 +28,17 @@ type OAuthLinkInput struct {
 
 // OAuthAuthResult contains the result of an OAuth authentication
 type OAuthAuthResult struct {
-	User      *domain.User
-	Tokens    *AuthTokens
-	IsNewUser bool
+	User                *domain.User
+	Tokens              *AuthTokens
+	IsNewUser           bool
+	FrontendRedirectURI string
 }
 
 // OAuthService defines the interface for OAuth authentication operations
 type OAuthService interface {
 	// GetAuthorizationURL generates the OAuth provider redirect URL with state
-	GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string) (authURL string, state string, err error)
+	// frontendRedirectURI is the URL to redirect the user to after OAuth callback
+	GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string) (authURL string, state string, err error)
 
 	// HandleCallback processes the OAuth callback and returns auth tokens
 	// This handles both new user registration and existing OAuth login

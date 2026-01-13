@@ -179,6 +179,32 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	response.Success(c, toUserResponse(user, stats))
 }
 
+// @Summary      Delete current user
+// @Description  Permanently delete the currently authenticated user's account
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      204 "Account deleted successfully"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      404 {object} response.Response "User not found"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/me [delete]
+func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if err := h.userService.DeleteCurrentUser(c.Request.Context(), userID); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	c.Status(204)
+}
+
 // @Summary      Get user by ID
 // @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info.
 // @Tags         users

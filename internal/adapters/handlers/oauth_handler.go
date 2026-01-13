@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	portservices "duskforge-api/internal/core/ports/services"
@@ -48,12 +52,14 @@ type OAuthLinkRequest struct {
 // @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication
 // @Tags         oauth
 // @Produce      json
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback"
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github [get]
 func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
+	frontendRedirectURI := c.Query("redirect_uri")
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -66,12 +72,13 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 }
 
 // @Summary      GitHub OAuth callback
-// @Description  Handle the GitHub OAuth callback and return authentication tokens
+// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from GitHub"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
+// @Success      302 "Redirects to frontend with tokens in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
 // @Failure      500 {object} response.Response
@@ -95,6 +102,13 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
+	// If frontend redirect URI was provided, redirect with tokens in fragment
+	if result.FrontendRedirectURI != "" {
+		h.redirectWithTokens(c, result)
+		return
+	}
+
+	// Otherwise return JSON response
 	response.Success(c, OAuthTokensResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
@@ -108,12 +122,14 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 // @Description  Get the Google authorization URL to redirect the user for OAuth authentication
 // @Tags         oauth
 // @Produce      json
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback"
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google [get]
 func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
+	frontendRedirectURI := c.Query("redirect_uri")
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -126,12 +142,13 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 }
 
 // @Summary      Google OAuth callback
-// @Description  Handle the Google OAuth callback and return authentication tokens
+// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from Google"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
+// @Success      302 "Redirects to frontend with tokens in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
 // @Failure      500 {object} response.Response
@@ -155,6 +172,13 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
+	// If frontend redirect URI was provided, redirect with tokens in fragment
+	if result.FrontendRedirectURI != "" {
+		h.redirectWithTokens(c, result)
+		return
+	}
+
+	// Otherwise return JSON response
 	response.Success(c, OAuthTokensResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
@@ -300,4 +324,17 @@ func (h *OAuthHandler) UnlinkGoogle(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Google account unlinked successfully"})
+}
+
+// redirectWithTokens redirects to the frontend URL with tokens in the URL fragment
+func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *portservices.OAuthAuthResult) {
+	fragment := url.Values{}
+	fragment.Set("access_token", result.Tokens.AccessToken)
+	fragment.Set("refresh_token", result.Tokens.RefreshToken)
+	fragment.Set("token_type", "Bearer")
+	fragment.Set("expires_in", fmt.Sprintf("%d", result.Tokens.ExpiresIn))
+	fragment.Set("is_new_user", fmt.Sprintf("%t", result.IsNewUser))
+
+	redirectURL := fmt.Sprintf("%s#%s", result.FrontendRedirectURI, fragment.Encode())
+	c.Redirect(http.StatusFound, redirectURL)
 }

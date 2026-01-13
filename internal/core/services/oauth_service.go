@@ -48,13 +48,13 @@ func NewOAuthService(
 	}
 }
 
-func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string) (string, string, error) {
+func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string) (string, string, error) {
 	p, ok := s.providers[provider]
 	if !ok {
 		return "", "", domain.ErrOAuthProviderNotSupported
 	}
 
-	state, err := s.stateManager.Generate()
+	state, err := s.stateManager.Generate(frontendRedirectURI)
 	if err != nil {
 		return "", "", domain.ErrInternal
 	}
@@ -64,8 +64,9 @@ func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirec
 }
 
 func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OAuthCallbackInput) (*portservices.OAuthAuthResult, error) {
-	// Validate state
-	if err := s.stateManager.Validate(input.State); err != nil {
+	// Validate state and extract data
+	stateData, err := s.stateManager.Validate(input.State)
+	if err != nil {
 		return nil, domain.ErrOAuthStateMismatch
 	}
 
@@ -136,15 +137,16 @@ func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OA
 	}
 
 	return &portservices.OAuthAuthResult{
-		User:      user,
-		Tokens:    tokens,
-		IsNewUser: isNewUser,
+		User:                user,
+		Tokens:              tokens,
+		IsNewUser:           isNewUser,
+		FrontendRedirectURI: stateData.RedirectURI,
 	}, nil
 }
 
 func (s *oauthService) LinkAccount(ctx context.Context, input portservices.OAuthLinkInput) error {
 	// Validate state
-	if err := s.stateManager.Validate(input.State); err != nil {
+	if _, err := s.stateManager.Validate(input.State); err != nil {
 		return domain.ErrOAuthStateMismatch
 	}
 

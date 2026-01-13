@@ -22,4 +22,5 @@ type UserService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	GetCurrentUser(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateCurrentUser(ctx context.Context, userID uuid.UUID, input UpdateUserInput) (*domain.User, error)
+	DeleteCurrentUser(ctx context.Context, userID uuid.UUID) error
 }
