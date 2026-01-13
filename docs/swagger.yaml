@@ -114,6 +114,21 @@ definitions:
     - password
     - username
     type: object
+  handlers.SearchUserResponse:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.jpg
+        type: string
+      bio:
+        example: Movie enthusiast
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      username:
+        example: johndoe
+        type: string
+    type: object
   handlers.TokensResponse:
     properties:
       access_token:
@@ -966,6 +981,61 @@ paths:
       security:
       - BearerAuth: []
       summary: Update current user
+      tags:
+      - users
+  /users/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for users by username with sorting and pagination
+      parameters:
+      - description: Search query (username)
+        in: query
+        name: query
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Results per page (max 100)
+        in: query
+        name: per_page
+        type: integer
+      - description: Sort field with direction prefix (+asc, -desc)
+        enum:
+        - +username
+        - -username
+        - +created_at
+        - -created_at
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.SearchUserResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Search users
       tags:
       - users
 securityDefinitions:

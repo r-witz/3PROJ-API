@@ -1060,6 +1060,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/search": {
+            "get": {
+                "description": "Search for users by username with sorting and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Search users",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query (username)",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Results per page (max 100)",
+                        "name": "per_page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "+username",
+                            "-username",
+                            "+created_at",
+                            "-created_at"
+                        ],
+                        "type": "string",
+                        "description": "Sort field with direction prefix (+asc, -desc)",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.SearchUserResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -1286,6 +1371,27 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3,
+                    "example": "johndoe"
+                }
+            }
+        },
+        "handlers.SearchUserResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "bio": {
+                    "type": "string",
+                    "example": "Movie enthusiast"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "username": {
+                    "type": "string",
                     "example": "johndoe"
                 }
             }
