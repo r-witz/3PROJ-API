@@ -58,13 +58,18 @@ type PublicUserResponse struct {
 	CreatedAt    string    `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
+type UpdatePreferencesRequest struct {
+	Theme  *string `json:"theme" binding:"omitempty,oneof=light dark system" example:"dark"`
+	Locale *string `json:"locale" binding:"omitempty,oneof=en fr es" example:"fr"`
+}
+
 type UpdateUserRequest struct {
-	Username  *string `json:"username" binding:"omitempty,min=3,max=30" example:"newusername"`
-	AvatarURL *string `json:"avatar_url" binding:"omitempty,url" example:"https://example.com/new-avatar.jpg"`
-	Bio       *string `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
-	Website   *string `json:"website" binding:"omitempty,url" example:"https://newwebsite.com"`
-	Theme     *string `json:"theme" binding:"omitempty,oneof=light dark system" example:"dark"`
-	Locale    *string `json:"locale" binding:"omitempty,oneof=en fr es" example:"fr"`
+	Email       *string                   `json:"email" binding:"omitempty,email" example:"newemail@example.com"`
+	Username    *string                   `json:"username" binding:"omitempty,min=3,max=30" example:"newusername"`
+	AvatarURL   *string                   `json:"avatar_url" binding:"omitempty,url" example:"https://example.com/new-avatar.jpg"`
+	Bio         *string                   `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
+	Website     *string                   `json:"website" binding:"omitempty,url" example:"https://newwebsite.com"`
+	Preferences *UpdatePreferencesRequest `json:"preferences" binding:"omitempty"`
 }
 
 // @Summary      Get current user
@@ -134,19 +139,22 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	}
 
 	input := portservices.UpdateUserInput{
+		Email:     req.Email,
 		Username:  req.Username,
 		AvatarURL: req.AvatarURL,
 		Bio:       req.Bio,
 		Website:   req.Website,
 	}
 
-	if req.Theme != nil {
-		theme := domain.UserTheme(*req.Theme)
-		input.Theme = &theme
-	}
-	if req.Locale != nil {
-		locale := domain.UserLocale(*req.Locale)
-		input.Locale = &locale
+	if req.Preferences != nil {
+		if req.Preferences.Theme != nil {
+			theme := domain.UserTheme(*req.Preferences.Theme)
+			input.Theme = &theme
+		}
+		if req.Preferences.Locale != nil {
+			locale := domain.UserLocale(*req.Preferences.Locale)
+			input.Locale = &locale
+		}
 	}
 
 	ctx := c.Request.Context()

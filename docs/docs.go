@@ -1248,18 +1248,9 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.UpdateUserRequest": {
+        "handlers.UpdatePreferencesRequest": {
             "type": "object",
             "properties": {
-                "avatar_url": {
-                    "type": "string",
-                    "example": "https://example.com/new-avatar.jpg"
-                },
-                "bio": {
-                    "type": "string",
-                    "maxLength": 500,
-                    "example": "Updated bio"
-                },
                 "locale": {
                     "type": "string",
                     "enum": [
@@ -1277,6 +1268,27 @@ const docTemplate = `{
                         "system"
                     ],
                     "example": "dark"
+                }
+            }
+        },
+        "handlers.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/new-avatar.jpg"
+                },
+                "bio": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Updated bio"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "newemail@example.com"
+                },
+                "preferences": {
+                    "$ref": "#/definitions/handlers.UpdatePreferencesRequest"
                 },
                 "username": {
                     "type": "string",

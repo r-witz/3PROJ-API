@@ -129,15 +129,8 @@ definitions:
         example: Bearer
         type: string
     type: object
-  handlers.UpdateUserRequest:
+  handlers.UpdatePreferencesRequest:
     properties:
-      avatar_url:
-        example: https://example.com/new-avatar.jpg
-        type: string
-      bio:
-        example: Updated bio
-        maxLength: 500
-        type: string
       locale:
         enum:
         - en
@@ -152,6 +145,21 @@ definitions:
         - system
         example: dark
         type: string
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      avatar_url:
+        example: https://example.com/new-avatar.jpg
+        type: string
+      bio:
+        example: Updated bio
+        maxLength: 500
+        type: string
+      email:
+        example: newemail@example.com
+        type: string
+      preferences:
+        $ref: '#/definitions/handlers.UpdatePreferencesRequest'
       username:
         example: newusername
         maxLength: 30
