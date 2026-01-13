@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"duskforge-api/internal/core/domain"
@@ -24,12 +25,48 @@ func NewMovieService(tmdbClient ports.TMDBClient, reviewRepo ports.ReviewReposit
 }
 
 func (s *movieService) Search(ctx context.Context, input portservices.SearchMoviesInput) (*portservices.SearchMoviesResult, error) {
+	if input.Query == "" {
+		return &portservices.SearchMoviesResult{
+			Page:         1,
+			TotalPages:   0,
+			TotalResults: 0,
+			Results:      []portservices.MovieSearchResult{},
+		}, nil
+	}
+
 	result, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
 		Query:    input.Query,
 		Page:     input.Page,
 		Year:     input.Year,
 		Language: input.Language,
 	})
+	if err != nil {
+		return nil, domain.ErrTMDBError
+	}
+
+	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, input.Language)
+}
+
+func (s *movieService) Discover(ctx context.Context, input portservices.DiscoverMoviesInput) (*portservices.SearchMoviesResult, error) {
+	params := tmdb.DiscoverMoviesParams{
+		Page:       input.Page,
+		Language:   input.Language,
+		WithGenres: input.Genres,
+		WithCast:   input.WithCast,
+	}
+
+	// Year range filter
+	if input.YearFrom > 0 {
+		params.PrimaryReleaseDateGTE = fmt.Sprintf("%d-01-01", input.YearFrom)
+	}
+	if input.YearTo > 0 {
+		params.PrimaryReleaseDateLTE = fmt.Sprintf("%d-12-31", input.YearTo)
+	}
+
+	// Sorting
+	params.SortBy = parseSort(input.Sort)
+
+	result, err := s.tmdbClient.DiscoverMovies(ctx, params)
 	if err != nil {
 		return nil, domain.ErrTMDBError
 	}
@@ -55,6 +92,37 @@ func (s *movieService) GetPopular(ctx context.Context, page int, language string
 	}
 
 	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, language)
+}
+
+func parseSort(sort string) tmdb.SortBy {
+	if sort == "" {
+		return tmdb.SortByPopularityDesc
+	}
+
+	order := ".desc"
+	field := sort
+
+	if len(sort) > 0 {
+		switch sort[0] {
+		case '+':
+			order = ".asc"
+			field = sort[1:]
+		case '-':
+			order = ".desc"
+			field = sort[1:]
+		}
+	}
+
+	switch field {
+	case "rating":
+		return tmdb.SortBy("vote_average" + order)
+	case "release_date":
+		return tmdb.SortBy("primary_release_date" + order)
+	case "popularity":
+		return tmdb.SortBy("popularity" + order)
+	default:
+		return tmdb.SortByPopularityDesc
+	}
 }
 
 func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieSummary, page, totalPages, totalResults int, language string) (*portservices.SearchMoviesResult, error) {

@@ -775,6 +775,64 @@ paths:
       summary: Get movie details
       tags:
       - movies
+  /movies/discover:
+    get:
+      consumes:
+      - application/json
+      description: Discover movies with advanced filtering and sorting. Use this for
+        browsing by genre, year range, cast, etc.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by starting year
+        in: query
+        name: year_from
+        type: integer
+      - description: Filter by ending year
+        in: query
+        name: year_to
+        type: integer
+      - description: Filter by genre IDs (comma-separated)
+        in: query
+        name: genres
+        type: string
+      - description: Filter by cast/actor IDs (comma-separated)
+        in: query
+        name: cast
+        type: string
+      - default: -popularity
+        description: Sort field with direction prefix (+asc, -desc)
+        enum:
+        - +popularity
+        - -popularity
+        - +rating
+        - -rating
+        - +release_date
+        - -release_date
+        in: query
+        name: sort
+        type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Discover results
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Discover movies with filters
+      tags:
+      - movies
   /movies/popular:
     get:
       consumes:
@@ -808,7 +866,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Search for movies by title
+      description: Search for movies by title. Use this endpoint when users are looking
+        for a specific movie by name.
       parameters:
       - description: Search query
         in: query
@@ -843,7 +902,7 @@ paths:
           description: External service error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Search movies
+      summary: Search movies by title
       tags:
       - movies
   /users/{id}:

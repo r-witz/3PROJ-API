@@ -13,6 +13,16 @@ type SearchMoviesInput struct {
 	Language string
 }
 
+type DiscoverMoviesInput struct {
+	Page     int
+	Language string
+	YearFrom int
+	YearTo   int
+	Genres   []int
+	WithCast []int
+	Sort     string // +popularity, -popularity, +rating, -rating, +release_date, -release_date
+}
+
 type MovieSearchResult struct {
 	ID              int      `json:"id"`
 	Poster          *string  `json:"poster"`
@@ -32,6 +42,7 @@ type SearchMoviesResult struct {
 
 type MovieService interface {
 	Search(ctx context.Context, input SearchMoviesInput) (*SearchMoviesResult, error)
+	Discover(ctx context.Context, input DiscoverMoviesInput) (*SearchMoviesResult, error)
 	GetByID(ctx context.Context, movieID int, language string) (*tmdb.MovieDetails, error)
 	GetPopular(ctx context.Context, page int, language string) (*SearchMoviesResult, error)
 }

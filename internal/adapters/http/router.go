@@ -107,6 +107,7 @@ func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 	movies.Use(middleware.Locale(r.userService))
 	{
 		movies.GET("/search", r.movieHandler.Search)
+		movies.GET("/discover", r.movieHandler.Discover)
 		movies.GET("/popular", r.movieHandler.GetPopular)
 		movies.GET("/:id", r.movieHandler.GetByID)
 	}

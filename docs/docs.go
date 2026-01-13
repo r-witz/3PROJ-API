@@ -734,6 +734,89 @@ const docTemplate = `{
                 }
             }
         },
+        "/movies/discover": {
+            "get": {
+                "description": "Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, cast, etc.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movies"
+                ],
+                "summary": "Discover movies with filters",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by starting year",
+                        "name": "year_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by ending year",
+                        "name": "year_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by genre IDs (comma-separated)",
+                        "name": "genres",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by cast/actor IDs (comma-separated)",
+                        "name": "cast",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "+popularity",
+                            "-popularity",
+                            "+rating",
+                            "-rating",
+                            "+release_date",
+                            "-release_date"
+                        ],
+                        "type": "string",
+                        "default": "-popularity",
+                        "description": "Sort field with direction prefix (+asc, -desc)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discover results",
+                        "schema": {
+                            "$ref": "#/definitions/response.PaginatedResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "External service error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/movies/popular": {
             "get": {
                 "description": "Get a list of currently popular movies",
@@ -780,7 +863,7 @@ const docTemplate = `{
         },
         "/movies/search": {
             "get": {
-                "description": "Search for movies by title",
+                "description": "Search for movies by title. Use this endpoint when users are looking for a specific movie by name.",
                 "consumes": [
                     "application/json"
                 ],
@@ -790,7 +873,7 @@ const docTemplate = `{
                 "tags": [
                     "movies"
                 ],
-                "summary": "Search movies",
+                "summary": "Search movies by title",
                 "parameters": [
                     {
                         "type": "string",

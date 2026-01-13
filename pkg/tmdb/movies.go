@@ -143,6 +143,7 @@ type DiscoverMoviesParams struct {
 	PrimaryReleaseDateLTE string
 	WithGenres            []int
 	WithoutGenres         []int
+	WithCast              []int
 	VoteAverageGTE        float64
 	VoteAverageLTE        float64
 	VoteCountGTE          int
@@ -193,6 +194,13 @@ func (c *Client) DiscoverMovies(ctx context.Context, params DiscoverMoviesParams
 			ids[i] = strconv.Itoa(id)
 		}
 		queryParams.Set("without_genres", strings.Join(ids, ","))
+	}
+	if len(params.WithCast) > 0 {
+		ids := make([]string, len(params.WithCast))
+		for i, id := range params.WithCast {
+			ids[i] = strconv.Itoa(id)
+		}
+		queryParams.Set("with_cast", strings.Join(ids, ","))
 	}
 	if params.VoteAverageGTE > 0 {
 		queryParams.Set("vote_average.gte", strconv.FormatFloat(params.VoteAverageGTE, 'f', 1, 64))
