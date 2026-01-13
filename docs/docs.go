@@ -757,10 +757,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "en-US",
-                        "description": "Language code",
-                        "name": "language",
-                        "in": "query"
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -815,10 +814,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "en-US",
-                        "description": "Language code",
-                        "name": "language",
-                        "in": "query"
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -866,10 +864,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "en-US",
-                        "description": "Language code",
-                        "name": "language",
-                        "in": "query"
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {

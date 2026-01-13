@@ -6,6 +6,7 @@ import (
 
 	"duskforge-api/internal/adapters/handlers"
 	"duskforge-api/internal/adapters/middleware"
+	portservices "duskforge-api/internal/core/ports/services"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -23,6 +24,7 @@ type Router struct {
 	oauthHandler *handlers.OAuthHandler
 	userHandler  *handlers.UserHandler
 	movieHandler *handlers.MovieHandler
+	userService  portservices.UserService
 }
 
 func NewRouter(
@@ -31,6 +33,7 @@ func NewRouter(
 	oauthHandler *handlers.OAuthHandler,
 	userHandler *handlers.UserHandler,
 	movieHandler *handlers.MovieHandler,
+	userService portservices.UserService,
 ) *Router {
 	return &Router{
 		engine:       gin.Default(),
@@ -39,6 +42,7 @@ func NewRouter(
 		oauthHandler: oauthHandler,
 		userHandler:  userHandler,
 		movieHandler: movieHandler,
+		userService:  userService,
 	}
 }
 
@@ -99,6 +103,8 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 
 func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 	movies := rg.Group("/movies")
+	movies.Use(middleware.OptionalAuth(r.config.AccessTokenSecret))
+	movies.Use(middleware.Locale(r.userService))
 	{
 		movies.GET("/search", r.movieHandler.Search)
 		movies.GET("/popular", r.movieHandler.GetPopular)

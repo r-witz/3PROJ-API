@@ -749,10 +749,9 @@ paths:
         name: id
         required: true
         type: integer
-      - default: en-US
-        description: Language code
-        in: query
-        name: language
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
         type: string
       produces:
       - application/json
@@ -787,10 +786,9 @@ paths:
         in: query
         name: page
         type: integer
-      - default: en-US
-        description: Language code
-        in: query
-        name: language
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
         type: string
       produces:
       - application/json
@@ -826,10 +824,9 @@ paths:
         in: query
         name: year
         type: integer
-      - default: en-US
-        description: Language code
-        in: query
-        name: language
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
         type: string
       produces:
       - application/json

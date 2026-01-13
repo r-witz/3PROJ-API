@@ -130,3 +130,32 @@ func (r *ReviewRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.Pool.Exec(ctx, query, id)
 	return err
 }
+
+func (r *ReviewRepository) GetAverageRatingsByTMDBIDs(ctx context.Context, tmdbIDs []int) (map[int]float64, error) {
+	if len(tmdbIDs) == 0 {
+		return make(map[int]float64), nil
+	}
+
+	query := `
+		SELECT tmdb_id, AVG(rating)
+		FROM reviews
+		WHERE tmdb_id = ANY($1)
+		GROUP BY tmdb_id
+	`
+	rows, err := r.db.Pool.Query(ctx, query, tmdbIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int]float64)
+	for rows.Next() {
+		var tmdbID int
+		var avgRating float64
+		if err := rows.Scan(&tmdbID, &avgRating); err != nil {
+			return nil, err
+		}
+		result[tmdbID] = avgRating
+	}
+	return result, rows.Err()
+}

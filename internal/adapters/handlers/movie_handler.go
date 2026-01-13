@@ -3,6 +3,7 @@ package handlers
 import (
 	"strconv"
 
+	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	portservices "duskforge-api/internal/core/ports/services"
 
@@ -25,7 +26,7 @@ func NewMovieHandler(movieService portservices.MovieService) *MovieHandler {
 // @Param        query query string true "Search query"
 // @Param        page query int false "Page number" default(1)
 // @Param        year query int false "Filter by release year"
-// @Param        language query string false "Language code" default(en-US)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Search results"
 // @Failure      400 {object} response.Response "Query parameter is required"
 // @Failure      502 {object} response.Response "External service error"
@@ -39,7 +40,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	year, _ := strconv.Atoi(c.Query("year"))
-	language := c.DefaultQuery("language", "en-US")
+	language := middleware.GetLocale(c)
 
 	result, err := h.movieService.Search(c.Request.Context(), portservices.SearchMoviesInput{
 		Query:    query,
@@ -66,7 +67,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id path int true "Movie ID"
-// @Param        language query string false "Language code" default(en-US)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.Response "Movie details"
 // @Failure      400 {object} response.Response "Invalid movie ID"
 // @Failure      404 {object} response.Response "Movie not found"
@@ -80,7 +81,7 @@ func (h *MovieHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	language := c.DefaultQuery("language", "en-US")
+	language := middleware.GetLocale(c)
 
 	movie, err := h.movieService.GetByID(c.Request.Context(), id, language)
 	if err != nil {
@@ -97,13 +98,13 @@ func (h *MovieHandler) GetByID(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        page query int false "Page number" default(1)
-// @Param        language query string false "Language code" default(en-US)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Popular movies"
 // @Failure      502 {object} response.Response "External service error"
 // @Router       /movies/popular [get]
 func (h *MovieHandler) GetPopular(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	language := c.DefaultQuery("language", "en-US")
+	language := middleware.GetLocale(c)
 
 	result, err := h.movieService.GetPopular(c.Request.Context(), page, language)
 	if err != nil {

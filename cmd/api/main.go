@@ -69,6 +69,7 @@ func main() {
 	sessionRepo := repositories.NewSessionRepository(db)
 	oauthRepo := repositories.NewOAuthAccountRepository(db)
 	followRepo := repositories.NewFollowRepository(db)
+	reviewRepo := repositories.NewReviewRepository(db)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -78,7 +79,7 @@ func main() {
 	})
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
-	movieService := services.NewMovieService(tmdbClient)
+	movieService := services.NewMovieService(tmdbClient, reviewRepo)
 
 	// Initialize OAuth providers
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
@@ -125,6 +126,7 @@ func main() {
 		oauthHandler,
 		userHandler,
 		movieHandler,
+		userService,
 	)
 
 	router.Setup()
