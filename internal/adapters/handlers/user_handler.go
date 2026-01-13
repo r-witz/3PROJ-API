@@ -20,25 +20,31 @@ func NewUserHandler(userService portservices.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
 
+type UserPreferences struct {
+	Theme  string `json:"theme" example:"system"`
+	Locale string `json:"locale" example:"en"`
+}
+
 type UserResponse struct {
-	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Email     string  `json:"email" example:"user@example.com"`
-	Username  string  `json:"username" example:"johndoe"`
-	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
-	Bio       *string `json:"bio,omitempty" example:"Movie enthusiast"`
-	Website   *string `json:"website,omitempty" example:"https://example.com"`
-	Role      string  `json:"role" example:"user"`
-	Theme     string  `json:"theme" example:"system"`
-	Locale    string  `json:"locale" example:"en"`
-	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	ID          string          `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Email       string          `json:"email" example:"user@example.com"`
+	Username    string          `json:"username" example:"johndoe"`
+	AvatarURL   *string         `json:"avatar_url" example:"https://example.com/avatar.jpg"`
+	Bio         *string         `json:"bio" example:"Movie enthusiast"`
+	Website     *string         `json:"website" example:"https://example.com"`
+	Role        string          `json:"role" example:"user"`
+	Preferences UserPreferences `json:"preferences"`
+	CreatedAt   string          `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt   string          `json:"updated_at" example:"2024-01-15T10:30:00Z"`
+	BannedAt    *string         `json:"banned_at,omitempty" example:"2024-01-15T10:30:00Z"`
 }
 
 type PublicUserResponse struct {
 	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Username  string  `json:"username" example:"johndoe"`
-	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
-	Bio       *string `json:"bio,omitempty" example:"Movie enthusiast"`
-	Website   *string `json:"website,omitempty" example:"https://example.com"`
+	AvatarURL *string `json:"avatar_url" example:"https://example.com/avatar.jpg"`
+	Bio       *string `json:"bio" example:"Movie enthusiast"`
+	Website   *string `json:"website" example:"https://example.com"`
 	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
@@ -158,7 +164,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 }
 
 func toUserResponse(user *domain.User) UserResponse {
-	return UserResponse{
+	resp := UserResponse{
 		ID:        user.ID.String(),
 		Email:     user.Email,
 		Username:  user.Username,
@@ -166,10 +172,18 @@ func toUserResponse(user *domain.User) UserResponse {
 		Bio:       user.Bio,
 		Website:   user.Website,
 		Role:      string(user.Role),
-		Theme:     string(user.Theme),
-		Locale:    string(user.Locale),
+		Preferences: UserPreferences{
+			Theme:  string(user.Theme),
+			Locale: string(user.Locale),
+		},
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
+	if user.BannedAt != nil {
+		bannedAt := user.BannedAt.Format(time.RFC3339)
+		resp.BannedAt = &bannedAt
+	}
+	return resp
 }
 
 func toPublicUserResponse(user *domain.User) PublicUserResponse {

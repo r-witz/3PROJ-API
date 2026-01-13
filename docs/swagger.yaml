@@ -153,10 +153,22 @@ definitions:
         example: https://newwebsite.com
         type: string
     type: object
+  handlers.UserPreferences:
+    properties:
+      locale:
+        example: en
+        type: string
+      theme:
+        example: system
+        type: string
+    type: object
   handlers.UserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
+        type: string
+      banned_at:
+        example: "2024-01-15T10:30:00Z"
         type: string
       bio:
         example: Movie enthusiast
@@ -170,14 +182,13 @@ definitions:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
-      locale:
-        example: en
-        type: string
+      preferences:
+        $ref: '#/definitions/handlers.UserPreferences'
       role:
         example: user
         type: string
-      theme:
-        example: system
+      updated_at:
+        example: "2024-01-15T10:30:00Z"
         type: string
       username:
         example: johndoe

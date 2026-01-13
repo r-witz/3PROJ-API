@@ -1274,12 +1274,29 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.UserPreferences": {
+            "type": "object",
+            "properties": {
+                "locale": {
+                    "type": "string",
+                    "example": "en"
+                },
+                "theme": {
+                    "type": "string",
+                    "example": "system"
+                }
+            }
+        },
         "handlers.UserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
                     "type": "string",
                     "example": "https://example.com/avatar.jpg"
+                },
+                "banned_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
                 },
                 "bio": {
                     "type": "string",
@@ -1297,17 +1314,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
-                "locale": {
-                    "type": "string",
-                    "example": "en"
+                "preferences": {
+                    "$ref": "#/definitions/handlers.UserPreferences"
                 },
                 "role": {
                     "type": "string",
                     "example": "user"
                 },
-                "theme": {
+                "updated_at": {
                     "type": "string",
-                    "example": "system"
+                    "example": "2024-01-15T10:30:00Z"
                 },
                 "username": {
                     "type": "string",
