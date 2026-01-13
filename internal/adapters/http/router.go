@@ -91,7 +91,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 	{
 		users.GET("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.GetCurrentUser)
 		users.PATCH("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.UpdateCurrentUser)
-		users.GET("/:id", r.userHandler.GetByID)
+		users.GET("/:id", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
 	}
 }
 

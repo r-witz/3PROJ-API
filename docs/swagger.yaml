@@ -71,6 +71,14 @@ definitions:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+      is_followed_by:
+        example: false
+        type: boolean
+      is_following:
+        example: true
+        type: boolean
+      stats:
+        $ref: '#/definitions/handlers.UserStats'
       username:
         example: johndoe
         type: string
@@ -187,6 +195,8 @@ definitions:
       role:
         example: user
         type: string
+      stats:
+        $ref: '#/definitions/handlers.UserStats'
       updated_at:
         example: "2024-01-15T10:30:00Z"
         type: string
@@ -196,6 +206,15 @@ definitions:
       website:
         example: https://example.com
         type: string
+    type: object
+  handlers.UserStats:
+    properties:
+      followers_count:
+        example: 150
+        type: integer
+      following_count:
+        example: 75
+        type: integer
     type: object
   response.ErrorInfo:
     properties:
@@ -781,7 +800,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get the public profile of a user by their ID
+      description: Get the public profile of a user by their ID. If authenticated,
+        includes follow relationship info.
       parameters:
       - description: User ID
         format: uuid
@@ -813,6 +833,8 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Get user by ID
       tags:
       - users

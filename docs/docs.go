@@ -999,7 +999,12 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
-                "description": "Get the public profile of a user by their ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the public profile of a user by their ID. If authenticated, includes follow relationship info.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1163,6 +1168,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
+                "is_followed_by": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "is_following": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "stats": {
+                    "$ref": "#/definitions/handlers.UserStats"
+                },
                 "username": {
                     "type": "string",
                     "example": "johndoe"
@@ -1321,6 +1337,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "user"
                 },
+                "stats": {
+                    "$ref": "#/definitions/handlers.UserStats"
+                },
                 "updated_at": {
                     "type": "string",
                     "example": "2024-01-15T10:30:00Z"
@@ -1332,6 +1351,19 @@ const docTemplate = `{
                 "website": {
                     "type": "string",
                     "example": "https://example.com"
+                }
+            }
+        },
+        "handlers.UserStats": {
+            "type": "object",
+            "properties": {
+                "followers_count": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "following_count": {
+                    "type": "integer",
+                    "example": 75
                 }
             }
         },
