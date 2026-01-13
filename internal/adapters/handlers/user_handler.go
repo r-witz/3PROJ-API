@@ -7,6 +7,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/pkg/query"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -56,6 +57,13 @@ type PublicUserResponse struct {
 	IsFollowing  bool      `json:"is_following" example:"true"`
 	IsFollowedBy bool      `json:"is_followed_by" example:"false"`
 	CreatedAt    string    `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
+type SearchUserResponse struct {
+	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Username  string  `json:"username" example:"johndoe"`
+	AvatarURL *string `json:"avatar_url" example:"https://example.com/avatar.jpg"`
+	Bio       *string `json:"bio" example:"Movie enthusiast"`
 }
 
 type UpdatePreferencesRequest struct {
@@ -290,4 +298,70 @@ func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFol
 		IsFollowedBy: isFollowedBy,
 		CreatedAt:   user.CreatedAt.Format(time.RFC3339),
 	}
+}
+
+func toSearchUserResponse(user *domain.User) SearchUserResponse {
+	return SearchUserResponse{
+		ID:        user.ID.String(),
+		Username:  user.Username,
+		AvatarURL: user.AvatarURL,
+		Bio:       user.Bio,
+	}
+}
+
+// @Summary      Search users
+// @Description  Search for users by username with sorting and pagination
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        query query string true "Search query (username)"
+// @Param        page query int false "Page number" default(1)
+// @Param        per_page query int false "Results per page (max 100)" default(20)
+// @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+username, -username, +created_at, -created_at)
+// @Success      200 {object} response.PaginatedResponse{data=[]SearchUserResponse} "Search results"
+// @Failure      400 {object} response.Response "Invalid query parameters"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/search [get]
+func (h *UserHandler) Search(c *gin.Context) {
+	searchQuery := c.Query("query")
+	if searchQuery == "" {
+		response.BadRequest(c, "Query parameter is required", nil)
+		return
+	}
+
+	params, err := query.Parse(c, query.Config{
+		DefaultPerPage: 20,
+		MaxPerPage:     100,
+		AllowedSorts:   []string{"username", "created_at"},
+	})
+	if err != nil {
+		response.BadRequest(c, err.Error(), nil)
+		return
+	}
+
+	input := portservices.SearchUsersInput{
+		Query:     searchQuery,
+		Page:      params.Page,
+		PerPage:   params.PerPage,
+		SortField: params.SortField,
+		SortOrder: params.SortOrder,
+	}
+
+	result, err := h.userService.SearchUsers(c.Request.Context(), input)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	users := make([]SearchUserResponse, len(result.Users))
+	for i, user := range result.Users {
+		users[i] = toSearchUserResponse(user)
+	}
+
+	response.SuccessPaginated(c, users, &response.Pagination{
+		Page:       result.Page,
+		PerPage:    result.PerPage,
+		Total:      result.Total,
+		TotalPages: result.TotalPages,
+	})
 }

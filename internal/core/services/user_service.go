@@ -105,3 +105,43 @@ func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) e
 
 	return nil
 }
+
+func (s *userService) SearchUsers(ctx context.Context, input portservices.SearchUsersInput) (*portservices.SearchUsersResult, error) {
+	if input.Page < 1 {
+		input.Page = 1
+	}
+	if input.PerPage < 1 {
+		input.PerPage = 20
+	}
+	if input.PerPage > 100 {
+		input.PerPage = 100
+	}
+
+	offset := (input.Page - 1) * input.PerPage
+
+	searchParams := ports.UserSearchParams{
+		Query:     input.Query,
+		Limit:     input.PerPage,
+		Offset:    offset,
+		SortField: input.SortField,
+		SortOrder: input.SortOrder,
+	}
+
+	users, total, err := s.userRepo.SearchByUsername(ctx, searchParams)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	totalPages := total / input.PerPage
+	if total%input.PerPage > 0 {
+		totalPages++
+	}
+
+	return &portservices.SearchUsersResult{
+		Users:      users,
+		Total:      total,
+		Page:       input.Page,
+		PerPage:    input.PerPage,
+		TotalPages: totalPages,
+	}, nil
+}

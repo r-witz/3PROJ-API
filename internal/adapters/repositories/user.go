@@ -3,8 +3,10 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"duskforge-api/internal/core/domain"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/database"
 
 	"github.com/google/uuid"
@@ -81,6 +83,60 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*d
 		return nil, nil
 	}
 	return user, err
+}
+
+var allowedSortColumns = map[string]string{
+	"username":   "username",
+	"created_at": "created_at",
+}
+
+func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.UserSearchParams) ([]*domain.User, int, error) {
+	countQuery := `SELECT COUNT(*) FROM users WHERE username ILIKE $1`
+	var total int
+	err := r.db.Pool.QueryRow(ctx, countQuery, "%"+params.Query+"%").Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	orderBy := "username ASC"
+	if params.SortField != "" {
+		if col, ok := allowedSortColumns[params.SortField]; ok {
+			order := "ASC"
+			if params.SortOrder == "DESC" {
+				order = "DESC"
+			}
+			orderBy = fmt.Sprintf("%s %s", col, order)
+		}
+	}
+
+	searchQuery := fmt.Sprintf(`
+		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		FROM users WHERE username ILIKE $1
+		ORDER BY %s
+		LIMIT $2 OFFSET $3
+	`, orderBy)
+
+	rows, err := r.db.Pool.Query(ctx, searchQuery, "%"+params.Query+"%", params.Limit, params.Offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		user := &domain.User{}
+		err := rows.Scan(
+			&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
+			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
+	}
+
+	return users, total, nil
 }
 
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
