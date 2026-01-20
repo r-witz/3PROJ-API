@@ -28,8 +28,10 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrInvalidToken:          {http.StatusUnauthorized, "INVALID_TOKEN", "Invalid or expired token"},
 	domain.ErrSessionExpired:        {http.StatusUnauthorized, "SESSION_EXPIRED", "Session has expired"},
 	domain.ErrUserBanned:            {http.StatusForbidden, "USER_BANNED", "Account has been banned"},
-	domain.ErrUserNotFound:          {http.StatusNotFound, "USER_NOT_FOUND", "User not found"},
-	domain.ErrMovieNotFound:         {http.StatusNotFound, "MOVIE_NOT_FOUND", "Movie not found"},
+	domain.ErrUserNotFound:       {http.StatusNotFound, "USER_NOT_FOUND", "User not found"},
+	domain.ErrNoPasswordSet:      {http.StatusConflict, "NO_PASSWORD_SET", "No password set for this account"},
+	domain.ErrIncorrectPassword:  {http.StatusUnauthorized, "INCORRECT_PASSWORD", "Current password is incorrect"},
+	domain.ErrMovieNotFound:      {http.StatusNotFound, "MOVIE_NOT_FOUND", "Movie not found"},
 	domain.ErrTMDBError:             {http.StatusBadGateway, "EXTERNAL_SERVICE_ERROR", "Movie service is temporarily unavailable"},
 
 	// OAuth errors

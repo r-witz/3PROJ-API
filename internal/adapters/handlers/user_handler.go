@@ -80,6 +80,11 @@ type UpdateUserRequest struct {
 	Preferences *UpdatePreferencesRequest `json:"preferences" binding:"omitempty"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required" example:"oldpassword123"`
+	NewPassword     string `json:"new_password" binding:"required,min=8,max=72" example:"newpassword456"`
+}
+
 // @Summary      Get current user
 // @Description  Get the profile of the currently authenticated user
 // @Tags         users
@@ -185,6 +190,45 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	}
 
 	response.Success(c, toUserResponse(user, stats))
+}
+
+// @Summary      Change password
+// @Description  Change the password of the currently authenticated user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body ChangePasswordRequest true "Current and new password"
+// @Success      200 {object} response.Response "Password changed successfully"
+// @Failure      400 {object} response.Response "Invalid request body or password too short/long"
+// @Failure      401 {object} response.Response "Unauthorized or incorrect current password"
+// @Failure      409 {object} response.Response "No password set (OAuth-only account)"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/me/password [put]
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body", err.Error())
+		return
+	}
+
+	input := portservices.ChangePasswordInput{
+		CurrentPassword: req.CurrentPassword,
+		NewPassword:     req.NewPassword,
+	}
+
+	if err := h.userService.ChangePassword(c.Request.Context(), userID, input); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "Password changed successfully"})
 }
 
 // @Summary      Delete current user

@@ -96,6 +96,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/search", r.userHandler.Search)
 		users.GET("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.GetCurrentUser)
 		users.PATCH("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.UpdateCurrentUser)
+		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/:id", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
 	}

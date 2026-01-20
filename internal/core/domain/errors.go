@@ -21,7 +21,9 @@ var (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
+	ErrUserNotFound    = errors.New("user not found")
+	ErrNoPasswordSet   = errors.New("no password set for this account")
+	ErrIncorrectPassword = errors.New("current password is incorrect")
 )
 
 var (
