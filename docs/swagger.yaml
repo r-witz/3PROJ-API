@@ -120,7 +120,7 @@ definitions:
         type: string
       username:
         example: johndoe
-        maxLength: 30
+        maxLength: 50
         minLength: 3
         type: string
     required:
@@ -191,7 +191,7 @@ definitions:
         $ref: '#/definitions/handlers.UpdatePreferencesRequest'
       username:
         example: newusername
-        maxLength: 30
+        maxLength: 50
         minLength: 3
         type: string
       website:

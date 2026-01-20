@@ -14,7 +14,11 @@ var (
 var (
 	ErrInvalidCredentials    = errors.New("invalid email or password")
 	ErrEmailAlreadyExists    = errors.New("email already registered")
+	ErrEmailRequired         = errors.New("email is required")
 	ErrUsernameAlreadyExists = errors.New("username already taken")
+	ErrUsernameRequired      = errors.New("username is required")
+	ErrUsernameTooShort      = errors.New("username must be at least 3 characters")
+	ErrUsernameTooLong       = errors.New("username must be at most 50 characters")
 	ErrInvalidEmailFormat    = errors.New("invalid email format")
 	ErrInvalidToken          = errors.New("invalid or expired token")
 	ErrSessionExpired        = errors.New("session has expired")
@@ -28,6 +32,7 @@ var (
 )
 
 var (
+	ErrPasswordRequired      = errors.New("password is required")
 	ErrPasswordTooShort      = errors.New("password must be at least 8 characters")
 	ErrPasswordTooLong       = errors.New("password must be at most 72 characters")
 	ErrPasswordNoUppercase   = errors.New("password must contain at least one uppercase letter")

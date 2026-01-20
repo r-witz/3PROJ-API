@@ -1543,7 +1543,7 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string",
-                    "maxLength": 30,
+                    "maxLength": 50,
                     "minLength": 3,
                     "example": "johndoe"
                 }
@@ -1635,7 +1635,7 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string",
-                    "maxLength": 30,
+                    "maxLength": 50,
                     "minLength": 3,
                     "example": "newusername"
                 },

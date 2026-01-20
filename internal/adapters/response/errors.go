@@ -25,7 +25,11 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrInternal:              {http.StatusInternalServerError, "INTERNAL_ERROR", "An internal error occurred"},
 	domain.ErrInvalidCredentials:    {http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid email or password"},
 	domain.ErrEmailAlreadyExists:    {http.StatusConflict, "EMAIL_EXISTS", "Email is already registered"},
+	domain.ErrEmailRequired:         {http.StatusBadRequest, "EMAIL_REQUIRED", "Email is required"},
 	domain.ErrUsernameAlreadyExists: {http.StatusConflict, "USERNAME_EXISTS", "Username is already taken"},
+	domain.ErrUsernameRequired:      {http.StatusBadRequest, "USERNAME_REQUIRED", "Username is required"},
+	domain.ErrUsernameTooShort:      {http.StatusBadRequest, "USERNAME_TOO_SHORT", "Username must be at least 3 characters"},
+	domain.ErrUsernameTooLong:       {http.StatusBadRequest, "USERNAME_TOO_LONG", "Username must be at most 50 characters"},
 	domain.ErrInvalidEmailFormat:    {http.StatusBadRequest, "INVALID_EMAIL", "Email must be a valid email address"},
 	domain.ErrInvalidToken:          {http.StatusUnauthorized, "INVALID_TOKEN", "Invalid or expired token"},
 	domain.ErrSessionExpired:        {http.StatusUnauthorized, "SESSION_EXPIRED", "Session has expired"},
@@ -35,6 +39,7 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrIncorrectPassword:  {http.StatusUnauthorized, "INCORRECT_PASSWORD", "Current password is incorrect"},
 
 	// Password validation errors
+	domain.ErrPasswordRequired:      {http.StatusBadRequest, "PASSWORD_REQUIRED", "Password is required"},
 	domain.ErrPasswordTooShort:      {http.StatusBadRequest, "PASSWORD_TOO_SHORT", "Password must be at least 8 characters"},
 	domain.ErrPasswordTooLong:       {http.StatusBadRequest, "PASSWORD_TOO_LONG", "Password must be at most 72 characters"},
 	domain.ErrPasswordNoUppercase:   {http.StatusBadRequest, "PASSWORD_NO_UPPERCASE", "Password must contain at least one uppercase letter"},
@@ -73,8 +78,36 @@ func HandleValidationError(c *gin.Context, err error) bool {
 	for _, fieldErr := range validationErrors {
 		switch fieldErr.Field() {
 		case "Email":
-			if fieldErr.Tag() == "email" || fieldErr.Tag() == "required" {
+			switch fieldErr.Tag() {
+			case "required":
+				HandleError(c, domain.ErrEmailRequired)
+				return true
+			case "email":
 				HandleError(c, domain.ErrInvalidEmailFormat)
+				return true
+			}
+		case "Username":
+			switch fieldErr.Tag() {
+			case "required":
+				HandleError(c, domain.ErrUsernameRequired)
+				return true
+			case "min":
+				HandleError(c, domain.ErrUsernameTooShort)
+				return true
+			case "max":
+				HandleError(c, domain.ErrUsernameTooLong)
+				return true
+			}
+		case "Password", "NewPassword", "CurrentPassword":
+			switch fieldErr.Tag() {
+			case "required":
+				HandleError(c, domain.ErrPasswordRequired)
+				return true
+			case "min":
+				HandleError(c, domain.ErrPasswordTooShort)
+				return true
+			case "max":
+				HandleError(c, domain.ErrPasswordTooLong)
 				return true
 			}
 		}
