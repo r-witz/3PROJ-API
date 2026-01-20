@@ -17,7 +17,7 @@ func NewAuthHandler(authService ports.AuthService) *AuthHandler {
 
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email" example:"user@example.com"`
-	Username string `json:"username" binding:"required,min=3,max=30" example:"johndoe"`
+	Username string `json:"username" binding:"required,min=3,max=50" example:"johndoe"`
 	Password string `json:"password" binding:"required,min=8,max=72" example:"securepassword123"`
 }
 

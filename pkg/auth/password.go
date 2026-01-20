@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"unicode"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,6 +22,10 @@ func HashPasswordWithCost(password string, cost int) (string, error) {
 			Operation: "hash",
 			Err:       ErrPasswordTooLong,
 		}
+	}
+
+	if err := validatePasswordComplexity(password); err != nil {
+		return "", err
 	}
 
 	if cost < MinBcryptCost {
@@ -54,4 +60,36 @@ func ComparePassword(hash, password string) (bool, error) {
 		Operation: "compare",
 		Err:       err,
 	}
+}
+
+func validatePasswordComplexity(password string) error {
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+
+	for _, r := range password {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsLower(r):
+			hasLower = true
+		case unicode.IsDigit(r):
+			hasDigit = true
+		case unicode.IsPunct(r) || unicode.IsSymbol(r):
+			hasSpecial = true
+		}
+	}
+
+	if !hasUpper {
+		return &PasswordError{Operation: "validate", Err: ErrPasswordNoUppercase}
+	}
+	if !hasLower {
+		return &PasswordError{Operation: "validate", Err: ErrPasswordNoLowercase}
+	}
+	if !hasDigit {
+		return &PasswordError{Operation: "validate", Err: ErrPasswordNoDigit}
+	}
+	if !hasSpecial {
+		return &PasswordError{Operation: "validate", Err: ErrPasswordNoSpecialChar}
+	}
+
+	return nil
 }

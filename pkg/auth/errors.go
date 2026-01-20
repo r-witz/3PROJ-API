@@ -11,9 +11,13 @@ var (
 	ErrTokenMalformed   = errors.New("malformed token")
 	ErrInvalidSignature = errors.New("invalid token signature")
 	ErrInvalidClaims    = errors.New("invalid token claims")
-	ErrPasswordTooShort = errors.New("password too short")
-	ErrPasswordTooLong  = errors.New("password too long")
-	ErrHashingFailed    = errors.New("failed to hash password")
+	ErrPasswordTooShort      = errors.New("password too short")
+	ErrPasswordTooLong       = errors.New("password too long")
+	ErrPasswordNoUppercase   = errors.New("password must contain at least one uppercase letter")
+	ErrPasswordNoLowercase   = errors.New("password must contain at least one lowercase letter")
+	ErrPasswordNoDigit       = errors.New("password must contain at least one digit")
+	ErrPasswordNoSpecialChar = errors.New("password must contain at least one special character")
+	ErrHashingFailed         = errors.New("failed to hash password")
 )
 
 type TokenError struct {

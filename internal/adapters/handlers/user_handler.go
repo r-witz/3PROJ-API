@@ -73,7 +73,7 @@ type UpdatePreferencesRequest struct {
 
 type UpdateUserRequest struct {
 	Email       *string                   `json:"email" binding:"omitempty,email" example:"newemail@example.com"`
-	Username    *string                   `json:"username" binding:"omitempty,min=3,max=30" example:"newusername"`
+	Username    *string                   `json:"username" binding:"omitempty,min=3,max=50" example:"newusername"`
 	AvatarURL   *string                   `json:"avatar_url" binding:"omitempty,url" example:"https://example.com/new-avatar.jpg"`
 	Bio         *string                   `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
 	Website     *string                   `json:"website" binding:"omitempty,url" example:"https://newwebsite.com"`
