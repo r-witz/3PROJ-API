@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"duskforge-api/internal/core/domain"
@@ -55,7 +56,7 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 
 	passwordHash, err := auth.HashPassword(input.Password)
 	if err != nil {
-		return nil, nil, domain.ErrInternal
+		return nil, nil, mapPasswordError(err)
 	}
 
 	now := time.Now()
@@ -212,4 +213,26 @@ func (s *authService) createSession(ctx context.Context, user *domain.User) (*po
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),
 	}, nil
+}
+
+func mapPasswordError(err error) error {
+	if errors.Is(err, auth.ErrPasswordTooShort) {
+		return domain.ErrPasswordTooShort
+	}
+	if errors.Is(err, auth.ErrPasswordTooLong) {
+		return domain.ErrPasswordTooLong
+	}
+	if errors.Is(err, auth.ErrPasswordNoUppercase) {
+		return domain.ErrPasswordNoUppercase
+	}
+	if errors.Is(err, auth.ErrPasswordNoLowercase) {
+		return domain.ErrPasswordNoLowercase
+	}
+	if errors.Is(err, auth.ErrPasswordNoDigit) {
+		return domain.ErrPasswordNoDigit
+	}
+	if errors.Is(err, auth.ErrPasswordNoSpecialChar) {
+		return domain.ErrPasswordNoSpecialChar
+	}
+	return domain.ErrInternal
 }

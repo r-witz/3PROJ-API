@@ -31,6 +31,15 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrUserNotFound:       {http.StatusNotFound, "USER_NOT_FOUND", "User not found"},
 	domain.ErrNoPasswordSet:      {http.StatusConflict, "NO_PASSWORD_SET", "No password set for this account"},
 	domain.ErrIncorrectPassword:  {http.StatusUnauthorized, "INCORRECT_PASSWORD", "Current password is incorrect"},
+
+	// Password validation errors
+	domain.ErrPasswordTooShort:      {http.StatusBadRequest, "PASSWORD_TOO_SHORT", "Password must be at least 8 characters"},
+	domain.ErrPasswordTooLong:       {http.StatusBadRequest, "PASSWORD_TOO_LONG", "Password must be at most 72 characters"},
+	domain.ErrPasswordNoUppercase:   {http.StatusBadRequest, "PASSWORD_NO_UPPERCASE", "Password must contain at least one uppercase letter"},
+	domain.ErrPasswordNoLowercase:   {http.StatusBadRequest, "PASSWORD_NO_LOWERCASE", "Password must contain at least one lowercase letter"},
+	domain.ErrPasswordNoDigit:       {http.StatusBadRequest, "PASSWORD_NO_DIGIT", "Password must contain at least one digit"},
+	domain.ErrPasswordNoSpecialChar: {http.StatusBadRequest, "PASSWORD_NO_SPECIAL", "Password must contain at least one special character"},
+
 	domain.ErrMovieNotFound:      {http.StatusNotFound, "MOVIE_NOT_FOUND", "Movie not found"},
 	domain.ErrTMDBError:             {http.StatusBadGateway, "EXTERNAL_SERVICE_ERROR", "Movie service is temporarily unavailable"},
 

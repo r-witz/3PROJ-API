@@ -21,9 +21,18 @@ var (
 )
 
 var (
-	ErrUserNotFound    = errors.New("user not found")
-	ErrNoPasswordSet   = errors.New("no password set for this account")
+	ErrUserNotFound      = errors.New("user not found")
+	ErrNoPasswordSet     = errors.New("no password set for this account")
 	ErrIncorrectPassword = errors.New("current password is incorrect")
+)
+
+var (
+	ErrPasswordTooShort      = errors.New("password must be at least 8 characters")
+	ErrPasswordTooLong       = errors.New("password must be at most 72 characters")
+	ErrPasswordNoUppercase   = errors.New("password must contain at least one uppercase letter")
+	ErrPasswordNoLowercase   = errors.New("password must contain at least one lowercase letter")
+	ErrPasswordNoDigit       = errors.New("password must contain at least one digit")
+	ErrPasswordNoSpecialChar = errors.New("password must contain at least one special character")
 )
 
 var (

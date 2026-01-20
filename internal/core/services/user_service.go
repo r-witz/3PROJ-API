@@ -113,7 +113,7 @@ func (s *userService) ChangePassword(ctx context.Context, userID uuid.UUID, inpu
 
 	newHash, err := auth.HashPassword(input.NewPassword)
 	if err != nil {
-		return domain.ErrInternal
+		return mapPasswordError(err)
 	}
 
 	user.PasswordHash = &newHash
