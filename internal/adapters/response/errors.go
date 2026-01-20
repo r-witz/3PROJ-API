@@ -7,6 +7,7 @@ import (
 	"duskforge-api/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type ErrorMapping struct {
@@ -25,6 +26,7 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrInvalidCredentials:    {http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid email or password"},
 	domain.ErrEmailAlreadyExists:    {http.StatusConflict, "EMAIL_EXISTS", "Email is already registered"},
 	domain.ErrUsernameAlreadyExists: {http.StatusConflict, "USERNAME_EXISTS", "Username is already taken"},
+	domain.ErrInvalidEmailFormat:    {http.StatusBadRequest, "INVALID_EMAIL", "Email must be a valid email address"},
 	domain.ErrInvalidToken:          {http.StatusUnauthorized, "INVALID_TOKEN", "Invalid or expired token"},
 	domain.ErrSessionExpired:        {http.StatusUnauthorized, "SESSION_EXPIRED", "Session has expired"},
 	domain.ErrUserBanned:            {http.StatusForbidden, "USER_BANNED", "Account has been banned"},
@@ -60,4 +62,23 @@ func HandleError(c *gin.Context, err error) {
 	}
 
 	InternalError(c)
+}
+
+func HandleValidationError(c *gin.Context, err error) bool {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(err, &validationErrors) {
+		return false
+	}
+
+	for _, fieldErr := range validationErrors {
+		switch fieldErr.Field() {
+		case "Email":
+			if fieldErr.Tag() == "email" || fieldErr.Tag() == "required" {
+				HandleError(c, domain.ErrInvalidEmailFormat)
+				return true
+			}
+		}
+	}
+
+	return false
 }

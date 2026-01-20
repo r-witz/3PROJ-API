@@ -15,6 +15,7 @@ var (
 	ErrInvalidCredentials    = errors.New("invalid email or password")
 	ErrEmailAlreadyExists    = errors.New("email already registered")
 	ErrUsernameAlreadyExists = errors.New("username already taken")
+	ErrInvalidEmailFormat    = errors.New("invalid email format")
 	ErrInvalidToken          = errors.New("invalid or expired token")
 	ErrSessionExpired        = errors.New("session has expired")
 	ErrUserBanned            = errors.New("user account is banned")

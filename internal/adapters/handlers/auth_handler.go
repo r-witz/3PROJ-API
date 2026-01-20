@@ -55,6 +55,9 @@ type TokensResponse struct {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
 		response.BadRequest(c, "Invalid request body", err.Error())
 		return
 	}
@@ -92,6 +95,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
 		response.BadRequest(c, "Invalid request body", err.Error())
 		return
 	}

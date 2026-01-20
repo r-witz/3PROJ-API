@@ -147,6 +147,9 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
 		response.BadRequest(c, "Invalid request body", err.Error())
 		return
 	}
