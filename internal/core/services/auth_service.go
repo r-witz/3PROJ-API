@@ -6,7 +6,6 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	portservices "duskforge-api/internal/core/ports/services"
 	"duskforge-api/pkg/auth"
 
 	"github.com/google/uuid"
@@ -29,7 +28,7 @@ func NewAuthService(
 	userRepo ports.UserRepository,
 	sessionRepo ports.SessionRepository,
 	config AuthServiceConfig,
-) portservices.AuthService {
+) ports.AuthService {
 	return &authService{
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
@@ -37,7 +36,7 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) Register(ctx context.Context, input portservices.RegisterInput) (*domain.User, *portservices.AuthTokens, error) {
+func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (*domain.User, *ports.AuthTokens, error) {
 	existing, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		return nil, nil, domain.ErrInternal
@@ -84,7 +83,7 @@ func (s *authService) Register(ctx context.Context, input portservices.RegisterI
 	return user, tokens, nil
 }
 
-func (s *authService) Login(ctx context.Context, input portservices.LoginInput) (*domain.User, *portservices.AuthTokens, error) {
+func (s *authService) Login(ctx context.Context, input ports.LoginInput) (*domain.User, *ports.AuthTokens, error) {
 	user, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		return nil, nil, domain.ErrInternal
@@ -114,7 +113,7 @@ func (s *authService) Login(ctx context.Context, input portservices.LoginInput) 
 	return user, tokens, nil
 }
 
-func (s *authService) Refresh(ctx context.Context, refreshToken string) (*portservices.AuthTokens, error) {
+func (s *authService) Refresh(ctx context.Context, refreshToken string) (*ports.AuthTokens, error) {
 	claims, err := auth.ValidateRefreshToken(refreshToken, s.config.RefreshTokenSecret)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
@@ -159,7 +158,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (*portse
 		return nil, domain.ErrInternal
 	}
 
-	return &portservices.AuthTokens{
+	return &ports.AuthTokens{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),
@@ -179,7 +178,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	return s.sessionRepo.Delete(ctx, session.ID)
 }
 
-func (s *authService) createSession(ctx context.Context, user *domain.User) (*portservices.AuthTokens, error) {
+func (s *authService) createSession(ctx context.Context, user *domain.User) (*ports.AuthTokens, error) {
 	sessionID := uuid.New()
 
 	accessToken, err := auth.GenerateAccessToken(
@@ -208,7 +207,7 @@ func (s *authService) createSession(ctx context.Context, user *domain.User) (*po
 		return nil, domain.ErrInternal
 	}
 
-	return &portservices.AuthTokens{
+	return &ports.AuthTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),

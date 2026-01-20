@@ -16,14 +16,12 @@ var (
 	ErrGitHubUserInfo      = errors.New("failed to get GitHub user info")
 )
 
-// GitHubProvider implements OAuth authentication with GitHub
 type GitHubProvider struct {
 	clientID     string
 	clientSecret string
 	httpClient   *http.Client
 }
 
-// NewGitHubProvider creates a new GitHub OAuth provider
 func NewGitHubProvider(clientID, clientSecret string) *GitHubProvider {
 	return &GitHubProvider{
 		clientID:     clientID,
@@ -93,13 +91,11 @@ func (p *GitHubProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 }
 
 func (p *GitHubProvider) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
-	// Get user profile
 	userResp, err := p.getUserProfile(ctx, accessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get user emails to find primary email
 	email, err := p.getPrimaryEmail(ctx, accessToken)
 	if err != nil {
 		return nil, err
@@ -184,14 +180,12 @@ func (p *GitHubProvider) getPrimaryEmail(ctx context.Context, accessToken string
 		return "", fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
 	}
 
-	// Find primary verified email
 	for _, e := range emails {
 		if e.Primary && e.Verified {
 			return e.Email, nil
 		}
 	}
 
-	// Fallback to first verified email
 	for _, e := range emails {
 		if e.Verified {
 			return e.Email, nil

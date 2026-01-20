@@ -7,7 +7,6 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	portservices "duskforge-api/internal/core/ports/services"
 	"duskforge-api/pkg/auth"
 	"duskforge-api/pkg/oauth"
 
@@ -37,7 +36,7 @@ func NewOAuthService(
 	stateManager *oauth.StateManager,
 	providers map[oauth.OAuthProvider]oauth.Provider,
 	config OAuthServiceConfig,
-) portservices.OAuthService {
+) ports.OAuthService {
 	return &oauthService{
 		userRepo:     userRepo,
 		oauthRepo:    oauthRepo,
@@ -63,32 +62,27 @@ func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirec
 	return authURL, state, nil
 }
 
-func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OAuthCallbackInput) (*portservices.OAuthAuthResult, error) {
-	// Validate state and extract data
+func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCallbackInput) (*ports.OAuthAuthResult, error) {
 	stateData, err := s.stateManager.Validate(input.State)
 	if err != nil {
 		return nil, domain.ErrOAuthStateMismatch
 	}
 
-	// Get provider
 	provider, ok := s.providers[input.Provider]
 	if !ok {
 		return nil, domain.ErrOAuthProviderNotSupported
 	}
 
-	// Exchange code for token
 	accessToken, err := provider.ExchangeCode(ctx, input.Code, input.RedirectURI)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
 
-	// Get user info from provider
 	oauthUserInfo, err := provider.GetUserInfo(ctx, accessToken)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
 
-	// Check if OAuth account exists
 	oauthAccount, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -98,7 +92,6 @@ func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OA
 	isNewUser := false
 
 	if oauthAccount != nil {
-		// Existing OAuth user - get user and login
 		user, err = s.userRepo.GetByID(ctx, oauthAccount.UserID)
 		if err != nil || user == nil {
 			return nil, domain.ErrInternal
@@ -108,20 +101,17 @@ func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OA
 			return nil, domain.ErrUserBanned
 		}
 	} else {
-		// Check if email already exists
 		existingUser, err := s.userRepo.GetByEmail(ctx, oauthUserInfo.Email)
 		if err != nil {
 			return nil, domain.ErrInternal
 		}
 
 		if existingUser != nil {
-			// Email exists - link OAuth to existing account
 			user = existingUser
 			if err := s.linkOAuthAccount(ctx, user.ID, input.Provider, oauthUserInfo); err != nil {
 				return nil, err
 			}
 		} else {
-			// New user - register via OAuth
 			user, err = s.createOAuthUser(ctx, input.Provider, oauthUserInfo)
 			if err != nil {
 				return nil, err
@@ -130,13 +120,12 @@ func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OA
 		}
 	}
 
-	// Create session
 	tokens, err := s.createSession(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return &portservices.OAuthAuthResult{
+	return &ports.OAuthAuthResult{
 		User:                user,
 		Tokens:              tokens,
 		IsNewUser:           isNewUser,
@@ -144,31 +133,26 @@ func (s *oauthService) HandleCallback(ctx context.Context, input portservices.OA
 	}, nil
 }
 
-func (s *oauthService) LinkAccount(ctx context.Context, input portservices.OAuthLinkInput) error {
-	// Validate state
+func (s *oauthService) LinkAccount(ctx context.Context, input ports.OAuthLinkInput) error {
 	if _, err := s.stateManager.Validate(input.State); err != nil {
 		return domain.ErrOAuthStateMismatch
 	}
 
-	// Get provider
 	provider, ok := s.providers[input.Provider]
 	if !ok {
 		return domain.ErrOAuthProviderNotSupported
 	}
 
-	// Exchange code for token
 	accessToken, err := provider.ExchangeCode(ctx, input.Code, input.RedirectURI)
 	if err != nil {
 		return domain.ErrInternal
 	}
 
-	// Get user info from provider
 	oauthUserInfo, err := provider.GetUserInfo(ctx, accessToken)
 	if err != nil {
 		return domain.ErrInternal
 	}
 
-	// Check if OAuth account is already linked to another user
 	existingOAuth, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
 	if err != nil {
 		return domain.ErrInternal
@@ -177,37 +161,30 @@ func (s *oauthService) LinkAccount(ctx context.Context, input portservices.OAuth
 		if existingOAuth.UserID != input.UserID {
 			return domain.ErrOAuthAccountAlreadyLinked
 		}
-		// Already linked to this user
 		return nil
 	}
 
-	// Check if user already has this provider linked
 	existingLink, err := s.oauthRepo.GetByUserIDAndProvider(ctx, input.UserID, string(input.Provider))
 	if err != nil {
 		return domain.ErrInternal
 	}
 	if existingLink != nil {
-		// Already has this provider linked, update it
 		if err := s.oauthRepo.Delete(ctx, existingLink.Provider, existingLink.ProviderUserID); err != nil {
 			return domain.ErrInternal
 		}
 	}
 
-	// Link OAuth account
 	return s.linkOAuthAccount(ctx, input.UserID, input.Provider, oauthUserInfo)
 }
 
 func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error {
-	// Get user to check authentication methods
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		return domain.ErrInternal
 	}
 
-	// Check if this is the only auth method
 	hasPassword := user.PasswordHash != nil
 
-	// Count OAuth accounts
 	githubOAuth, _ := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGitHub))
 	googleOAuth, _ := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGoogle))
 
@@ -219,12 +196,10 @@ func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, prov
 		oauthCount++
 	}
 
-	// Cannot unlink if this is the only auth method
 	if !hasPassword && oauthCount <= 1 {
 		return domain.ErrCannotUnlinkOnlyAuth
 	}
 
-	// Get the OAuth account to delete
 	oauthAccount, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(provider))
 	if err != nil {
 		return domain.ErrInternal
@@ -233,7 +208,6 @@ func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, prov
 		return domain.ErrOAuthAccountNotFound
 	}
 
-	// Delete OAuth account
 	if err := s.oauthRepo.Delete(ctx, oauthAccount.Provider, oauthAccount.ProviderUserID); err != nil {
 		return domain.ErrInternal
 	}
@@ -242,7 +216,6 @@ func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, prov
 }
 
 func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuthProvider, info *oauth.UserInfo) (*domain.User, error) {
-	// Generate unique username
 	username, err := s.generateUniqueUsername(ctx, info.Username)
 	if err != nil {
 		return nil, err
@@ -253,7 +226,7 @@ func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuth
 		ID:           uuid.New(),
 		Email:        info.Email,
 		Username:     username,
-		PasswordHash: nil, // OAuth-only users have no password
+		PasswordHash: nil,
 		AvatarURL:    info.AvatarURL,
 		Role:         domain.UserRoleUser,
 		Theme:        domain.UserThemeSystem,
@@ -266,7 +239,6 @@ func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuth
 		return nil, domain.ErrInternal
 	}
 
-	// Link OAuth account
 	if err := s.linkOAuthAccount(ctx, user.ID, provider, info); err != nil {
 		return nil, err
 	}
@@ -290,7 +262,6 @@ func (s *oauthService) linkOAuthAccount(ctx context.Context, userID uuid.UUID, p
 }
 
 func (s *oauthService) generateUniqueUsername(ctx context.Context, baseUsername string) (string, error) {
-	// Try base username first
 	existing, err := s.userRepo.GetByUsername(ctx, baseUsername)
 	if err != nil {
 		return "", domain.ErrInternal
@@ -299,7 +270,6 @@ func (s *oauthService) generateUniqueUsername(ctx context.Context, baseUsername 
 		return baseUsername, nil
 	}
 
-	// Append numbers until we find a unique username
 	for i := 1; i < 1000; i++ {
 		username := fmt.Sprintf("%s%d", baseUsername, i)
 		existing, err := s.userRepo.GetByUsername(ctx, username)
@@ -311,11 +281,10 @@ func (s *oauthService) generateUniqueUsername(ctx context.Context, baseUsername 
 		}
 	}
 
-	// Fallback to UUID suffix if all else fails
 	return fmt.Sprintf("%s_%s", baseUsername, uuid.New().String()[:8]), nil
 }
 
-func (s *oauthService) createSession(ctx context.Context, user *domain.User) (*portservices.AuthTokens, error) {
+func (s *oauthService) createSession(ctx context.Context, user *domain.User) (*ports.AuthTokens, error) {
 	sessionID := uuid.New()
 
 	accessToken, err := auth.GenerateAccessToken(
@@ -344,7 +313,7 @@ func (s *oauthService) createSession(ctx context.Context, user *domain.User) (*p
 		return nil, domain.ErrInternal
 	}
 
-	return &portservices.AuthTokens{
+	return &ports.AuthTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),

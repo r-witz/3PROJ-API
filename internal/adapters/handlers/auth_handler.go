@@ -2,16 +2,16 @@ package handlers
 
 import (
 	"duskforge-api/internal/adapters/response"
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	authService portservices.AuthService
+	authService ports.AuthService
 }
 
-func NewAuthHandler(authService portservices.AuthService) *AuthHandler {
+func NewAuthHandler(authService ports.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
@@ -59,7 +59,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	_, tokens, err := h.authService.Register(c.Request.Context(), portservices.RegisterInput{
+	_, tokens, err := h.authService.Register(c.Request.Context(), ports.RegisterInput{
 		Email:    req.Email,
 		Username: req.Username,
 		Password: req.Password,
@@ -96,7 +96,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	_, tokens, err := h.authService.Login(c.Request.Context(), portservices.LoginInput{
+	_, tokens, err := h.authService.Login(c.Request.Context(), ports.LoginInput{
 		Email:    req.Email,
 		Password: req.Password,
 	})

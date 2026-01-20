@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"duskforge-api/internal/core/ports"
-	portservices "duskforge-api/internal/core/ports/services"
 
 	"github.com/google/uuid"
 )
@@ -13,11 +12,11 @@ type followService struct {
 	followRepo ports.FollowRepository
 }
 
-func NewFollowService(followRepo ports.FollowRepository) portservices.FollowService {
+func NewFollowService(followRepo ports.FollowRepository) ports.FollowService {
 	return &followService{followRepo: followRepo}
 }
 
-func (s *followService) GetStats(ctx context.Context, userID uuid.UUID) (*portservices.FollowStats, error) {
+func (s *followService) GetStats(ctx context.Context, userID uuid.UUID) (*ports.FollowStats, error) {
 	followersCount, err := s.followRepo.CountFollowers(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -28,7 +27,7 @@ func (s *followService) GetStats(ctx context.Context, userID uuid.UUID) (*portse
 		return nil, err
 	}
 
-	return &portservices.FollowStats{
+	return &ports.FollowStats{
 		FollowersCount: followersCount,
 		FollowingCount: followingCount,
 	}, nil

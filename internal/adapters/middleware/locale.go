@@ -3,14 +3,14 @@ package middleware
 import (
 	"strings"
 
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 const ContextKeyLocale = "locale"
 
-func Locale(userService portservices.UserService) gin.HandlerFunc {
+func Locale(userService ports.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		locale := "en-US"
 

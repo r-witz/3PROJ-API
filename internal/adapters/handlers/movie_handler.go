@@ -6,16 +6,16 @@ import (
 
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
 )
 
 type MovieHandler struct {
-	movieService portservices.MovieService
+	movieService ports.MovieService
 }
 
-func NewMovieHandler(movieService portservices.MovieService) *MovieHandler {
+func NewMovieHandler(movieService ports.MovieService) *MovieHandler {
 	return &MovieHandler{movieService: movieService}
 }
 
@@ -43,7 +43,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 	year, _ := strconv.Atoi(c.Query("year"))
 	language := middleware.GetLocale(c)
 
-	result, err := h.movieService.Search(c.Request.Context(), portservices.SearchMoviesInput{
+	result, err := h.movieService.Search(c.Request.Context(), ports.SearchMoviesInput{
 		Query:    query,
 		Page:     page,
 		Year:     year,
@@ -102,7 +102,7 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 		}
 	}
 
-	result, err := h.movieService.Discover(c.Request.Context(), portservices.DiscoverMoviesInput{
+	result, err := h.movieService.Discover(c.Request.Context(), ports.DiscoverMoviesInput{
 		Page:     page,
 		Language: language,
 		YearFrom: yearFrom,

@@ -6,7 +6,7 @@ import (
 
 	"duskforge-api/internal/adapters/handlers"
 	"duskforge-api/internal/adapters/middleware"
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -24,7 +24,7 @@ type Router struct {
 	oauthHandler *handlers.OAuthHandler
 	userHandler  *handlers.UserHandler
 	movieHandler *handlers.MovieHandler
-	userService  portservices.UserService
+	userService  ports.UserService
 }
 
 func NewRouter(
@@ -33,7 +33,7 @@ func NewRouter(
 	oauthHandler *handlers.OAuthHandler,
 	userHandler *handlers.UserHandler,
 	movieHandler *handlers.MovieHandler,
-	userService portservices.UserService,
+	userService ports.UserService,
 ) *Router {
 	return &Router{
 		engine:       gin.Default(),
@@ -72,16 +72,13 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 		auth.POST("/refresh", r.authHandler.Refresh)
 		auth.POST("/logout", r.authHandler.Logout)
 
-		// OAuth routes
 		oauth := auth.Group("/oauth")
 		{
-			// GitHub OAuth
 			oauth.GET("/github", r.oauthHandler.GitHubRedirect)
 			oauth.GET("/github/callback", r.oauthHandler.GitHubCallback)
 			oauth.POST("/github/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGitHub)
 			oauth.DELETE("/github/unlink", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.UnlinkGitHub)
 
-			// Google OAuth
 			oauth.GET("/google", r.oauthHandler.GoogleRedirect)
 			oauth.GET("/google/callback", r.oauthHandler.GoogleCallback)
 			oauth.POST("/google/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGoogle)

@@ -1,4 +1,4 @@
-package services
+package ports
 
 import (
 	"context"
@@ -20,7 +20,7 @@ type DiscoverMoviesInput struct {
 	YearTo   int
 	Genres   []int
 	WithCast []int
-	Sort     string // +popularity, -popularity, +rating, -rating, +release_date, -release_date
+	Sort     string
 }
 
 type MovieSearchResult struct {

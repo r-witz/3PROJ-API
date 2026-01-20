@@ -81,7 +81,6 @@ func main() {
 	followService := services.NewFollowService(followRepo)
 	movieService := services.NewMovieService(tmdbClient, reviewRepo)
 
-	// Initialize OAuth providers
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
 	if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {
 		providers[oauth.ProviderGitHub] = oauth.NewGitHubProvider(cfg.GitHubClientID, cfg.GitHubClientSecret)
@@ -92,10 +91,9 @@ func main() {
 		logger.Logger.Info("Google OAuth provider initialized")
 	}
 
-	// Initialize OAuth state manager
 	stateSecret := cfg.OAuthStateSecret
 	if stateSecret == "" {
-		stateSecret = cfg.AccessTokenSecret // Fallback to access token secret
+		stateSecret = cfg.AccessTokenSecret
 	}
 	stateManager := oauth.NewStateManager(stateSecret, 10*time.Minute)
 

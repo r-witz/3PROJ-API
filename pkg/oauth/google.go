@@ -16,14 +16,12 @@ var (
 	ErrGoogleUserInfo      = errors.New("failed to get Google user info")
 )
 
-// GoogleProvider implements OAuth authentication with Google
 type GoogleProvider struct {
 	clientID     string
 	clientSecret string
 	httpClient   *http.Client
 }
 
-// NewGoogleProvider creates a new Google OAuth provider
 func NewGoogleProvider(clientID, clientSecret string) *GoogleProvider {
 	return &GoogleProvider{
 		clientID:     clientID,
@@ -133,7 +131,6 @@ func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 		return nil, fmt.Errorf("%w: email not verified", ErrGoogleUserInfo)
 	}
 
-	// Generate username from name or email
 	username := generateUsernameFromName(userResp.Name, userResp.Email)
 
 	var avatarURL *string
@@ -149,13 +146,9 @@ func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	}, nil
 }
 
-// generateUsernameFromName creates a username from a name or email
 func generateUsernameFromName(name, email string) string {
-	// Try to use the name
 	if name != "" {
-		// Replace spaces with underscores and convert to lowercase
 		username := strings.ToLower(strings.ReplaceAll(name, " ", "_"))
-		// Remove any non-alphanumeric characters except underscores
 		var cleaned strings.Builder
 		for _, r := range username {
 			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
@@ -167,7 +160,6 @@ func generateUsernameFromName(name, email string) string {
 		}
 	}
 
-	// Fallback to email prefix
 	if idx := strings.Index(email, "@"); idx > 0 {
 		return strings.ToLower(email[:idx])
 	}

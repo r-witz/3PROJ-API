@@ -6,7 +6,6 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	portservices "duskforge-api/internal/core/ports/services"
 	"duskforge-api/pkg/auth"
 
 	"github.com/google/uuid"
@@ -16,7 +15,7 @@ type userService struct {
 	userRepo ports.UserRepository
 }
 
-func NewUserService(userRepo ports.UserRepository) portservices.UserService {
+func NewUserService(userRepo ports.UserRepository) ports.UserService {
 	return &userService{userRepo: userRepo}
 }
 
@@ -35,7 +34,7 @@ func (s *userService) GetCurrentUser(ctx context.Context, userID uuid.UUID) (*do
 	return s.GetByID(ctx, userID)
 }
 
-func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, input portservices.UpdateUserInput) (*domain.User, error) {
+func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, input ports.UpdateUserInput) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -91,7 +90,7 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 	return user, nil
 }
 
-func (s *userService) ChangePassword(ctx context.Context, userID uuid.UUID, input portservices.ChangePasswordInput) error {
+func (s *userService) ChangePassword(ctx context.Context, userID uuid.UUID, input ports.ChangePasswordInput) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return domain.ErrInternal
@@ -143,7 +142,7 @@ func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) e
 	return nil
 }
 
-func (s *userService) SearchUsers(ctx context.Context, input portservices.SearchUsersInput) (*portservices.SearchUsersResult, error) {
+func (s *userService) SearchUsers(ctx context.Context, input ports.SearchUsersInput) (*ports.SearchUsersResult, error) {
 	if input.Page < 1 {
 		input.Page = 1
 	}
@@ -174,7 +173,7 @@ func (s *userService) SearchUsers(ctx context.Context, input portservices.Search
 		totalPages++
 	}
 
-	return &portservices.SearchUsersResult{
+	return &ports.SearchUsersResult{
 		Users:      users,
 		Total:      total,
 		Page:       input.Page,

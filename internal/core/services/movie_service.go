@@ -8,7 +8,6 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	portservices "duskforge-api/internal/core/ports/services"
 	"duskforge-api/pkg/tmdb"
 )
 
@@ -17,20 +16,20 @@ type movieService struct {
 	reviewRepo ports.ReviewRepository
 }
 
-func NewMovieService(tmdbClient ports.TMDBClient, reviewRepo ports.ReviewRepository) portservices.MovieService {
+func NewMovieService(tmdbClient ports.TMDBClient, reviewRepo ports.ReviewRepository) ports.MovieService {
 	return &movieService{
 		tmdbClient: tmdbClient,
 		reviewRepo: reviewRepo,
 	}
 }
 
-func (s *movieService) Search(ctx context.Context, input portservices.SearchMoviesInput) (*portservices.SearchMoviesResult, error) {
+func (s *movieService) Search(ctx context.Context, input ports.SearchMoviesInput) (*ports.SearchMoviesResult, error) {
 	if input.Query == "" {
-		return &portservices.SearchMoviesResult{
+		return &ports.SearchMoviesResult{
 			Page:         1,
 			TotalPages:   0,
 			TotalResults: 0,
-			Results:      []portservices.MovieSearchResult{},
+			Results:      []ports.MovieSearchResult{},
 		}, nil
 	}
 
@@ -47,7 +46,7 @@ func (s *movieService) Search(ctx context.Context, input portservices.SearchMovi
 	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, input.Language)
 }
 
-func (s *movieService) Discover(ctx context.Context, input portservices.DiscoverMoviesInput) (*portservices.SearchMoviesResult, error) {
+func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesInput) (*ports.SearchMoviesResult, error) {
 	params := tmdb.DiscoverMoviesParams{
 		Page:       input.Page,
 		Language:   input.Language,
@@ -85,7 +84,7 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 	return movie, nil
 }
 
-func (s *movieService) GetPopular(ctx context.Context, page int, language string) (*portservices.SearchMoviesResult, error) {
+func (s *movieService) GetPopular(ctx context.Context, page int, language string) (*ports.SearchMoviesResult, error) {
 	result, err := s.tmdbClient.GetPopularMovies(ctx, page, language, "")
 	if err != nil {
 		return nil, domain.ErrTMDBError
@@ -125,13 +124,13 @@ func parseSort(sort string) tmdb.SortBy {
 	}
 }
 
-func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieSummary, page, totalPages, totalResults int, language string) (*portservices.SearchMoviesResult, error) {
+func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieSummary, page, totalPages, totalResults int, language string) (*ports.SearchMoviesResult, error) {
 	if len(movies) == 0 {
-		return &portservices.SearchMoviesResult{
+		return &ports.SearchMoviesResult{
 			Page:         page,
 			TotalPages:   totalPages,
 			TotalResults: totalResults,
-			Results:      []portservices.MovieSearchResult{},
+			Results:      []ports.MovieSearchResult{},
 		}, nil
 	}
 
@@ -147,7 +146,7 @@ func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieS
 		ratings = make(map[int]float64)
 	}
 
-	results := make([]portservices.MovieSearchResult, len(movies))
+	results := make([]ports.MovieSearchResult, len(movies))
 	for i, movie := range movies {
 		var director *string
 		if d, ok := directors[movie.ID]; ok && d != "" {
@@ -159,7 +158,7 @@ func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieS
 			duskforgeRating = &r
 		}
 
-		results[i] = portservices.MovieSearchResult{
+		results[i] = ports.MovieSearchResult{
 			ID:              movie.ID,
 			Poster:          movie.PosterPath,
 			Name:            movie.Title,
@@ -170,7 +169,7 @@ func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieS
 		}
 	}
 
-	return &portservices.SearchMoviesResult{
+	return &ports.SearchMoviesResult{
 		Page:         page,
 		TotalPages:   totalPages,
 		TotalResults: totalResults,

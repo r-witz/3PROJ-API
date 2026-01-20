@@ -6,7 +6,7 @@ import (
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/query"
 
 	"github.com/gin-gonic/gin"
@@ -14,11 +14,11 @@ import (
 )
 
 type UserHandler struct {
-	userService   portservices.UserService
-	followService portservices.FollowService
+	userService   ports.UserService
+	followService ports.FollowService
 }
 
-func NewUserHandler(userService portservices.UserService, followService portservices.FollowService) *UserHandler {
+func NewUserHandler(userService ports.UserService, followService ports.FollowService) *UserHandler {
 	return &UserHandler{userService: userService, followService: followService}
 }
 
@@ -151,7 +151,7 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 		return
 	}
 
-	input := portservices.UpdateUserInput{
+	input := ports.UpdateUserInput{
 		Email:     req.Email,
 		Username:  req.Username,
 		AvatarURL: req.AvatarURL,
@@ -218,7 +218,7 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	input := portservices.ChangePasswordInput{
+	input := ports.ChangePasswordInput{
 		CurrentPassword: req.CurrentPassword,
 		NewPassword:     req.NewPassword,
 	}
@@ -383,7 +383,7 @@ func (h *UserHandler) Search(c *gin.Context) {
 		return
 	}
 
-	input := portservices.SearchUsersInput{
+	input := ports.SearchUsersInput{
 		Query:     searchQuery,
 		Page:      params.Page,
 		PerPage:   params.PerPage,

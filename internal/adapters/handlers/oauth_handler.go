@@ -7,18 +7,18 @@ import (
 
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
-	portservices "duskforge-api/internal/core/ports/services"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/oauth"
 
 	"github.com/gin-gonic/gin"
 )
 
 type OAuthHandler struct {
-	oauthService portservices.OAuthService
+	oauthService ports.OAuthService
 	redirectBase string
 }
 
-func NewOAuthHandler(oauthService portservices.OAuthService, redirectBase string) *OAuthHandler {
+func NewOAuthHandler(oauthService ports.OAuthService, redirectBase string) *OAuthHandler {
 	return &OAuthHandler{
 		oauthService: oauthService,
 		redirectBase: redirectBase,
@@ -98,7 +98,7 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	result, err := h.oauthService.HandleCallback(c.Request.Context(), portservices.OAuthCallbackInput{
+	result, err := h.oauthService.HandleCallback(c.Request.Context(), ports.OAuthCallbackInput{
 		Provider:    oauth.ProviderGitHub,
 		Code:        req.Code,
 		State:       req.State,
@@ -175,7 +175,7 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	result, err := h.oauthService.HandleCallback(c.Request.Context(), portservices.OAuthCallbackInput{
+	result, err := h.oauthService.HandleCallback(c.Request.Context(), ports.OAuthCallbackInput{
 		Provider:    oauth.ProviderGoogle,
 		Code:        req.Code,
 		State:       req.State,
@@ -229,7 +229,7 @@ func (h *OAuthHandler) LinkGitHub(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	err := h.oauthService.LinkAccount(c.Request.Context(), portservices.OAuthLinkInput{
+	err := h.oauthService.LinkAccount(c.Request.Context(), ports.OAuthLinkInput{
 		UserID:      userID,
 		Provider:    oauth.ProviderGitHub,
 		Code:        req.Code,
@@ -298,7 +298,7 @@ func (h *OAuthHandler) LinkGoogle(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	err := h.oauthService.LinkAccount(c.Request.Context(), portservices.OAuthLinkInput{
+	err := h.oauthService.LinkAccount(c.Request.Context(), ports.OAuthLinkInput{
 		UserID:      userID,
 		Provider:    oauth.ProviderGoogle,
 		Code:        req.Code,
@@ -341,7 +341,7 @@ func (h *OAuthHandler) UnlinkGoogle(c *gin.Context) {
 }
 
 // redirectWithTokens redirects to the frontend URL with tokens in the URL fragment
-func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *portservices.OAuthAuthResult) {
+func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *ports.OAuthAuthResult) {
 	fragment := url.Values{}
 	fragment.Set("access_token", result.Tokens.AccessToken)
 	fragment.Set("refresh_token", result.Tokens.RefreshToken)
