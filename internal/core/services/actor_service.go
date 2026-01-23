@@ -84,7 +84,6 @@ func (s *actorService) Search(ctx context.Context, input ports.SearchActorsInput
 			Name:               p.Name,
 			ProfilePath:        p.ProfilePath,
 			KnownForDepartment: p.KnownForDepartment,
-			Popularity:         p.Popularity,
 		}
 	}
 
@@ -114,8 +113,6 @@ func (s *actorService) GetByID(ctx context.Context, actorID int, language string
 		PlaceOfBirth:       person.PlaceOfBirth,
 		ProfilePath:        person.ProfilePath,
 		KnownForDepartment: person.KnownForDepartment,
-		Popularity:         person.Popularity,
-		AlsoKnownAs:        person.AlsoKnownAs,
 	}, nil
 }
 

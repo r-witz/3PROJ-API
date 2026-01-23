@@ -26,7 +26,6 @@ type ActorSearchResult struct {
 	Name               string  `json:"name"`
 	ProfilePath        *string `json:"profile_path"`
 	KnownForDepartment string  `json:"known_for_department"`
-	Popularity         float64 `json:"popularity"`
 }
 
 type SearchActorsResult struct {
@@ -37,16 +36,14 @@ type SearchActorsResult struct {
 }
 
 type ActorDetailsResult struct {
-	ID                 int      `json:"id"`
-	Name               string   `json:"name"`
-	Biography          string   `json:"biography"`
-	Birthday           *string  `json:"birthday"`
-	Deathday           *string  `json:"deathday"`
-	PlaceOfBirth       *string  `json:"place_of_birth"`
-	ProfilePath        *string  `json:"profile_path"`
-	KnownForDepartment string   `json:"known_for_department"`
-	Popularity         float64  `json:"popularity"`
-	AlsoKnownAs        []string `json:"also_known_as"`
+	ID                 int     `json:"id"`
+	Name               string  `json:"name"`
+	Biography          string  `json:"biography"`
+	Birthday           *string `json:"birthday"`
+	Deathday           *string `json:"deathday"`
+	PlaceOfBirth       *string `json:"place_of_birth"`
+	ProfilePath        *string `json:"profile_path"`
+	KnownForDepartment string  `json:"known_for_department"`
 }
 
 type ActorFilmCredit struct {
