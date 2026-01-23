@@ -408,7 +408,7 @@ func (h *UserHandler) Search(c *gin.Context) {
 		users[i] = toSearchUserResponse(user)
 	}
 
-	response.SuccessPaginated(c, users, &response.Pagination{
+	response.SuccessPagePaginated(c, users, &response.PagePagination{
 		Page:       result.Page,
 		PerPage:    result.PerPage,
 		Total:      result.Total,

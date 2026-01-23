@@ -23,19 +23,31 @@ func NewMovieService(tmdbClient ports.TMDBClient, reviewRepo ports.ReviewReposit
 	}
 }
 
+const tmdbPageSize = 20
+
 func (s *movieService) Search(ctx context.Context, input ports.SearchMoviesInput) (*ports.SearchMoviesResult, error) {
 	if input.Query == "" {
 		return &ports.SearchMoviesResult{
-			Page:         1,
-			TotalPages:   0,
-			TotalResults: 0,
-			Results:      []ports.MovieSearchResult{},
+			Offset:  input.Offset,
+			Limit:   input.Limit,
+			Total:   0,
+			Results: []ports.MovieSearchResult{},
 		}, nil
 	}
 
+	if input.Limit <= 0 {
+		input.Limit = tmdbPageSize
+	}
+	if input.Limit > tmdbPageSize {
+		input.Limit = tmdbPageSize
+	}
+
+	page := (input.Offset / tmdbPageSize) + 1
+	offsetInPage := input.Offset % tmdbPageSize
+
 	result, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
 		Query:    input.Query,
-		Page:     input.Page,
+		Page:     page,
 		Year:     input.Year,
 		Language: input.Language,
 	})
@@ -43,12 +55,22 @@ func (s *movieService) Search(ctx context.Context, input ports.SearchMoviesInput
 		return nil, domain.ErrTMDBError
 	}
 
-	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, input.Language)
+	return s.transformMoviesWithOffset(ctx, result.Results, input.Offset, input.Limit, offsetInPage, result.TotalResults, input.Language)
 }
 
 func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesInput) (*ports.SearchMoviesResult, error) {
+	if input.Limit <= 0 {
+		input.Limit = tmdbPageSize
+	}
+	if input.Limit > tmdbPageSize {
+		input.Limit = tmdbPageSize
+	}
+
+	page := (input.Offset / tmdbPageSize) + 1
+	offsetInPage := input.Offset % tmdbPageSize
+
 	params := tmdb.DiscoverMoviesParams{
-		Page:       input.Page,
+		Page:       page,
 		Language:   input.Language,
 		WithGenres: input.Genres,
 		WithCast:   input.WithCast,
@@ -70,10 +92,10 @@ func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesI
 		return nil, domain.ErrTMDBError
 	}
 
-	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, input.Language)
+	return s.transformMoviesWithOffset(ctx, result.Results, input.Offset, input.Limit, offsetInPage, result.TotalResults, input.Language)
 }
 
-func (s *movieService) GetByID(ctx context.Context, movieID int, language string) (*tmdb.MovieDetails, error) {
+func (s *movieService) GetByID(ctx context.Context, movieID int, language string) (*ports.MovieDetailsResult, error) {
 	movie, err := s.tmdbClient.GetMovieDetails(ctx, movieID, language)
 	if err != nil {
 		if errors.Is(err, tmdb.ErrNotFound) {
@@ -81,16 +103,68 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 		}
 		return nil, domain.ErrTMDBError
 	}
-	return movie, nil
+
+	genres := make([]ports.Genre, len(movie.Genres))
+	for i, g := range movie.Genres {
+		genres[i] = ports.Genre{
+			ID:   g.ID,
+			Name: g.Name,
+		}
+	}
+
+	var duskforgeRating *ports.RatingInfo
+	ratingStats, err := s.reviewRepo.GetRatingStatsByTMDBIDs(ctx, []int{movieID})
+	if err == nil {
+		if stats, ok := ratingStats[movieID]; ok {
+			duskforgeRating = &ports.RatingInfo{
+				Rating: stats.Rating,
+				Count:  stats.Count,
+			}
+		}
+	}
+
+	return &ports.MovieDetailsResult{
+		ID:           movie.ID,
+		Title:        movie.Title,
+		Overview:     movie.Overview,
+		Tagline:      movie.Tagline,
+		PosterPath:   movie.PosterPath,
+		BackdropPath: movie.BackdropPath,
+		ReleaseDate:  movie.ReleaseDate,
+		Runtime:      movie.Runtime,
+		Adult:        movie.Adult,
+		Genres:       genres,
+		Ratings: ports.MovieRatings{
+			TMDB: ports.RatingInfo{
+				Rating: movie.VoteAverage / 2,
+				Count:  movie.VoteCount,
+			},
+			Duskforge: duskforgeRating,
+		},
+		Financials: ports.MovieFinancials{
+			Budget:  movie.Budget,
+			Revenue: movie.Revenue,
+		},
+	}, nil
 }
 
-func (s *movieService) GetPopular(ctx context.Context, page int, language string) (*ports.SearchMoviesResult, error) {
+func (s *movieService) GetPopular(ctx context.Context, offset, limit int, language string) (*ports.SearchMoviesResult, error) {
+	if limit <= 0 {
+		limit = tmdbPageSize
+	}
+	if limit > tmdbPageSize {
+		limit = tmdbPageSize
+	}
+
+	page := (offset / tmdbPageSize) + 1
+	offsetInPage := offset % tmdbPageSize
+
 	result, err := s.tmdbClient.GetPopularMovies(ctx, page, language, "")
 	if err != nil {
 		return nil, domain.ErrTMDBError
 	}
 
-	return s.transformMovies(ctx, result.Results, result.Page, result.TotalPages, result.TotalResults, language)
+	return s.transformMoviesWithOffset(ctx, result.Results, offset, limit, offsetInPage, result.TotalResults, language)
 }
 
 func parseSort(sort string) tmdb.SortBy {
@@ -124,18 +198,36 @@ func parseSort(sort string) tmdb.SortBy {
 	}
 }
 
-func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieSummary, page, totalPages, totalResults int, language string) (*ports.SearchMoviesResult, error) {
+func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []tmdb.MovieSummary, offset, limit, offsetInPage, totalResults int, language string) (*ports.SearchMoviesResult, error) {
 	if len(movies) == 0 {
 		return &ports.SearchMoviesResult{
-			Page:         page,
-			TotalPages:   totalPages,
-			TotalResults: totalResults,
-			Results:      []ports.MovieSearchResult{},
+			Offset:  offset,
+			Limit:   limit,
+			Total:   totalResults,
+			Results: []ports.MovieSearchResult{},
 		}, nil
 	}
 
-	tmdbIDs := make([]int, len(movies))
-	for i, movie := range movies {
+	// Slice movies based on offset within page and limit
+	start := offsetInPage
+	if start >= len(movies) {
+		return &ports.SearchMoviesResult{
+			Offset:  offset,
+			Limit:   limit,
+			Total:   totalResults,
+			Results: []ports.MovieSearchResult{},
+		}, nil
+	}
+
+	end := start + limit
+	if end > len(movies) {
+		end = len(movies)
+	}
+
+	slicedMovies := movies[start:end]
+
+	tmdbIDs := make([]int, len(slicedMovies))
+	for i, movie := range slicedMovies {
 		tmdbIDs[i] = movie.ID
 	}
 
@@ -146,8 +238,8 @@ func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieS
 		ratings = make(map[int]float64)
 	}
 
-	results := make([]ports.MovieSearchResult, len(movies))
-	for i, movie := range movies {
+	results := make([]ports.MovieSearchResult, len(slicedMovies))
+	for i, movie := range slicedMovies {
 		var director *string
 		if d, ok := directors[movie.ID]; ok && d != "" {
 			director = &d
@@ -170,10 +262,10 @@ func (s *movieService) transformMovies(ctx context.Context, movies []tmdb.MovieS
 	}
 
 	return &ports.SearchMoviesResult{
-		Page:         page,
-		TotalPages:   totalPages,
-		TotalResults: totalResults,
-		Results:      results,
+		Offset:  offset,
+		Limit:   len(results),
+		Total:   totalResults,
+		Results: results,
 	}, nil
 }
 

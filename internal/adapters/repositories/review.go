@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"duskforge-api/internal/core/domain"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/database"
 
 	"github.com/google/uuid"
@@ -156,6 +157,39 @@ func (r *ReviewRepository) GetAverageRatingsByTMDBIDs(ctx context.Context, tmdbI
 			return nil, err
 		}
 		result[tmdbID] = avgRating
+	}
+	return result, rows.Err()
+}
+
+func (r *ReviewRepository) GetRatingStatsByTMDBIDs(ctx context.Context, tmdbIDs []int) (map[int]ports.RatingStats, error) {
+	if len(tmdbIDs) == 0 {
+		return make(map[int]ports.RatingStats), nil
+	}
+
+	query := `
+		SELECT tmdb_id, AVG(rating), COUNT(*)
+		FROM reviews
+		WHERE tmdb_id = ANY($1)
+		GROUP BY tmdb_id
+	`
+	rows, err := r.db.Pool.Query(ctx, query, tmdbIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int]ports.RatingStats)
+	for rows.Next() {
+		var tmdbID int
+		var avgRating float64
+		var count int
+		if err := rows.Scan(&tmdbID, &avgRating, &count); err != nil {
+			return nil, err
+		}
+		result[tmdbID] = ports.RatingStats{
+			Rating: avgRating,
+			Count:  count,
+		}
 	}
 	return result, rows.Err()
 }

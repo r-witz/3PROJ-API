@@ -25,7 +25,8 @@ func NewMovieHandler(movieService ports.MovieService) *MovieHandler {
 // @Accept       json
 // @Produce      json
 // @Param        query query string true "Search query"
-// @Param        page query int false "Page number" default(1)
+// @Param        offset query int false "Number of items to skip" default(0)
+// @Param        limit query int false "Number of items to return (max 20)" default(20)
 // @Param        year query int false "Filter by release year"
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Search results"
@@ -39,13 +40,15 @@ func (h *MovieHandler) Search(c *gin.Context) {
 		return
 	}
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	year, _ := strconv.Atoi(c.Query("year"))
 	language := middleware.GetLocale(c)
 
 	result, err := h.movieService.Search(c.Request.Context(), ports.SearchMoviesInput{
 		Query:    query,
-		Page:     page,
+		Offset:   offset,
+		Limit:    limit,
 		Year:     year,
 		Language: language,
 	})
@@ -55,10 +58,9 @@ func (h *MovieHandler) Search(c *gin.Context) {
 	}
 
 	response.SuccessPaginated(c, result.Results, &response.Pagination{
-		Page:       result.Page,
-		PerPage:    20,
-		Total:      result.TotalResults,
-		TotalPages: result.TotalPages,
+		Offset: result.Offset,
+		Limit:  result.Limit,
+		Total:  result.Total,
 	})
 }
 
@@ -67,7 +69,8 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Tags         movies
 // @Accept       json
 // @Produce      json
-// @Param        page query int false "Page number" default(1)
+// @Param        offset query int false "Number of items to skip" default(0)
+// @Param        limit query int false "Number of items to return (max 20)" default(20)
 // @Param        year_from query int false "Filter by starting year"
 // @Param        year_to query int false "Filter by ending year"
 // @Param        genres query string false "Filter by genre IDs (comma-separated)"
@@ -78,7 +81,8 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Failure      502 {object} response.Response "External service error"
 // @Router       /movies/discover [get]
 func (h *MovieHandler) Discover(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	yearFrom, _ := strconv.Atoi(c.Query("year_from"))
 	yearTo, _ := strconv.Atoi(c.Query("year_to"))
 	sort := c.DefaultQuery("sort", "-popularity")
@@ -103,7 +107,8 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 	}
 
 	result, err := h.movieService.Discover(c.Request.Context(), ports.DiscoverMoviesInput{
-		Page:     page,
+		Offset:   offset,
+		Limit:    limit,
 		Language: language,
 		YearFrom: yearFrom,
 		YearTo:   yearTo,
@@ -117,10 +122,9 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 	}
 
 	response.SuccessPaginated(c, result.Results, &response.Pagination{
-		Page:       result.Page,
-		PerPage:    20,
-		Total:      result.TotalResults,
-		TotalPages: result.TotalPages,
+		Offset: result.Offset,
+		Limit:  result.Limit,
+		Total:  result.Total,
 	})
 }
 
@@ -160,25 +164,26 @@ func (h *MovieHandler) GetByID(c *gin.Context) {
 // @Tags         movies
 // @Accept       json
 // @Produce      json
-// @Param        page query int false "Page number" default(1)
+// @Param        offset query int false "Number of items to skip" default(0)
+// @Param        limit query int false "Number of items to return (max 20)" default(20)
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Popular movies"
 // @Failure      502 {object} response.Response "External service error"
 // @Router       /movies/popular [get]
 func (h *MovieHandler) GetPopular(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	language := middleware.GetLocale(c)
 
-	result, err := h.movieService.GetPopular(c.Request.Context(), page, language)
+	result, err := h.movieService.GetPopular(c.Request.Context(), offset, limit, language)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
 	response.SuccessPaginated(c, result.Results, &response.Pagination{
-		Page:       result.Page,
-		PerPage:    20,
-		Total:      result.TotalResults,
-		TotalPages: result.TotalPages,
+		Offset: result.Offset,
+		Limit:  result.Limit,
+		Total:  result.Total,
 	})
 }

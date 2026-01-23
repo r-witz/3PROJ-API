@@ -25,6 +25,12 @@ type PaginatedResponse struct {
 }
 
 type Pagination struct {
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+	Total  int `json:"total"`
+}
+
+type PagePagination struct {
 	Page       int `json:"page"`
 	PerPage    int `json:"per_page"`
 	Total      int `json:"total"`
@@ -47,6 +53,20 @@ func Created(c *gin.Context, data interface{}) {
 
 func SuccessPaginated(c *gin.Context, data interface{}, pagination *Pagination) {
 	c.JSON(http.StatusOK, PaginatedResponse{
+		Success:    true,
+		Data:       data,
+		Pagination: pagination,
+	})
+}
+
+type PagePaginatedResponse struct {
+	Success    bool            `json:"success"`
+	Data       interface{}     `json:"data"`
+	Pagination *PagePagination `json:"pagination,omitempty"`
+}
+
+func SuccessPagePaginated(c *gin.Context, data interface{}, pagination *PagePagination) {
+	c.JSON(http.StatusOK, PagePaginatedResponse{
 		Success:    true,
 		Data:       data,
 		Pagination: pagination,
