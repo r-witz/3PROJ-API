@@ -10,53 +10,49 @@ import (
 )
 
 type Params struct {
-	Page      int
-	PerPage   int
+	Offset    int
+	Limit     int
 	Sort      string
 	SortField string
 	SortOrder string
 }
 
 type Config struct {
-	DefaultPage    int
-	DefaultPerPage int
-	MaxPerPage     int
-	AllowedSorts   []string
+	DefaultLimit int
+	MaxLimit     int
+	AllowedSorts []string
 }
 
 func Parse(c *gin.Context, config Config) (*Params, error) {
 	params := &Params{
-		Page:    config.DefaultPage,
-		PerPage: config.DefaultPerPage,
+		Offset: 0,
+		Limit:  config.DefaultLimit,
 	}
 
-	if config.DefaultPage == 0 {
-		params.Page = 1
+	if config.DefaultLimit == 0 {
+		params.Limit = 20
 	}
-	if config.DefaultPerPage == 0 {
-		params.PerPage = 20
-	}
-	if config.MaxPerPage == 0 {
-		config.MaxPerPage = 100
+	if config.MaxLimit == 0 {
+		config.MaxLimit = 100
 	}
 
-	if pageStr := c.Query("page"); pageStr != "" {
-		page, err := strconv.Atoi(pageStr)
-		if err != nil || page < 1 {
-			return nil, fmt.Errorf("invalid page parameter")
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil || offset < 0 {
+			return nil, fmt.Errorf("invalid offset parameter")
 		}
-		params.Page = page
+		params.Offset = offset
 	}
 
-	if perPageStr := c.Query("per_page"); perPageStr != "" {
-		perPage, err := strconv.Atoi(perPageStr)
-		if err != nil || perPage < 1 {
-			return nil, fmt.Errorf("invalid per_page parameter")
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit < 1 {
+			return nil, fmt.Errorf("invalid limit parameter")
 		}
-		if perPage > config.MaxPerPage {
-			perPage = config.MaxPerPage
+		if limit > config.MaxLimit {
+			limit = config.MaxLimit
 		}
-		params.PerPage = perPage
+		params.Limit = limit
 	}
 
 	if sortStr := c.Query("sort"); sortStr != "" {
@@ -79,8 +75,4 @@ func Parse(c *gin.Context, config Config) (*Params, error) {
 	}
 
 	return params, nil
-}
-
-func (p *Params) Offset() int {
-	return (p.Page - 1) * p.PerPage
 }

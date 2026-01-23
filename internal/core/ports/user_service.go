@@ -25,18 +25,17 @@ type ChangePasswordInput struct {
 
 type SearchUsersInput struct {
 	Query     string
-	Page      int
-	PerPage   int
+	Offset    int
+	Limit     int
 	SortField string
 	SortOrder string
 }
 
 type SearchUsersResult struct {
-	Users      []*domain.User
-	Total      int
-	Page       int
-	PerPage    int
-	TotalPages int
+	Users  []*domain.User
+	Total  int
+	Offset int
+	Limit  int
 }
 
 type UserService interface {

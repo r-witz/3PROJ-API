@@ -143,22 +143,20 @@ func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) e
 }
 
 func (s *userService) SearchUsers(ctx context.Context, input ports.SearchUsersInput) (*ports.SearchUsersResult, error) {
-	if input.Page < 1 {
-		input.Page = 1
+	if input.Offset < 0 {
+		input.Offset = 0
 	}
-	if input.PerPage < 1 {
-		input.PerPage = 20
+	if input.Limit < 1 {
+		input.Limit = 20
 	}
-	if input.PerPage > 100 {
-		input.PerPage = 100
+	if input.Limit > 100 {
+		input.Limit = 100
 	}
-
-	offset := (input.Page - 1) * input.PerPage
 
 	searchParams := ports.UserSearchParams{
 		Query:     input.Query,
-		Limit:     input.PerPage,
-		Offset:    offset,
+		Limit:     input.Limit,
+		Offset:    input.Offset,
 		SortField: input.SortField,
 		SortOrder: input.SortOrder,
 	}
@@ -168,16 +166,10 @@ func (s *userService) SearchUsers(ctx context.Context, input ports.SearchUsersIn
 		return nil, domain.ErrInternal
 	}
 
-	totalPages := total / input.PerPage
-	if total%input.PerPage > 0 {
-		totalPages++
-	}
-
 	return &ports.SearchUsersResult{
-		Users:      users,
-		Total:      total,
-		Page:       input.Page,
-		PerPage:    input.PerPage,
-		TotalPages: totalPages,
+		Users:  users,
+		Total:  total,
+		Offset: input.Offset,
+		Limit:  len(users),
 	}, nil
 }

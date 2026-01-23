@@ -365,8 +365,8 @@ func toSearchUserResponse(user *domain.User) SearchUserResponse {
 // @Accept       json
 // @Produce      json
 // @Param        query query string true "Search query (username)"
-// @Param        page query int false "Page number" default(1)
-// @Param        per_page query int false "Results per page (max 100)" default(20)
+// @Param        offset query int false "Number of items to skip" default(0)
+// @Param        limit query int false "Number of items to return (max 100)" default(20)
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+username, -username, +created_at, -created_at)
 // @Success      200 {object} response.PaginatedResponse{data=[]SearchUserResponse} "Search results"
 // @Failure      400 {object} response.Response "Invalid query parameters"
@@ -380,9 +380,9 @@ func (h *UserHandler) Search(c *gin.Context) {
 	}
 
 	params, err := query.Parse(c, query.Config{
-		DefaultPerPage: 20,
-		MaxPerPage:     100,
-		AllowedSorts:   []string{"username", "created_at"},
+		DefaultLimit: 20,
+		MaxLimit:     100,
+		AllowedSorts: []string{"username", "created_at"},
 	})
 	if err != nil {
 		response.BadRequest(c, err.Error(), nil)
@@ -391,8 +391,8 @@ func (h *UserHandler) Search(c *gin.Context) {
 
 	input := ports.SearchUsersInput{
 		Query:     searchQuery,
-		Page:      params.Page,
-		PerPage:   params.PerPage,
+		Offset:    params.Offset,
+		Limit:     params.Limit,
 		SortField: params.SortField,
 		SortOrder: params.SortOrder,
 	}
@@ -408,10 +408,9 @@ func (h *UserHandler) Search(c *gin.Context) {
 		users[i] = toSearchUserResponse(user)
 	}
 
-	response.SuccessPagePaginated(c, users, &response.PagePagination{
-		Page:       result.Page,
-		PerPage:    result.PerPage,
-		Total:      result.Total,
-		TotalPages: result.TotalPages,
+	response.SuccessPaginated(c, users, &response.Pagination{
+		Offset: result.Offset,
+		Limit:  result.Limit,
+		Total:  result.Total,
 	})
 }
