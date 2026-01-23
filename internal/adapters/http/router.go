@@ -112,6 +112,9 @@ func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 		movies.GET("/discover", r.movieHandler.Discover)
 		movies.GET("/popular", r.movieHandler.GetPopular)
 		movies.GET("/:id", r.movieHandler.GetByID)
+		movies.GET("/:id/trailer", r.movieHandler.GetTrailer)
+		movies.GET("/:id/cast", r.movieHandler.GetCast)
+		movies.GET("/:id/release-dates", r.movieHandler.GetReleaseDates)
 	}
 }
 

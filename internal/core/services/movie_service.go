@@ -315,3 +315,154 @@ func (s *movieService) fetchDirectors(ctx context.Context, movieIDs []int, langu
 	wg.Wait()
 	return directors
 }
+
+func (s *movieService) GetTrailer(ctx context.Context, movieID int, language string) (*ports.MovieTrailerResult, error) {
+	videos, err := s.tmdbClient.GetMovieVideos(ctx, movieID, language)
+	if err != nil {
+		if errors.Is(err, tmdb.ErrNotFound) {
+			return nil, domain.ErrMovieNotFound
+		}
+		return nil, domain.ErrTMDBError
+	}
+
+	// Find best YouTube trailer (prefer official trailers)
+	var bestTrailer *tmdb.Video
+	for i := range videos.Results {
+		v := &videos.Results[i]
+		if v.Site != "YouTube" {
+			continue
+		}
+		if v.Type == "Trailer" {
+			if bestTrailer == nil || (v.Official && !bestTrailer.Official) {
+				bestTrailer = v
+			}
+		}
+	}
+
+	// Fallback to any YouTube video if no trailer found
+	if bestTrailer == nil {
+		for i := range videos.Results {
+			v := &videos.Results[i]
+			if v.Site == "YouTube" {
+				bestTrailer = v
+				break
+			}
+		}
+	}
+
+	if bestTrailer == nil {
+		return &ports.MovieTrailerResult{EmbedURL: nil}, nil
+	}
+
+	embedURL := fmt.Sprintf("https://www.youtube.com/embed/%s", bestTrailer.Key)
+	return &ports.MovieTrailerResult{EmbedURL: &embedURL}, nil
+}
+
+func (s *movieService) GetCast(ctx context.Context, movieID int, language string) (*ports.MovieCastResult, error) {
+	credits, err := s.tmdbClient.GetMovieCredits(ctx, movieID, language)
+	if err != nil {
+		if errors.Is(err, tmdb.ErrNotFound) {
+			return nil, domain.ErrMovieNotFound
+		}
+		return nil, domain.ErrTMDBError
+	}
+
+	imageURLs := s.tmdbClient.ImageURLs()
+
+	// Transform cast
+	cast := make([]ports.PersonResult, len(credits.Cast))
+	for i, c := range credits.Cast {
+		var picture *string
+		if c.ProfilePath != nil {
+			url := imageURLs.ProfileURL(c.ProfilePath, "w185")
+			picture = &url
+		}
+		cast[i] = ports.PersonResult{
+			ID:      c.ID,
+			Name:    c.Name,
+			Role:    c.Character,
+			Picture: picture,
+		}
+	}
+
+	// Categorize crew
+	var directors, writers, crew []ports.PersonResult
+	writerJobs := map[string]bool{"Writer": true, "Screenplay": true, "Story": true}
+
+	for _, c := range credits.Crew {
+		var picture *string
+		if c.ProfilePath != nil {
+			url := imageURLs.ProfileURL(c.ProfilePath, "w185")
+			picture = &url
+		}
+		person := ports.PersonResult{
+			ID:      c.ID,
+			Name:    c.Name,
+			Role:    c.Job,
+			Picture: picture,
+		}
+
+		switch {
+		case c.Job == "Director":
+			directors = append(directors, person)
+		case writerJobs[c.Job]:
+			writers = append(writers, person)
+		default:
+			crew = append(crew, person)
+		}
+	}
+
+	return &ports.MovieCastResult{
+		Cast:      cast,
+		Directors: directors,
+		Writers:   writers,
+		Crew:      crew,
+	}, nil
+}
+
+func (s *movieService) GetReleaseDates(ctx context.Context, movieID int) (*ports.MovieReleaseDatesResult, error) {
+	releaseDates, err := s.tmdbClient.GetMovieReleaseDates(ctx, movieID)
+	if err != nil {
+		if errors.Is(err, tmdb.ErrNotFound) {
+			return nil, domain.ErrMovieNotFound
+		}
+		return nil, domain.ErrTMDBError
+	}
+
+	regions := make([]ports.RegionReleaseDates, len(releaseDates.Results))
+	for i, r := range releaseDates.Results {
+		dates := make([]ports.ReleaseDateItem, len(r.ReleaseDates))
+		for j, d := range r.ReleaseDates {
+			dates[j] = ports.ReleaseDateItem{
+				Date:          d.ReleaseDate,
+				Type:          releaseTypeName(d.Type),
+				Certification: d.Certification,
+			}
+		}
+		regions[i] = ports.RegionReleaseDates{
+			Region:       r.ISO31661,
+			ReleaseDates: dates,
+		}
+	}
+
+	return &ports.MovieReleaseDatesResult{Regions: regions}, nil
+}
+
+func releaseTypeName(typeCode int) string {
+	switch typeCode {
+	case 1:
+		return "Premiere"
+	case 2:
+		return "Theatrical (limited)"
+	case 3:
+		return "Theatrical"
+	case 4:
+		return "Digital"
+	case 5:
+		return "Physical"
+	case 6:
+		return "TV"
+	default:
+		return "Unknown"
+	}
+}

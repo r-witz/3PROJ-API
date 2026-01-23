@@ -19,4 +19,6 @@ type TMDBClient interface {
 	SearchPerson(ctx context.Context, params tmdb.SearchPersonParams) (*tmdb.SearchPersonResponse, error)
 	GetPersonDetails(ctx context.Context, personID int, language string) (*tmdb.PersonDetails, error)
 	GetPersonMovieCredits(ctx context.Context, personID int, language string) (*tmdb.PersonMovieCredits, error)
+	GetMovieVideos(ctx context.Context, movieID int, language string) (*tmdb.VideosResponse, error)
+	GetMovieReleaseDates(ctx context.Context, movieID int) (*tmdb.ReleaseDatesResponse, error)
 }

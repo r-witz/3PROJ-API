@@ -74,9 +74,49 @@ type Genre struct {
 	Name string `json:"name"`
 }
 
+// Trailer result
+type MovieTrailerResult struct {
+	EmbedURL *string `json:"embed_url"`
+}
+
+// Unified person result for cast/crew
+type PersonResult struct {
+	ID      int     `json:"id"`
+	Name    string  `json:"name"`
+	Role    string  `json:"role"`
+	Picture *string `json:"picture"`
+}
+
+// Cast result with categorized roles
+type MovieCastResult struct {
+	Cast      []PersonResult `json:"cast"`
+	Directors []PersonResult `json:"directors"`
+	Writers   []PersonResult `json:"writers"`
+	Crew      []PersonResult `json:"crew"`
+}
+
+// Release dates result
+type ReleaseDateItem struct {
+	Date          string `json:"date"`
+	Type          string `json:"type"`
+	Certification string `json:"certification"`
+}
+
+type RegionReleaseDates struct {
+	Region       string            `json:"region"`
+	ReleaseDates []ReleaseDateItem `json:"release_dates"`
+}
+
+type MovieReleaseDatesResult struct {
+	Regions []RegionReleaseDates `json:"regions"`
+}
+
 type MovieService interface {
 	Search(ctx context.Context, input SearchMoviesInput) (*SearchMoviesResult, error)
 	Discover(ctx context.Context, input DiscoverMoviesInput) (*SearchMoviesResult, error)
 	GetByID(ctx context.Context, movieID int, language string) (*MovieDetailsResult, error)
 	GetPopular(ctx context.Context, offset, limit int, language string) (*SearchMoviesResult, error)
+	GetTrailer(ctx context.Context, movieID int, language string) (*MovieTrailerResult, error)
+	GetCast(ctx context.Context, movieID int, language string) (*MovieCastResult, error)
+	GetReleaseDates(ctx context.Context, movieID int) (*MovieReleaseDatesResult, error)
 }

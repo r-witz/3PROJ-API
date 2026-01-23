@@ -176,3 +176,93 @@ func (h *MovieHandler) GetPopular(c *gin.Context) {
 		Total:  result.Total,
 	})
 }
+
+// @Summary      Get movie trailer
+// @Description  Get a YouTube embed URL for the movie's trailer
+// @Tags         movies
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Movie ID"
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
+// @Success      200 {object} response.Response "Trailer embed URL"
+// @Failure      400 {object} response.Response "Invalid movie ID"
+// @Failure      404 {object} response.Response "Movie not found"
+// @Failure      502 {object} response.Response "External service error"
+// @Router       /movies/{id}/trailer [get]
+func (h *MovieHandler) GetTrailer(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.BadRequest(c, "Invalid movie ID", nil)
+		return
+	}
+
+	language := middleware.GetLocale(c)
+
+	trailer, err := h.movieService.GetTrailer(c.Request.Context(), id, language)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, trailer)
+}
+
+// @Summary      Get movie cast and crew
+// @Description  Get categorized cast and crew (actors, directors, writers, crew)
+// @Tags         movies
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Movie ID"
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
+// @Success      200 {object} response.Response "Cast and crew"
+// @Failure      400 {object} response.Response "Invalid movie ID"
+// @Failure      404 {object} response.Response "Movie not found"
+// @Failure      502 {object} response.Response "External service error"
+// @Router       /movies/{id}/cast [get]
+func (h *MovieHandler) GetCast(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.BadRequest(c, "Invalid movie ID", nil)
+		return
+	}
+
+	language := middleware.GetLocale(c)
+
+	cast, err := h.movieService.GetCast(c.Request.Context(), id, language)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, cast)
+}
+
+// @Summary      Get movie release dates
+// @Description  Get release dates by region with certification info
+// @Tags         movies
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Movie ID"
+// @Success      200 {object} response.Response "Release dates by region"
+// @Failure      400 {object} response.Response "Invalid movie ID"
+// @Failure      404 {object} response.Response "Movie not found"
+// @Failure      502 {object} response.Response "External service error"
+// @Router       /movies/{id}/release-dates [get]
+func (h *MovieHandler) GetReleaseDates(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.BadRequest(c, "Invalid movie ID", nil)
+		return
+	}
+
+	releaseDates, err := h.movieService.GetReleaseDates(c.Request.Context(), id)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, releaseDates)
+}

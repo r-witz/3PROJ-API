@@ -207,3 +207,35 @@ type PersonCrewCredit struct {
 }
 
 type SearchPersonResponse = PaginatedResponse[PersonSummary]
+
+// Video types (for trailer)
+type Video struct {
+	ID       string `json:"id"`
+	Key      string `json:"key"`
+	Name     string `json:"name"`
+	Site     string `json:"site"`
+	Type     string `json:"type"`
+	Official bool   `json:"official"`
+}
+
+type VideosResponse struct {
+	ID      int     `json:"id"`
+	Results []Video `json:"results"`
+}
+
+// Release date types
+type ReleaseDate struct {
+	Certification string `json:"certification"`
+	ReleaseDate   string `json:"release_date"`
+	Type          int    `json:"type"`
+}
+
+type ReleaseDateResult struct {
+	ISO31661     string        `json:"iso_3166_1"`
+	ReleaseDates []ReleaseDate `json:"release_dates"`
+}
+
+type ReleaseDatesResponse struct {
+	ID      int                 `json:"id"`
+	Results []ReleaseDateResult `json:"results"`
+}

@@ -930,6 +930,113 @@ paths:
       summary: Get movie details
       tags:
       - movies
+  /movies/{id}/cast:
+    get:
+      consumes:
+      - application/json
+      description: Get categorized cast and crew (actors, directors, writers, crew)
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cast and crew
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Invalid movie ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Movie not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get movie cast and crew
+      tags:
+      - movies
+  /movies/{id}/release-dates:
+    get:
+      consumes:
+      - application/json
+      description: Get release dates by region with certification info
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Release dates by region
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Invalid movie ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Movie not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get movie release dates
+      tags:
+      - movies
+  /movies/{id}/trailer:
+    get:
+      consumes:
+      - application/json
+      description: Get a YouTube embed URL for the movie's trailer
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trailer embed URL
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Invalid movie ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Movie not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get movie trailer
+      tags:
+      - movies
   /movies/discover:
     get:
       consumes:

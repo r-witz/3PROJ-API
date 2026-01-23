@@ -300,3 +300,38 @@ func (c *Client) GetMovieWithCredits(ctx context.Context, movieID int, language 
 
 	return detailsRes.movie, creditsRes.credits, nil
 }
+
+func (c *Client) GetMovieVideos(ctx context.Context, movieID int, language string) (*VideosResponse, error) {
+	params := url.Values{}
+	if language != "" {
+		params.Set("language", language)
+	}
+
+	endpoint := fmt.Sprintf("/movie/%d/videos", movieID)
+	body, err := c.doRequest(ctx, "GET", endpoint, params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp VideosResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, &RequestError{Operation: endpoint, Err: err}
+	}
+
+	return &resp, nil
+}
+
+func (c *Client) GetMovieReleaseDates(ctx context.Context, movieID int) (*ReleaseDatesResponse, error) {
+	endpoint := fmt.Sprintf("/movie/%d/release_dates", movieID)
+	body, err := c.doRequest(ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp ReleaseDatesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, &RequestError{Operation: endpoint, Err: err}
+	}
+
+	return &resp, nil
+}
