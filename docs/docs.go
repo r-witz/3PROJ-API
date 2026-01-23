@@ -750,9 +750,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Number of items to return (max 20)",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -833,9 +840,16 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Number of items to return (max 20)",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -884,9 +898,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Number of items to return (max 20)",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -1238,16 +1259,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
+                        "default": 0,
+                        "description": "Number of items to skip",
+                        "name": "offset",
                         "in": "query"
                     },
                     {
                         "type": "integer",
                         "default": 20,
-                        "description": "Results per page (max 100)",
-                        "name": "per_page",
+                        "description": "Number of items to return (max 100)",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -1749,16 +1770,13 @@ const docTemplate = `{
         "response.Pagination": {
             "type": "object",
             "properties": {
-                "page": {
+                "limit": {
                     "type": "integer"
                 },
-                "per_page": {
+                "offset": {
                     "type": "integer"
                 },
                 "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
                     "type": "integer"
                 }
             }

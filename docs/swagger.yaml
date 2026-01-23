@@ -271,13 +271,11 @@ definitions:
     type: object
   response.Pagination:
     properties:
-      page:
+      limit:
         type: integer
-      per_page:
+      offset:
         type: integer
       total:
-        type: integer
-      total_pages:
         type: integer
     type: object
   response.Response:
@@ -796,10 +794,15 @@ paths:
       description: Discover movies with advanced filtering and sorting. Use this for
         browsing by genre, year range, cast, etc.
       parameters:
-      - default: 1
-        description: Page number
+      - default: 0
+        description: Number of items to skip
         in: query
-        name: page
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
         type: integer
       - description: Filter by starting year
         in: query
@@ -853,10 +856,15 @@ paths:
       - application/json
       description: Get a list of currently popular movies
       parameters:
-      - default: 1
-        description: Page number
+      - default: 0
+        description: Number of items to skip
         in: query
-        name: page
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
         type: integer
       - description: Language code (e.g., en, fr)
         in: header
@@ -888,10 +896,15 @@ paths:
         name: query
         required: true
         type: string
-      - default: 1
-        description: Page number
+      - default: 0
+        description: Number of items to skip
         in: query
-        name: page
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
         type: integer
       - description: Filter by release year
         in: query
@@ -1116,15 +1129,15 @@ paths:
         name: query
         required: true
         type: string
-      - default: 1
-        description: Page number
+      - default: 0
+        description: Number of items to skip
         in: query
-        name: page
+        name: offset
         type: integer
       - default: 20
-        description: Results per page (max 100)
+        description: Number of items to return (max 100)
         in: query
-        name: per_page
+        name: limit
         type: integer
       - description: Sort field with direction prefix (+asc, -desc)
         enum:
