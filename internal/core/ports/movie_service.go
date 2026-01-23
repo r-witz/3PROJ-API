@@ -29,7 +29,7 @@ type MovieSearchResult struct {
 	Name            string   `json:"name"`
 	Date            string   `json:"date"`
 	Director        *string  `json:"director"`
-	TMDBRating      float64  `json:"tmdb_rating"`
+	TMDBRating      *float64 `json:"tmdb_rating"`
 	DuskforgeRating *float64 `json:"duskforge_rating"`
 }
 
@@ -56,13 +56,13 @@ type MovieDetailsResult struct {
 }
 
 type MovieRatings struct {
-	TMDB      RatingInfo  `json:"tmdb"`
-	Duskforge *RatingInfo `json:"duskforge"`
+	TMDB      RatingInfo `json:"tmdb"`
+	Duskforge RatingInfo `json:"duskforge"`
 }
 
 type RatingInfo struct {
-	Rating float64 `json:"rating"`
-	Count  int     `json:"count"`
+	Rating *float64 `json:"rating"`
+	Count  int      `json:"count"`
 }
 
 type MovieFinancials struct {

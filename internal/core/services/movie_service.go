@@ -112,14 +112,26 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 		}
 	}
 
-	var duskforgeRating *ports.RatingInfo
+	// TMDB rating - null if no votes
+	tmdbRating := ports.RatingInfo{
+		Rating: nil,
+		Count:  movie.VoteCount,
+	}
+	if movie.VoteCount > 0 {
+		rating := movie.VoteAverage / 2
+		tmdbRating.Rating = &rating
+	}
+
+	// Duskforge rating - null if no reviews
+	duskforgeRating := ports.RatingInfo{
+		Rating: nil,
+		Count:  0,
+	}
 	ratingStats, err := s.reviewRepo.GetRatingStatsByTMDBIDs(ctx, []int{movieID})
 	if err == nil {
 		if stats, ok := ratingStats[movieID]; ok {
-			duskforgeRating = &ports.RatingInfo{
-				Rating: stats.Rating,
-				Count:  stats.Count,
-			}
+			duskforgeRating.Rating = &stats.Rating
+			duskforgeRating.Count = stats.Count
 		}
 	}
 
@@ -135,10 +147,7 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 		Adult:        movie.Adult,
 		Genres:       genres,
 		Ratings: ports.MovieRatings{
-			TMDB: ports.RatingInfo{
-				Rating: movie.VoteAverage / 2,
-				Count:  movie.VoteCount,
-			},
+			TMDB:      tmdbRating,
 			Duskforge: duskforgeRating,
 		},
 		Financials: ports.MovieFinancials{
@@ -250,13 +259,19 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 			duskforgeRating = &r
 		}
 
+		var tmdbRating *float64
+		if movie.VoteCount > 0 {
+			rating := movie.VoteAverage / 2
+			tmdbRating = &rating
+		}
+
 		results[i] = ports.MovieSearchResult{
 			ID:              movie.ID,
 			Poster:          movie.PosterPath,
 			Name:            movie.Title,
 			Date:            movie.ReleaseDate,
 			Director:        director,
-			TMDBRating:      movie.VoteAverage / 2,
+			TMDBRating:      tmdbRating,
 			DuskforgeRating: duskforgeRating,
 		}
 	}
