@@ -299,6 +299,149 @@ info:
   title: Duskforge API
   version: "1.0"
 paths:
+  /actors/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about an actor by their TMDB ID
+      parameters:
+      - description: Actor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Actor details
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Invalid actor ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Actor not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get actor details
+      tags:
+      - actors
+  /actors/{id}/movies:
+    get:
+      consumes:
+      - application/json
+      description: Get the filmography (movies) of an actor by their TMDB ID. Includes
+        both cast and crew credits.
+      parameters:
+      - description: Actor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
+        type: integer
+      - default: -release_date
+        description: Sort field with direction prefix (+asc, -desc)
+        enum:
+        - +release_date
+        - -release_date
+        - +popularity
+        - -popularity
+        - +rating
+        - -rating
+        - +name
+        - -name
+        in: query
+        name: sort
+        type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Actor filmography
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "400":
+          description: Invalid actor ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Actor not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get actor filmography
+      tags:
+      - actors
+  /actors/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for actors by name. Use this endpoint when users are looking
+        for a specific actor/person.
+      parameters:
+      - description: Search query
+        in: query
+        name: query
+        required: true
+        type: string
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "400":
+          description: Query parameter is required
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Search actors by name
+      tags:
+      - actors
   /auth/login:
     post:
       consumes:
@@ -792,7 +935,7 @@ paths:
       consumes:
       - application/json
       description: Discover movies with advanced filtering and sorting. Use this for
-        browsing by genre, year range, cast, etc.
+        browsing by genre, year range, etc.
       parameters:
       - default: 0
         description: Number of items to skip
@@ -815,10 +958,6 @@ paths:
       - description: Filter by genre IDs (comma-separated)
         in: query
         name: genres
-        type: string
-      - description: Filter by cast/actor IDs (comma-separated)
-        in: query
-        name: cast
         type: string
       - default: -popularity
         description: Sort field with direction prefix (+asc, -desc)

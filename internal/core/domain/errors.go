@@ -43,6 +43,7 @@ var (
 
 var (
 	ErrMovieNotFound = errors.New("movie not found")
+	ErrActorNotFound = errors.New("actor not found")
 	ErrTMDBError     = errors.New("external movie service error")
 )
 

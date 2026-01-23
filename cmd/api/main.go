@@ -80,6 +80,7 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
 	movieService := services.NewMovieService(tmdbClient, reviewRepo)
+	actorService := services.NewActorService(tmdbClient, reviewRepo)
 
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
 	if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {
@@ -115,6 +116,7 @@ func main() {
 	oauthHandler := handlers.NewOAuthHandler(oauthService, cfg.OAuthRedirectBase)
 	userHandler := handlers.NewUserHandler(userService, followService)
 	movieHandler := handlers.NewMovieHandler(movieService)
+	actorHandler := handlers.NewActorHandler(actorService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -124,6 +126,7 @@ func main() {
 		oauthHandler,
 		userHandler,
 		movieHandler,
+		actorHandler,
 		userService,
 	)
 

@@ -73,7 +73,6 @@ func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesI
 		Page:       page,
 		Language:   input.Language,
 		WithGenres: input.Genres,
-		WithCast:   input.WithCast,
 	}
 
 	// Year range filter

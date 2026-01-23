@@ -16,4 +16,7 @@ type TMDBClient interface {
 	GetGenres(ctx context.Context, language string) ([]tmdb.Genre, error)
 	GetConfiguration(ctx context.Context) (*tmdb.Configuration, error)
 	ImageURLs() *tmdb.ImageURLBuilder
+	SearchPerson(ctx context.Context, params tmdb.SearchPersonParams) (*tmdb.SearchPersonResponse, error)
+	GetPersonDetails(ctx context.Context, personID int, language string) (*tmdb.PersonDetails, error)
+	GetPersonMovieCredits(ctx context.Context, personID int, language string) (*tmdb.PersonMovieCredits, error)
 }

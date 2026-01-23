@@ -65,7 +65,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 }
 
 // @Summary      Discover movies with filters
-// @Description  Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, cast, etc.
+// @Description  Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, etc.
 // @Tags         movies
 // @Accept       json
 // @Produce      json
@@ -74,7 +74,6 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Param        year_from query int false "Filter by starting year"
 // @Param        year_to query int false "Filter by ending year"
 // @Param        genres query string false "Filter by genre IDs (comma-separated)"
-// @Param        cast query string false "Filter by cast/actor IDs (comma-separated)"
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+popularity, -popularity, +rating, -rating, +release_date, -release_date) default(-popularity)
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Discover results"
@@ -97,15 +96,6 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 		}
 	}
 
-	var cast []int
-	if castStr := c.Query("cast"); castStr != "" {
-		for _, p := range strings.Split(castStr, ",") {
-			if id, err := strconv.Atoi(strings.TrimSpace(p)); err == nil {
-				cast = append(cast, id)
-			}
-		}
-	}
-
 	result, err := h.movieService.Discover(c.Request.Context(), ports.DiscoverMoviesInput{
 		Offset:   offset,
 		Limit:    limit,
@@ -113,7 +103,6 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 		YearFrom: yearFrom,
 		YearTo:   yearTo,
 		Genres:   genres,
-		WithCast: cast,
 		Sort:     sort,
 	})
 	if err != nil {

@@ -48,6 +48,7 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrPasswordNoSpecialChar: {http.StatusBadRequest, "PASSWORD_NO_SPECIAL", "Password must contain at least one special character"},
 
 	domain.ErrMovieNotFound:      {http.StatusNotFound, "MOVIE_NOT_FOUND", "Movie not found"},
+	domain.ErrActorNotFound:      {http.StatusNotFound, "ACTOR_NOT_FOUND", "Actor not found"},
 	domain.ErrTMDBError:             {http.StatusBadGateway, "EXTERNAL_SERVICE_ERROR", "Movie service is temporarily unavailable"},
 
 	// OAuth errors

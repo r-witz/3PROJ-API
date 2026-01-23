@@ -19,7 +19,6 @@ type DiscoverMoviesInput struct {
 	YearFrom int
 	YearTo   int
 	Genres   []int
-	WithCast []int
 	Sort     string
 }
 

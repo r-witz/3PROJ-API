@@ -139,3 +139,71 @@ type PaginatedResponse[T any] struct {
 type SearchMoviesResponse = PaginatedResponse[MovieSummary]
 type DiscoverMoviesResponse = PaginatedResponse[MovieSummary]
 type PopularMoviesResponse = PaginatedResponse[MovieSummary]
+
+// Person types
+type PersonSummary struct {
+	ID                 int      `json:"id"`
+	Name               string   `json:"name"`
+	ProfilePath        *string  `json:"profile_path"`
+	KnownForDepartment string   `json:"known_for_department"`
+	Popularity         float64  `json:"popularity"`
+	Adult              bool     `json:"adult"`
+	Gender             int      `json:"gender"`
+}
+
+type PersonDetails struct {
+	ID                 int      `json:"id"`
+	Name               string   `json:"name"`
+	Biography          string   `json:"biography"`
+	Birthday           *string  `json:"birthday"`
+	Deathday           *string  `json:"deathday"`
+	PlaceOfBirth       *string  `json:"place_of_birth"`
+	ProfilePath        *string  `json:"profile_path"`
+	KnownForDepartment string   `json:"known_for_department"`
+	Popularity         float64  `json:"popularity"`
+	Adult              bool     `json:"adult"`
+	Gender             int      `json:"gender"`
+	IMDbID             *string  `json:"imdb_id"`
+	Homepage           *string  `json:"homepage"`
+	AlsoKnownAs        []string `json:"also_known_as"`
+}
+
+type PersonMovieCredits struct {
+	ID   int                 `json:"id"`
+	Cast []PersonCastCredit  `json:"cast"`
+	Crew []PersonCrewCredit  `json:"crew"`
+}
+
+type PersonCastCredit struct {
+	ID           int     `json:"id"`
+	Title        string  `json:"title"`
+	Character    string  `json:"character"`
+	PosterPath   *string `json:"poster_path"`
+	ReleaseDate  string  `json:"release_date"`
+	VoteAverage  float64 `json:"vote_average"`
+	VoteCount    int     `json:"vote_count"`
+	Popularity   float64 `json:"popularity"`
+	Adult        bool    `json:"adult"`
+	Overview     string  `json:"overview"`
+	GenreIDs     []int   `json:"genre_ids"`
+	CreditID     string  `json:"credit_id"`
+	Order        int     `json:"order"`
+}
+
+type PersonCrewCredit struct {
+	ID           int     `json:"id"`
+	Title        string  `json:"title"`
+	Department   string  `json:"department"`
+	Job          string  `json:"job"`
+	PosterPath   *string `json:"poster_path"`
+	ReleaseDate  string  `json:"release_date"`
+	VoteAverage  float64 `json:"vote_average"`
+	VoteCount    int     `json:"vote_count"`
+	Popularity   float64 `json:"popularity"`
+	Adult        bool    `json:"adult"`
+	Overview     string  `json:"overview"`
+	GenreIDs     []int   `json:"genre_ids"`
+	CreditID     string  `json:"credit_id"`
+}
+
+type SearchPersonResponse = PaginatedResponse[PersonSummary]
