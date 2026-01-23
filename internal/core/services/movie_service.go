@@ -367,21 +367,14 @@ func (s *movieService) GetCast(ctx context.Context, movieID int, language string
 		return nil, domain.ErrTMDBError
 	}
 
-	imageURLs := s.tmdbClient.ImageURLs()
-
 	// Transform cast
 	cast := make([]ports.PersonResult, len(credits.Cast))
 	for i, c := range credits.Cast {
-		var picture *string
-		if c.ProfilePath != nil {
-			url := imageURLs.ProfileURL(c.ProfilePath, "w185")
-			picture = &url
-		}
 		cast[i] = ports.PersonResult{
 			ID:      c.ID,
 			Name:    c.Name,
 			Role:    c.Character,
-			Picture: picture,
+			Picture: c.ProfilePath,
 		}
 	}
 
@@ -390,16 +383,11 @@ func (s *movieService) GetCast(ctx context.Context, movieID int, language string
 	writerJobs := map[string]bool{"Writer": true, "Screenplay": true, "Story": true}
 
 	for _, c := range credits.Crew {
-		var picture *string
-		if c.ProfilePath != nil {
-			url := imageURLs.ProfileURL(c.ProfilePath, "w185")
-			picture = &url
-		}
 		person := ports.PersonResult{
 			ID:      c.ID,
 			Name:    c.Name,
 			Role:    c.Job,
-			Picture: picture,
+			Picture: c.ProfilePath,
 		}
 
 		switch {
