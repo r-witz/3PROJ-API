@@ -1,0 +1,39 @@
+package ports
+
+import (
+	"context"
+
+	"duskforge-api/internal/core/domain"
+
+	"github.com/google/uuid"
+)
+
+type CreateReviewInput struct {
+	Rating           float64 `json:"rating"`
+	Content          *string `json:"content"`
+	ContainsSpoilers bool    `json:"contains_spoilers"`
+	Runtime          int16   `json:"runtime"`
+}
+
+type UpdateReviewInput struct {
+	Rating           *float64 `json:"rating"`
+	Content          *string  `json:"content"`
+	ContainsSpoilers *bool    `json:"contains_spoilers"`
+}
+
+type ReviewWithMeta struct {
+	Review      *domain.Review
+	LikeCount   int
+	LikedByUser bool
+}
+
+type ReviewService interface {
+	Create(ctx context.Context, userID uuid.UUID, tmdbID int, input CreateReviewInput) (*domain.Review, error)
+	GetByID(ctx context.Context, id uuid.UUID, requestingUserID *uuid.UUID) (*ReviewWithMeta, error)
+	GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID) ([]*ReviewWithMeta, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]*ReviewWithMeta, error)
+	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input UpdateReviewInput) (*domain.Review, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	Like(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID) error
+	Unlike(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID) error
+}

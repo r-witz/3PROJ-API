@@ -65,6 +65,13 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrCannotDeleteSystemCollection: {http.StatusForbidden, "SYSTEM_COLLECTION", "Cannot delete a system collection"},
 	domain.ErrCollectionItemAlreadyExists:  {http.StatusConflict, "ITEM_EXISTS", "Item already exists in this collection"},
 	domain.ErrCollectionItemNotFound:       {http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found in this collection"},
+
+	// Review & comment errors
+	domain.ErrReviewNotFound:      {http.StatusNotFound, "REVIEW_NOT_FOUND", "Review not found"},
+	domain.ErrReviewAlreadyExists: {http.StatusConflict, "REVIEW_EXISTS", "You have already reviewed this movie"},
+	domain.ErrCommentNotFound:     {http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found"},
+	domain.ErrAlreadyLiked:        {http.StatusConflict, "ALREADY_LIKED", "Already liked"},
+	domain.ErrNotLiked:            {http.StatusNotFound, "NOT_LIKED", "Not liked"},
 }
 
 func HandleError(c *gin.Context, err error) {

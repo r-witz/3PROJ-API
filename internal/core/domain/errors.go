@@ -63,3 +63,11 @@ var (
 	ErrCollectionItemAlreadyExists   = errors.New("item already exists in collection")
 	ErrCollectionItemNotFound        = errors.New("collection item not found")
 )
+
+var (
+	ErrReviewNotFound      = errors.New("review not found")
+	ErrReviewAlreadyExists = errors.New("review already exists for this movie")
+	ErrCommentNotFound     = errors.New("comment not found")
+	ErrAlreadyLiked        = errors.New("already liked")
+	ErrNotLiked            = errors.New("not liked")
+)

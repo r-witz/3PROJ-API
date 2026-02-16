@@ -70,6 +70,9 @@ func main() {
 	oauthRepo := repositories.NewOAuthAccountRepository(db)
 	followRepo := repositories.NewFollowRepository(db)
 	reviewRepo := repositories.NewReviewRepository(db)
+	reviewLikeRepo := repositories.NewReviewLikeRepository(db)
+	commentRepo := repositories.NewCommentRepository(db)
+	commentLikeRepo := repositories.NewCommentLikeRepository(db)
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
@@ -83,6 +86,8 @@ func main() {
 	})
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, collectionService)
+	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo)
 	movieService := services.NewMovieService(tmdbClient, reviewRepo)
 	actorService := services.NewActorService(tmdbClient, reviewRepo)
 
@@ -123,6 +128,8 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
+	reviewHandler := handlers.NewReviewHandler(reviewService)
+	commentHandler := handlers.NewCommentHandler(commentService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -134,6 +141,8 @@ func main() {
 		movieHandler,
 		actorHandler,
 		collectionHandler,
+		reviewHandler,
+		commentHandler,
 		userService,
 	)
 

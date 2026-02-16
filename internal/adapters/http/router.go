@@ -26,6 +26,8 @@ type Router struct {
 	movieHandler      *handlers.MovieHandler
 	actorHandler      *handlers.ActorHandler
 	collectionHandler *handlers.CollectionHandler
+	reviewHandler     *handlers.ReviewHandler
+	commentHandler    *handlers.CommentHandler
 	userService       ports.UserService
 }
 
@@ -37,6 +39,8 @@ func NewRouter(
 	movieHandler *handlers.MovieHandler,
 	actorHandler *handlers.ActorHandler,
 	collectionHandler *handlers.CollectionHandler,
+	reviewHandler *handlers.ReviewHandler,
+	commentHandler *handlers.CommentHandler,
 	userService ports.UserService,
 ) *Router {
 	return &Router{
@@ -48,6 +52,8 @@ func NewRouter(
 		movieHandler:      movieHandler,
 		actorHandler:      actorHandler,
 		collectionHandler: collectionHandler,
+		reviewHandler:     reviewHandler,
+		commentHandler:    commentHandler,
 		userService:       userService,
 	}
 }
@@ -66,6 +72,8 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupUserRoutes(v1)
 		r.setupMovieRoutes(v1)
 		r.setupActorRoutes(v1)
+		r.setupReviewRoutes(v1)
+		r.setupCommentRoutes(v1)
 	}
 
 	return r.engine
@@ -103,6 +111,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
+		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByUserID)
 
 		collections := users.Group("/:userId/collections")
 		{
@@ -130,6 +139,8 @@ func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 		movies.GET("/:id/trailer", r.movieHandler.GetTrailer)
 		movies.GET("/:id/cast", r.movieHandler.GetCast)
 		movies.GET("/:id/release-dates", r.movieHandler.GetReleaseDates)
+		movies.GET("/:id/reviews", r.reviewHandler.GetByMovieID)
+		movies.POST("/:id/reviews", middleware.Auth(r.config.AccessTokenSecret), r.reviewHandler.Create)
 	}
 }
 
@@ -141,6 +152,29 @@ func (r *Router) setupActorRoutes(rg *gin.RouterGroup) {
 		actors.GET("/search", r.actorHandler.Search)
 		actors.GET("/:id", r.actorHandler.GetByID)
 		actors.GET("/:id/movies", r.actorHandler.GetFilmography)
+	}
+}
+
+func (r *Router) setupReviewRoutes(rg *gin.RouterGroup) {
+	reviews := rg.Group("/reviews")
+	{
+		reviews.GET("/:reviewId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByID)
+		reviews.PATCH("/:reviewId", middleware.Auth(r.config.AccessTokenSecret), r.reviewHandler.Update)
+		reviews.DELETE("/:reviewId", middleware.Auth(r.config.AccessTokenSecret), r.reviewHandler.Delete)
+		reviews.POST("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret), r.reviewHandler.Like)
+		reviews.DELETE("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret), r.reviewHandler.Unlike)
+		reviews.GET("/:reviewId/comments", middleware.OptionalAuth(r.config.AccessTokenSecret), r.commentHandler.GetByReviewID)
+		reviews.POST("/:reviewId/comments", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Create)
+	}
+}
+
+func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
+	comments := rg.Group("/comments")
+	{
+		comments.PATCH("/:commentId", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Update)
+		comments.DELETE("/:commentId", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Delete)
+		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Like)
+		comments.DELETE("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Unlike)
 	}
 }
 
