@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strings"
 	"time"
@@ -233,6 +234,7 @@ func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug 
 		TMDBID:       tmdbID,
 		AddedAt:      time.Now(),
 		Runtime:      runtime,
+		Metadata:     json.RawMessage("{}"),
 	}
 
 	if err := s.collectionItemRepo.Create(ctx, item); err != nil {
