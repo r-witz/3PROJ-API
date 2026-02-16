@@ -72,6 +72,34 @@ func (r *CollectionRepository) GetByUserID(ctx context.Context, userID uuid.UUID
 	return collections, rows.Err()
 }
 
+func (r *CollectionRepository) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int) ([]*domain.Collection, error) {
+	query := `
+		SELECT c.id, c.user_id, c.name, c.slug, c.type, c.visibility, c.description, c.created_at, c.updated_at
+		FROM collections c
+		JOIN collection_items ci ON c.id = ci.collection_id
+		WHERE c.user_id = $1 AND ci.tmdb_id = $2
+		ORDER BY c.created_at DESC
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, tmdbID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var collections []*domain.Collection
+	for rows.Next() {
+		collection := &domain.Collection{}
+		if err := rows.Scan(
+			&collection.ID, &collection.UserID, &collection.Name, &collection.Slug, &collection.Type,
+			&collection.Visibility, &collection.Description, &collection.CreatedAt, &collection.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		collections = append(collections, collection)
+	}
+	return collections, rows.Err()
+}
+
 func (r *CollectionRepository) GetByUserIDAndSlug(ctx context.Context, userID uuid.UUID, slug string) (*domain.Collection, error) {
 	query := `
 		SELECT id, user_id, name, slug, type, visibility, description, created_at, updated_at

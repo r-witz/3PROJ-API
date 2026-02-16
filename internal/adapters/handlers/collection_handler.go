@@ -148,14 +148,15 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 }
 
 // @Summary      Get user's collections
-// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise.
+// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. Optionally filter by TMDB movie ID to find collections containing a specific movie.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
+// @Param        tmdb_id query int false "Filter by TMDB movie ID"
 // @Success      200 {object} response.Response{data=[]CollectionResponse} "List of collections"
-// @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      400 {object} response.Response "Invalid user ID or TMDB ID"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections [get]
 func (h *CollectionHandler) GetByUserID(c *gin.Context) {
@@ -170,10 +171,25 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 		requestingUserID = &uid
 	}
 
-	collections, err := h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID)
-	if err != nil {
-		response.HandleError(c, err)
-		return
+	var collections []*domain.Collection
+
+	if tmdbIDStr := c.Query("tmdb_id"); tmdbIDStr != "" {
+		tmdbID, err := strconv.Atoi(tmdbIDStr)
+		if err != nil {
+			response.BadRequest(c, "Invalid TMDB ID", nil)
+			return
+		}
+		collections, err = h.collectionService.GetByUserIDAndTMDBID(c.Request.Context(), userID, tmdbID, requestingUserID)
+		if err != nil {
+			response.HandleError(c, err)
+			return
+		}
+	} else {
+		collections, err = h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID)
+		if err != nil {
+			response.HandleError(c, err)
+			return
+		}
 	}
 
 	resp := make([]CollectionResponse, len(collections))

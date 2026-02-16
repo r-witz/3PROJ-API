@@ -1759,7 +1759,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise.",
+                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. Optionally filter by TMDB movie ID to find collections containing a specific movie.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1778,6 +1778,12 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by TMDB movie ID",
+                        "name": "tmdb_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1803,7 +1809,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid user ID",
+                        "description": "Invalid user ID or TMDB ID",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

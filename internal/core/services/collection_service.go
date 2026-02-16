@@ -143,6 +143,27 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 	return visible, nil
 }
 
+func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]*domain.Collection, error) {
+	collections, err := s.collectionRepo.GetByUserIDAndTMDBID(ctx, userID, tmdbID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	isOwner := requestingUserID != nil && *requestingUserID == userID
+
+	if isOwner {
+		return collections, nil
+	}
+
+	var visible []*domain.Collection
+	for _, c := range collections {
+		if c.Visibility == domain.CollectionVisibilityPublic {
+			visible = append(visible, c)
+		}
+	}
+	return visible, nil
+}
+
 func (s *collectionService) Update(ctx context.Context, userID uuid.UUID, slug string, input ports.UpdateCollectionInput) (*domain.Collection, error) {
 	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {

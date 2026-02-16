@@ -1319,7 +1319,8 @@ paths:
       consumes:
       - application/json
       description: Get all collections for a user. Returns all collections if the
-        requester is the owner, only public ones otherwise.
+        requester is the owner, only public ones otherwise. Optionally filter by TMDB
+        movie ID to find collections containing a specific movie.
       parameters:
       - description: User ID
         format: uuid
@@ -1327,6 +1328,10 @@ paths:
         name: userId
         required: true
         type: string
+      - description: Filter by TMDB movie ID
+        in: query
+        name: tmdb_id
+        type: integer
       produces:
       - application/json
       responses:
@@ -1342,7 +1347,7 @@ paths:
                   type: array
               type: object
         "400":
-          description: Invalid user ID
+          description: Invalid user ID or TMDB ID
           schema:
             $ref: '#/definitions/response.Response'
         "500":
