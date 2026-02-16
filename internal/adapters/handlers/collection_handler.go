@@ -63,17 +63,30 @@ type CollectionItemResponse struct {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        userId path string true "User ID" format(uuid)
 // @Param        request body CreateCollectionRequest true "Collection details"
 // @Success      201 {object} response.Response{data=CollectionResponse} "Collection created"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "Forbidden"
 // @Failure      409 {object} response.Response "Collection with this name already exists"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections [post]
+// @Router       /users/{userId}/collections [post]
 func (h *CollectionHandler) Create(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	authUserID, ok := middleware.GetUserID(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	userID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if authUserID != userID {
+		response.Forbidden(c, "You can only create collections for yourself")
 		return
 	}
 
@@ -98,32 +111,34 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 	response.Created(c, toCollectionResponse(collection))
 }
 
-// @Summary      Get collection by ID
-// @Description  Get a collection by its ID. Returns the collection if public or if the requester is the owner.
+// @Summary      Get collection by slug
+// @Description  Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Success      200 {object} response.Response{data=CollectionResponse} "Collection details"
-// @Failure      400 {object} response.Response "Invalid collection ID"
+// @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id} [get]
-func (h *CollectionHandler) GetByID(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+// @Router       /users/{userId}/collections/{slug} [get]
+func (h *CollectionHandler) GetBySlug(c *gin.Context) {
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
+
+	slug := c.Param("slug")
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	collection, err := h.collectionService.GetByID(c.Request.Context(), id, requestingUserID)
+	collection, err := h.collectionService.GetBySlug(c.Request.Context(), userID, slug, requestingUserID)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -138,14 +153,13 @@ func (h *CollectionHandler) GetByID(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "User ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
 // @Success      200 {object} response.Response{data=[]CollectionResponse} "List of collections"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /users/{id}/collections [get]
+// @Router       /users/{userId}/collections [get]
 func (h *CollectionHandler) GetByUserID(c *gin.Context) {
-	idStr := c.Param("id")
-	userID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
@@ -176,29 +190,36 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Param        request body UpdateCollectionRequest true "Fields to update"
 // @Success      200 {object} response.Response{data=CollectionResponse} "Updated collection"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Cannot modify system collection"
+// @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      409 {object} response.Response "Collection with this name already exists"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id} [patch]
+// @Router       /users/{userId}/collections/{slug} [patch]
 func (h *CollectionHandler) Update(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	authUserID, ok := middleware.GetUserID(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	idStr := c.Param("id")
-	collectionID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
+
+	if authUserID != userID {
+		response.Forbidden(c, "You can only update your own collections")
+		return
+	}
+
+	slug := c.Param("slug")
 
 	var req UpdateCollectionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -212,7 +233,7 @@ func (h *CollectionHandler) Update(c *gin.Context) {
 		Visibility:  req.Visibility,
 	}
 
-	collection, err := h.collectionService.Update(c.Request.Context(), collectionID, userID, input)
+	collection, err := h.collectionService.Update(c.Request.Context(), userID, slug, input)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -227,29 +248,36 @@ func (h *CollectionHandler) Update(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Success      204 "Collection deleted"
-// @Failure      400 {object} response.Response "Invalid collection ID"
+// @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Cannot delete system collection"
+// @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id} [delete]
+// @Router       /users/{userId}/collections/{slug} [delete]
 func (h *CollectionHandler) Delete(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	authUserID, ok := middleware.GetUserID(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	idStr := c.Param("id")
-	collectionID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
 
-	if err := h.collectionService.Delete(c.Request.Context(), collectionID, userID); err != nil {
+	if authUserID != userID {
+		response.Forbidden(c, "You can only delete your own collections")
+		return
+	}
+
+	slug := c.Param("slug")
+
+	if err := h.collectionService.Delete(c.Request.Context(), userID, slug); err != nil {
 		response.HandleError(c, err)
 		return
 	}
@@ -263,29 +291,36 @@ func (h *CollectionHandler) Delete(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Param        request body AddItemRequest true "Movie to add"
 // @Success      201 {object} response.Response{data=CollectionItemResponse} "Item added"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Not the collection owner"
+// @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      409 {object} response.Response "Item already in collection"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id}/items [post]
+// @Router       /users/{userId}/collections/{slug}/items [post]
 func (h *CollectionHandler) AddItem(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	authUserID, ok := middleware.GetUserID(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	idStr := c.Param("id")
-	collectionID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
+
+	if authUserID != userID {
+		response.Forbidden(c, "You can only add items to your own collections")
+		return
+	}
+
+	slug := c.Param("slug")
 
 	var req AddItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -293,7 +328,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 		return
 	}
 
-	item, err := h.collectionService.AddItem(c.Request.Context(), collectionID, userID, req.TMDBID, req.Runtime)
+	item, err := h.collectionService.AddItem(c.Request.Context(), userID, slug, req.TMDBID, req.Runtime)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -308,26 +343,28 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Success      200 {object} response.Response{data=[]CollectionItemResponse} "List of items"
-// @Failure      400 {object} response.Response "Invalid collection ID"
+// @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id}/items [get]
+// @Router       /users/{userId}/collections/{slug}/items [get]
 func (h *CollectionHandler) GetItems(c *gin.Context) {
-	idStr := c.Param("id")
-	collectionID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
+
+	slug := c.Param("slug")
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	items, err := h.collectionService.GetItems(c.Request.Context(), collectionID, requestingUserID)
+	items, err := h.collectionService.GetItems(c.Request.Context(), userID, slug, requestingUserID)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -347,28 +384,35 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "Collection ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
+// @Param        slug path string true "Collection slug"
 // @Param        tmdbId path int true "TMDB movie ID"
 // @Success      204 "Item removed"
-// @Failure      400 {object} response.Response "Invalid collection or TMDB ID"
+// @Failure      400 {object} response.Response "Invalid user ID or TMDB ID"
 // @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Not the collection owner"
+// @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection or item not found"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /collections/{id}/items/{tmdbId} [delete]
+// @Router       /users/{userId}/collections/{slug}/items/{tmdbId} [delete]
 func (h *CollectionHandler) RemoveItem(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	authUserID, ok := middleware.GetUserID(c)
 	if !ok {
 		response.Unauthorized(c, "User not authenticated")
 		return
 	}
 
-	idStr := c.Param("id")
-	collectionID, err := uuid.Parse(idStr)
+	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
-		response.BadRequest(c, "Invalid collection ID", nil)
+		response.BadRequest(c, "Invalid user ID", nil)
 		return
 	}
+
+	if authUserID != userID {
+		response.Forbidden(c, "You can only remove items from your own collections")
+		return
+	}
+
+	slug := c.Param("slug")
 
 	tmdbIDStr := c.Param("tmdbId")
 	tmdbID, err := strconv.Atoi(tmdbIDStr)
@@ -377,7 +421,7 @@ func (h *CollectionHandler) RemoveItem(c *gin.Context) {
 		return
 	}
 
-	if err := h.collectionService.RemoveItem(c.Request.Context(), collectionID, userID, tmdbID); err != nil {
+	if err := h.collectionService.RemoveItem(c.Request.Context(), userID, slug, tmdbID); err != nil {
 		response.HandleError(c, err)
 		return
 	}

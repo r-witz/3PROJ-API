@@ -105,8 +105,8 @@ func (s *collectionService) Create(ctx context.Context, userID uuid.UUID, input 
 	return collection, nil
 }
 
-func (s *collectionService) GetByID(ctx context.Context, collectionID uuid.UUID, requestingUserID *uuid.UUID) (*domain.Collection, error) {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) GetBySlug(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) (*domain.Collection, error) {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
@@ -142,17 +142,13 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 	return visible, nil
 }
 
-func (s *collectionService) Update(ctx context.Context, collectionID uuid.UUID, userID uuid.UUID, input ports.UpdateCollectionInput) (*domain.Collection, error) {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) Update(ctx context.Context, userID uuid.UUID, slug string, input ports.UpdateCollectionInput) (*domain.Collection, error) {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
 	if collection == nil {
 		return nil, domain.ErrCollectionNotFound
-	}
-
-	if collection.UserID != userID {
-		return nil, domain.ErrForbidden
 	}
 
 	if collection.Type == domain.CollectionTypeSystem && input.Name != nil {
@@ -166,7 +162,7 @@ func (s *collectionService) Update(ctx context.Context, collectionID uuid.UUID, 
 		if err != nil {
 			return nil, domain.ErrInternal
 		}
-		if existing != nil && existing.ID != collectionID {
+		if existing != nil && existing.ID != collection.ID {
 			return nil, domain.ErrCollectionAlreadyExists
 		}
 
@@ -195,8 +191,8 @@ func (s *collectionService) Update(ctx context.Context, collectionID uuid.UUID, 
 	return collection, nil
 }
 
-func (s *collectionService) Delete(ctx context.Context, collectionID uuid.UUID, userID uuid.UUID) error {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) Delete(ctx context.Context, userID uuid.UUID, slug string) error {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return domain.ErrInternal
 	}
@@ -204,23 +200,19 @@ func (s *collectionService) Delete(ctx context.Context, collectionID uuid.UUID, 
 		return domain.ErrCollectionNotFound
 	}
 
-	if collection.UserID != userID {
-		return domain.ErrForbidden
-	}
-
 	if collection.Type == domain.CollectionTypeSystem {
 		return domain.ErrCannotDeleteSystemCollection
 	}
 
-	if err := s.collectionRepo.Delete(ctx, collectionID); err != nil {
+	if err := s.collectionRepo.Delete(ctx, collection.ID); err != nil {
 		return domain.ErrInternal
 	}
 
 	return nil
 }
 
-func (s *collectionService) AddItem(ctx context.Context, collectionID uuid.UUID, userID uuid.UUID, tmdbID int, runtime int16) (*domain.CollectionItem, error) {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int, runtime int16) (*domain.CollectionItem, error) {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
@@ -228,11 +220,7 @@ func (s *collectionService) AddItem(ctx context.Context, collectionID uuid.UUID,
 		return nil, domain.ErrCollectionNotFound
 	}
 
-	if collection.UserID != userID {
-		return nil, domain.ErrForbidden
-	}
-
-	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collectionID, tmdbID)
+	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collection.ID, tmdbID)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
@@ -241,7 +229,7 @@ func (s *collectionService) AddItem(ctx context.Context, collectionID uuid.UUID,
 	}
 
 	item := &domain.CollectionItem{
-		CollectionID: collectionID,
+		CollectionID: collection.ID,
 		TMDBID:       tmdbID,
 		AddedAt:      time.Now(),
 		Runtime:      runtime,
@@ -254,8 +242,8 @@ func (s *collectionService) AddItem(ctx context.Context, collectionID uuid.UUID,
 	return item, nil
 }
 
-func (s *collectionService) RemoveItem(ctx context.Context, collectionID uuid.UUID, userID uuid.UUID, tmdbID int) error {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) RemoveItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) error {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return domain.ErrInternal
 	}
@@ -263,11 +251,7 @@ func (s *collectionService) RemoveItem(ctx context.Context, collectionID uuid.UU
 		return domain.ErrCollectionNotFound
 	}
 
-	if collection.UserID != userID {
-		return domain.ErrForbidden
-	}
-
-	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collectionID, tmdbID)
+	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collection.ID, tmdbID)
 	if err != nil {
 		return domain.ErrInternal
 	}
@@ -275,15 +259,15 @@ func (s *collectionService) RemoveItem(ctx context.Context, collectionID uuid.UU
 		return domain.ErrCollectionItemNotFound
 	}
 
-	if err := s.collectionItemRepo.Delete(ctx, collectionID, tmdbID); err != nil {
+	if err := s.collectionItemRepo.Delete(ctx, collection.ID, tmdbID); err != nil {
 		return domain.ErrInternal
 	}
 
 	return nil
 }
 
-func (s *collectionService) GetItems(ctx context.Context, collectionID uuid.UUID, requestingUserID *uuid.UUID) ([]*domain.CollectionItem, error) {
-	collection, err := s.collectionRepo.GetByID(ctx, collectionID)
+func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) ([]*domain.CollectionItem, error) {
+	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
@@ -295,7 +279,7 @@ func (s *collectionService) GetItems(ctx context.Context, collectionID uuid.UUID
 		return nil, domain.ErrCollectionNotFound
 	}
 
-	items, err := s.collectionItemRepo.GetByCollectionID(ctx, collectionID)
+	items, err := s.collectionItemRepo.GetByCollectionID(ctx, collection.ID)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}

@@ -269,14 +269,14 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        id path string true "User ID" format(uuid)
+// @Param        userId path string true "User ID" format(uuid)
 // @Success      200 {object} response.Response{data=PublicUserResponse} "User public profile"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      500 {object} response.Response "Internal server error"
-// @Router       /users/{id} [get]
+// @Router       /users/{userId} [get]
 func (h *UserHandler) GetByID(c *gin.Context) {
-	idStr := c.Param("id")
+	idStr := c.Param("userId")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
