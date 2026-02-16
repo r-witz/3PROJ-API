@@ -57,6 +57,14 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrOAuthProviderNotSupported: {http.StatusBadRequest, "OAUTH_PROVIDER_INVALID", "OAuth provider not supported"},
 	domain.ErrOAuthStateMismatch:        {http.StatusBadRequest, "OAUTH_STATE_INVALID", "Invalid OAuth state parameter"},
 	domain.ErrCannotUnlinkOnlyAuth:      {http.StatusBadRequest, "CANNOT_UNLINK", "Cannot remove the only authentication method"},
+
+	// Collection errors
+	domain.ErrCollectionNotFound:           {http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"},
+	domain.ErrCollectionAlreadyExists:      {http.StatusConflict, "COLLECTION_EXISTS", "A collection with this name already exists"},
+	domain.ErrCannotModifySystemCollection: {http.StatusForbidden, "SYSTEM_COLLECTION", "Cannot modify a system collection"},
+	domain.ErrCannotDeleteSystemCollection: {http.StatusForbidden, "SYSTEM_COLLECTION", "Cannot delete a system collection"},
+	domain.ErrCollectionItemAlreadyExists:  {http.StatusConflict, "ITEM_EXISTS", "Item already exists in this collection"},
+	domain.ErrCollectionItemNotFound:       {http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found in this collection"},
 }
 
 func HandleError(c *gin.Context, err error) {

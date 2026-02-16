@@ -20,20 +20,23 @@ type AuthServiceConfig struct {
 }
 
 type authService struct {
-	userRepo    ports.UserRepository
-	sessionRepo ports.SessionRepository
-	config      AuthServiceConfig
+	userRepo          ports.UserRepository
+	sessionRepo       ports.SessionRepository
+	collectionService ports.CollectionService
+	config            AuthServiceConfig
 }
 
 func NewAuthService(
 	userRepo ports.UserRepository,
 	sessionRepo ports.SessionRepository,
+	collectionService ports.CollectionService,
 	config AuthServiceConfig,
 ) ports.AuthService {
 	return &authService{
-		userRepo:    userRepo,
-		sessionRepo: sessionRepo,
-		config:      config,
+		userRepo:          userRepo,
+		sessionRepo:       sessionRepo,
+		collectionService: collectionService,
+		config:            config,
 	}
 }
 
@@ -74,6 +77,12 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, nil, domain.ErrInternal
+	}
+
+	if s.collectionService != nil {
+		if err := s.collectionService.CreateDefaultCollections(ctx, user.ID); err != nil {
+			return nil, nil, domain.ErrInternal
+		}
 	}
 
 	tokens, err := s.createSession(ctx, user)

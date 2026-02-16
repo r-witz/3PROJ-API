@@ -1,5 +1,16 @@
 basePath: /api/v1
 definitions:
+  handlers.AddItemRequest:
+    properties:
+      runtime:
+        example: 139
+        type: integer
+      tmdb_id:
+        example: 550
+        type: integer
+    required:
+    - tmdb_id
+    type: object
   handlers.ChangePasswordRequest:
     properties:
       current_password:
@@ -13,6 +24,71 @@ definitions:
     required:
     - current_password
     - new_password
+    type: object
+  handlers.CollectionItemResponse:
+    properties:
+      added_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      collection_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      runtime:
+        example: 139
+        type: integer
+      tmdb_id:
+        example: 550
+        type: integer
+    type: object
+  handlers.CollectionResponse:
+    properties:
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      description:
+        example: A collection of my favorite movies
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: My Favorites
+        type: string
+      slug:
+        example: my-favorites
+        type: string
+      type:
+        example: custom
+        type: string
+      updated_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      user_id:
+        example: 660e8400-e29b-41d4-a716-446655440000
+        type: string
+      visibility:
+        example: private
+        type: string
+    type: object
+  handlers.CreateCollectionRequest:
+    properties:
+      description:
+        example: A collection of my favorite movies
+        maxLength: 500
+        type: string
+      name:
+        example: My Favorites
+        maxLength: 100
+        minLength: 1
+        type: string
+      visibility:
+        enum:
+        - public
+        - private
+        example: private
+        type: string
+    required:
+    - name
     type: object
   handlers.LoginRequest:
     properties:
@@ -156,6 +232,24 @@ definitions:
         type: string
       token_type:
         example: Bearer
+        type: string
+    type: object
+  handlers.UpdateCollectionRequest:
+    properties:
+      description:
+        example: Updated description
+        maxLength: 500
+        type: string
+      name:
+        example: Updated Name
+        maxLength: 100
+        minLength: 1
+        type: string
+      visibility:
+        enum:
+        - public
+        - private
+        example: public
         type: string
     type: object
   handlers.UpdatePreferencesRequest:
@@ -893,6 +987,341 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /collections:
+    post:
+      consumes:
+      - application/json
+      description: Create a new custom collection for the authenticated user
+      parameters:
+      - description: Collection details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateCollectionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Collection created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CollectionResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Collection with this name already exists
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a collection
+      tags:
+      - collections
+  /collections/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a collection. System collections cannot be deleted.
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Collection deleted
+        "400":
+          description: Invalid collection ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Cannot delete system collection
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete a collection
+      tags:
+      - collections
+    get:
+      consumes:
+      - application/json
+      description: Get a collection by its ID. Returns the collection if public or
+        if the requester is the owner.
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Collection details
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CollectionResponse'
+              type: object
+        "400":
+          description: Invalid collection ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get collection by ID
+      tags:
+      - collections
+    patch:
+      consumes:
+      - application/json
+      description: Update a collection's name, description, or visibility. System
+        collections cannot have their name changed.
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateCollectionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated collection
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CollectionResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Cannot modify system collection
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Collection with this name already exists
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a collection
+      tags:
+      - collections
+  /collections/{id}/items:
+    get:
+      consumes:
+      - application/json
+      description: Get all items in a collection. Respects visibility rules.
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of items
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.CollectionItemResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid collection ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get collection items
+      tags:
+      - collections
+    post:
+      consumes:
+      - application/json
+      description: Add a movie to a collection by TMDB ID
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Movie to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AddItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Item added
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CollectionItemResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Not the collection owner
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Item already in collection
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Add item to collection
+      tags:
+      - collections
+  /collections/{id}/items/{tmdbId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a movie from a collection by TMDB ID
+      parameters:
+      - description: Collection ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: TMDB movie ID
+        in: path
+        name: tmdbId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Item removed
+        "400":
+          description: Invalid collection or TMDB ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Not the collection owner
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Collection or item not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove item from collection
+      tags:
+      - collections
   /movies/{id}:
     get:
       consumes:
@@ -1220,6 +1649,46 @@ paths:
       summary: Get user by ID
       tags:
       - users
+  /users/{id}/collections:
+    get:
+      consumes:
+      - application/json
+      description: Get all collections for a user. Returns all collections if the
+        requester is the owner, only public ones otherwise.
+      parameters:
+      - description: User ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of collections
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.CollectionResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user's collections
+      tags:
+      - collections
   /users/me:
     delete:
       consumes:

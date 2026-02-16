@@ -18,14 +18,15 @@ type RouterConfig struct {
 }
 
 type Router struct {
-	engine       *gin.Engine
-	config       RouterConfig
-	authHandler  *handlers.AuthHandler
-	oauthHandler *handlers.OAuthHandler
-	userHandler  *handlers.UserHandler
-	movieHandler *handlers.MovieHandler
-	actorHandler *handlers.ActorHandler
-	userService  ports.UserService
+	engine            *gin.Engine
+	config            RouterConfig
+	authHandler       *handlers.AuthHandler
+	oauthHandler      *handlers.OAuthHandler
+	userHandler       *handlers.UserHandler
+	movieHandler      *handlers.MovieHandler
+	actorHandler      *handlers.ActorHandler
+	collectionHandler *handlers.CollectionHandler
+	userService       ports.UserService
 }
 
 func NewRouter(
@@ -35,17 +36,19 @@ func NewRouter(
 	userHandler *handlers.UserHandler,
 	movieHandler *handlers.MovieHandler,
 	actorHandler *handlers.ActorHandler,
+	collectionHandler *handlers.CollectionHandler,
 	userService ports.UserService,
 ) *Router {
 	return &Router{
-		engine:       gin.Default(),
-		config:       config,
-		authHandler:  authHandler,
-		oauthHandler: oauthHandler,
-		userHandler:  userHandler,
-		movieHandler: movieHandler,
-		actorHandler: actorHandler,
-		userService:  userService,
+		engine:            gin.Default(),
+		config:            config,
+		authHandler:       authHandler,
+		oauthHandler:      oauthHandler,
+		userHandler:       userHandler,
+		movieHandler:      movieHandler,
+		actorHandler:      actorHandler,
+		collectionHandler: collectionHandler,
+		userService:       userService,
 	}
 }
 
@@ -63,6 +66,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupUserRoutes(v1)
 		r.setupMovieRoutes(v1)
 		r.setupActorRoutes(v1)
+		r.setupCollectionRoutes(v1)
 	}
 
 	return r.engine
@@ -100,6 +104,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/:id", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
+		users.GET("/:id/collections", middleware.OptionalAuth(r.config.AccessTokenSecret), r.collectionHandler.GetByUserID)
 	}
 }
 
@@ -126,6 +131,19 @@ func (r *Router) setupActorRoutes(rg *gin.RouterGroup) {
 		actors.GET("/search", r.actorHandler.Search)
 		actors.GET("/:id", r.actorHandler.GetByID)
 		actors.GET("/:id/movies", r.actorHandler.GetFilmography)
+	}
+}
+
+func (r *Router) setupCollectionRoutes(rg *gin.RouterGroup) {
+	collections := rg.Group("/collections")
+	{
+		collections.POST("", middleware.Auth(r.config.AccessTokenSecret), r.collectionHandler.Create)
+		collections.GET("/:id", middleware.OptionalAuth(r.config.AccessTokenSecret), r.collectionHandler.GetByID)
+		collections.PATCH("/:id", middleware.Auth(r.config.AccessTokenSecret), r.collectionHandler.Update)
+		collections.DELETE("/:id", middleware.Auth(r.config.AccessTokenSecret), r.collectionHandler.Delete)
+		collections.POST("/:id/items", middleware.Auth(r.config.AccessTokenSecret), r.collectionHandler.AddItem)
+		collections.GET("/:id/items", middleware.OptionalAuth(r.config.AccessTokenSecret), r.collectionHandler.GetItems)
+		collections.DELETE("/:id/items/:tmdbId", middleware.Auth(r.config.AccessTokenSecret), r.collectionHandler.RemoveItem)
 	}
 }
 

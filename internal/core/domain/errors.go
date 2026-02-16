@@ -54,3 +54,12 @@ var (
 	ErrOAuthStateMismatch        = errors.New("invalid oauth state")
 	ErrCannotUnlinkOnlyAuth      = errors.New("cannot unlink the only authentication method")
 )
+
+var (
+	ErrCollectionNotFound            = errors.New("collection not found")
+	ErrCollectionAlreadyExists       = errors.New("collection already exists")
+	ErrCannotModifySystemCollection  = errors.New("cannot modify system collection")
+	ErrCannotDeleteSystemCollection  = errors.New("cannot delete system collection")
+	ErrCollectionItemAlreadyExists   = errors.New("item already exists in collection")
+	ErrCollectionItemNotFound        = errors.New("collection item not found")
+)

@@ -70,8 +70,12 @@ func main() {
 	oauthRepo := repositories.NewOAuthAccountRepository(db)
 	followRepo := repositories.NewFollowRepository(db)
 	reviewRepo := repositories.NewReviewRepository(db)
+	collectionRepo := repositories.NewCollectionRepository(db)
+	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
-	authService := services.NewAuthService(userRepo, sessionRepo, services.AuthServiceConfig{
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo)
+
+	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
 		AccessTokenExpiry:  cfg.AccessTokenExpiry,
 		RefreshTokenSecret: cfg.RefreshTokenSecret,
@@ -102,6 +106,7 @@ func main() {
 		userRepo,
 		oauthRepo,
 		sessionRepo,
+		collectionService,
 		stateManager,
 		providers,
 		services.OAuthServiceConfig{
@@ -117,6 +122,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService, followService)
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
+	collectionHandler := handlers.NewCollectionHandler(collectionService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -127,6 +133,7 @@ func main() {
 		userHandler,
 		movieHandler,
 		actorHandler,
+		collectionHandler,
 		userService,
 	)
 

@@ -21,29 +21,32 @@ type OAuthServiceConfig struct {
 }
 
 type oauthService struct {
-	userRepo     ports.UserRepository
-	oauthRepo    ports.OAuthAccountRepository
-	sessionRepo  ports.SessionRepository
-	stateManager *oauth.StateManager
-	providers    map[oauth.OAuthProvider]oauth.Provider
-	config       OAuthServiceConfig
+	userRepo          ports.UserRepository
+	oauthRepo         ports.OAuthAccountRepository
+	sessionRepo       ports.SessionRepository
+	collectionService ports.CollectionService
+	stateManager      *oauth.StateManager
+	providers         map[oauth.OAuthProvider]oauth.Provider
+	config            OAuthServiceConfig
 }
 
 func NewOAuthService(
 	userRepo ports.UserRepository,
 	oauthRepo ports.OAuthAccountRepository,
 	sessionRepo ports.SessionRepository,
+	collectionService ports.CollectionService,
 	stateManager *oauth.StateManager,
 	providers map[oauth.OAuthProvider]oauth.Provider,
 	config OAuthServiceConfig,
 ) ports.OAuthService {
 	return &oauthService{
-		userRepo:     userRepo,
-		oauthRepo:    oauthRepo,
-		sessionRepo:  sessionRepo,
-		stateManager: stateManager,
-		providers:    providers,
-		config:       config,
+		userRepo:          userRepo,
+		oauthRepo:         oauthRepo,
+		sessionRepo:       sessionRepo,
+		collectionService: collectionService,
+		stateManager:      stateManager,
+		providers:         providers,
+		config:            config,
 	}
 }
 
@@ -237,6 +240,12 @@ func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuth
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, domain.ErrInternal
+	}
+
+	if s.collectionService != nil {
+		if err := s.collectionService.CreateDefaultCollections(ctx, user.ID); err != nil {
+			return nil, domain.ErrInternal
+		}
 	}
 
 	if err := s.linkOAuthAccount(ctx, user.ID, provider, info); err != nil {
