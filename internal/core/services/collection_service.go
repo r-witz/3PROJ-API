@@ -373,9 +373,6 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 	}
 	wg.Wait()
 
-	// Fetch directors concurrently
-	directors := s.fetchDirectors(ctx, tmdbIDs, language)
-
 	// Fetch duskforge ratings
 	ratings, err := s.reviewRepo.GetAverageRatingsByTMDBIDs(ctx, tmdbIDs)
 	if err != nil {
@@ -384,11 +381,6 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 
 	result := make([]ports.MovieSearchResult, len(items))
 	for i, item := range items {
-		var director *string
-		if d, ok := directors[item.TMDBID]; ok && d != "" {
-			director = &d
-		}
-
 		var duskforgeRating *float64
 		if r, ok := ratings[item.TMDBID]; ok {
 			duskforgeRating = &r
@@ -399,45 +391,12 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 			Poster:          movieInfos[i].poster,
 			Name:            movieInfos[i].title,
 			Date:            movieInfos[i].date,
-			Director:        director,
 			TMDBRating:      movieInfos[i].tmdbRating,
 			DuskforgeRating: duskforgeRating,
 		}
 	}
 
 	return result, total, nil
-}
-
-func (s *collectionService) fetchDirectors(ctx context.Context, movieIDs []int, language string) map[int]string {
-	directors := make(map[int]string)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	for _, movieID := range movieIDs {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-
-			credits, err := s.tmdbClient.GetMovieCredits(ctx, id, language)
-			if err != nil {
-				return
-			}
-
-			for _, crew := range credits.Crew {
-				if crew.Job == "Director" {
-					mu.Lock()
-					if directors[id] == "" {
-						directors[id] = crew.Name
-					}
-					mu.Unlock()
-					break
-				}
-			}
-		}(movieID)
-	}
-
-	wg.Wait()
-	return directors
 }
 
 func generateSlug(name string) string {

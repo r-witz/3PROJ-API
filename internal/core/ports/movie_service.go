@@ -27,7 +27,6 @@ type MovieSearchResult struct {
 	Poster          *string  `json:"poster"`
 	Name            string   `json:"name"`
 	Date            string   `json:"date"`
-	Director        *string  `json:"director"`
 	TMDBRating      *float64 `json:"tmdb_rating"`
 	DuskforgeRating *float64 `json:"duskforge_rating"`
 }

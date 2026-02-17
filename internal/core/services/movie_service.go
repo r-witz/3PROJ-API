@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
@@ -239,8 +238,6 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 		tmdbIDs[i] = movie.ID
 	}
 
-	directors := s.fetchDirectors(ctx, tmdbIDs, language)
-
 	ratings, err := s.reviewRepo.GetAverageRatingsByTMDBIDs(ctx, tmdbIDs)
 	if err != nil {
 		ratings = make(map[int]float64)
@@ -248,11 +245,6 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 
 	results := make([]ports.MovieSearchResult, len(slicedMovies))
 	for i, movie := range slicedMovies {
-		var director *string
-		if d, ok := directors[movie.ID]; ok && d != "" {
-			director = &d
-		}
-
 		var duskforgeRating *float64
 		if r, ok := ratings[movie.ID]; ok {
 			duskforgeRating = &r
@@ -269,7 +261,6 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 			Poster:          movie.PosterPath,
 			Name:            movie.Title,
 			Date:            movie.ReleaseDate,
-			Director:        director,
 			TMDBRating:      tmdbRating,
 			DuskforgeRating: duskforgeRating,
 		}
@@ -281,39 +272,6 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 		Total:   totalResults,
 		Results: results,
 	}, nil
-}
-
-func (s *movieService) fetchDirectors(ctx context.Context, movieIDs []int, language string) map[int]string {
-	directors := make(map[int]string)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	for _, movieID := range movieIDs {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-
-			credits, err := s.tmdbClient.GetMovieCredits(ctx, id, language)
-			if err != nil {
-				return
-			}
-
-			for _, crew := range credits.Crew {
-				if crew.Job == "Director" {
-					mu.Lock()
-					if directors[id] == "" {
-						directors[id] = crew.Name
-					} else {
-						directors[id] += ", " + crew.Name
-					}
-					mu.Unlock()
-				}
-			}
-		}(movieID)
-	}
-
-	wg.Wait()
-	return directors
 }
 
 func (s *movieService) GetTrailer(ctx context.Context, movieID int, language string) (*ports.MovieTrailerResult, error) {
