@@ -48,12 +48,12 @@ func (r *ReviewRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.R
 	return review, err
 }
 
-func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Review, error) {
+func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Review, error) {
 	query := `
 		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
-		FROM reviews WHERE user_id = $1 ORDER BY created_at DESC
+		FROM reviews WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
 	`
-	rows, err := r.db.Pool.Query(ctx, query, userID)
+	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -73,12 +73,12 @@ func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([
 	return reviews, rows.Err()
 }
 
-func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int) ([]*domain.Review, error) {
+func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int, offset, limit int) ([]*domain.Review, error) {
 	query := `
 		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
-		FROM reviews WHERE tmdb_id = $1 ORDER BY created_at DESC
+		FROM reviews WHERE tmdb_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
 	`
-	rows, err := r.db.Pool.Query(ctx, query, tmdbID)
+	rows, err := r.db.Pool.Query(ctx, query, tmdbID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +112,18 @@ func (r *ReviewRepository) GetByUserIDAndTMDBID(ctx context.Context, userID uuid
 		return nil, nil
 	}
 	return review, err
+}
+
+func (r *ReviewRepository) CountByTMDBID(ctx context.Context, tmdbID int) (int, error) {
+	var count int
+	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE tmdb_id = $1`, tmdbID).Scan(&count)
+	return count, err
+}
+
+func (r *ReviewRepository) CountByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE user_id = $1`, userID).Scan(&count)
+	return count, err
 }
 
 func (r *ReviewRepository) Update(ctx context.Context, review *domain.Review) error {

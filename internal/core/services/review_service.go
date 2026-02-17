@@ -16,17 +16,20 @@ type reviewService struct {
 	reviewRepo     ports.ReviewRepository
 	reviewLikeRepo ports.ReviewLikeRepository
 	collectionSvc  ports.CollectionService
+	userRepo       ports.UserRepository
 }
 
 func NewReviewService(
 	reviewRepo ports.ReviewRepository,
 	reviewLikeRepo ports.ReviewLikeRepository,
 	collectionSvc ports.CollectionService,
+	userRepo ports.UserRepository,
 ) ports.ReviewService {
 	return &reviewService{
 		reviewRepo:     reviewRepo,
 		reviewLikeRepo: reviewLikeRepo,
 		collectionSvc:  collectionSvc,
+		userRepo:       userRepo,
 	}
 }
 
@@ -62,7 +65,7 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 		return nil, domain.ErrInternal
 	}
 
-	_, err = s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID, input.Runtime)
+	_, err = s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID)
 	if err != nil && !errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
 		// silently ignore — non-critical
 	}
@@ -79,43 +82,56 @@ func (s *reviewService) GetByID(ctx context.Context, id uuid.UUID, requestingUse
 		return nil, domain.ErrReviewNotFound
 	}
 
-	return s.enrichReview(ctx, review, requestingUserID)
-}
+	enriched, err := s.enrichReview(ctx, review, requestingUserID)
+	if err != nil {
+		return nil, err
+	}
 
-func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID) ([]*ports.ReviewWithMeta, error) {
-	reviews, err := s.reviewRepo.GetByTMDBID(ctx, tmdbID)
+	user, err := s.userRepo.GetByID(ctx, review.UserID)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
+	enriched.User = user
 
-	result := make([]*ports.ReviewWithMeta, len(reviews))
-	for i, review := range reviews {
-		enriched, err := s.enrichReview(ctx, review, requestingUserID)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = enriched
-	}
-
-	return result, nil
+	return enriched, nil
 }
 
-func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]*ports.ReviewWithMeta, error) {
-	reviews, err := s.reviewRepo.GetByUserID(ctx, userID)
+func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID, offset, limit int) ([]*ports.ReviewWithMeta, int, error) {
+	reviews, err := s.reviewRepo.GetByTMDBID(ctx, tmdbID, offset, limit)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, 0, domain.ErrInternal
 	}
 
-	result := make([]*ports.ReviewWithMeta, len(reviews))
-	for i, review := range reviews {
-		enriched, err := s.enrichReview(ctx, review, requestingUserID)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = enriched
+	total, err := s.reviewRepo.CountByTMDBID(ctx, tmdbID)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
 	}
 
-	return result, nil
+	result, err := s.enrichReviews(ctx, reviews, requestingUserID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return result, total, nil
+}
+
+func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int) ([]*ports.ReviewWithMeta, int, error) {
+	reviews, err := s.reviewRepo.GetByUserID(ctx, userID, offset, limit)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
+	total, err := s.reviewRepo.CountByUserID(ctx, userID)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
+	result, err := s.enrichReviews(ctx, reviews, requestingUserID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return result, total, nil
 }
 
 func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateReviewInput) (*domain.Review, error) {
@@ -228,6 +244,40 @@ func (s *reviewService) Unlike(ctx context.Context, reviewID uuid.UUID, userID u
 	}
 
 	return nil
+}
+
+func (s *reviewService) enrichReviews(ctx context.Context, reviews []*domain.Review, requestingUserID *uuid.UUID) ([]*ports.ReviewWithMeta, error) {
+	// Collect unique user IDs
+	userIDSet := make(map[uuid.UUID]struct{})
+	for _, r := range reviews {
+		userIDSet[r.UserID] = struct{}{}
+	}
+	userIDs := make([]uuid.UUID, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+
+	// Batch fetch users
+	users, err := s.userRepo.GetByIDs(ctx, userIDs)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	userMap := make(map[uuid.UUID]*domain.User, len(users))
+	for _, u := range users {
+		userMap[u.ID] = u
+	}
+
+	result := make([]*ports.ReviewWithMeta, len(reviews))
+	for i, review := range reviews {
+		enriched, err := s.enrichReview(ctx, review, requestingUserID)
+		if err != nil {
+			return nil, err
+		}
+		enriched.User = userMap[review.UserID]
+		result[i] = enriched
+	}
+
+	return result, nil
 }
 
 func (s *reviewService) enrichReview(ctx context.Context, review *domain.Review, requestingUserID *uuid.UUID) (*ports.ReviewWithMeta, error) {

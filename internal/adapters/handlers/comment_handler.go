@@ -14,10 +14,11 @@ import (
 
 type CommentHandler struct {
 	commentService ports.CommentService
+	userService    ports.UserService
 }
 
-func NewCommentHandler(commentService ports.CommentService) *CommentHandler {
-	return &CommentHandler{commentService: commentService}
+func NewCommentHandler(commentService ports.CommentService, userService ports.UserService) *CommentHandler {
+	return &CommentHandler{commentService: commentService, userService: userService}
 }
 
 type CreateCommentRequest struct {
@@ -31,15 +32,15 @@ type UpdateCommentRequest struct {
 }
 
 type CommentResponse struct {
-	ID               string `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	UserID           string `json:"user_id" example:"660e8400-e29b-41d4-a716-446655440000"`
-	ReviewID         string `json:"review_id" example:"770e8400-e29b-41d4-a716-446655440000"`
-	Content          string `json:"content" example:"Great review!"`
-	ContainsSpoilers bool   `json:"contains_spoilers" example:"false"`
-	LikeCount        int    `json:"like_count" example:"5"`
-	LikedByUser      bool   `json:"liked_by_user" example:"false"`
-	CreatedAt        string `json:"created_at" example:"2024-01-15T10:30:00Z"`
-	UpdatedAt        string `json:"updated_at" example:"2024-01-15T10:30:00Z"`
+	ID               string      `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	User             UserSummary `json:"user"`
+	ReviewID         string      `json:"review_id" example:"770e8400-e29b-41d4-a716-446655440000"`
+	Content          string      `json:"content" example:"Great review!"`
+	ContainsSpoilers bool        `json:"contains_spoilers" example:"false"`
+	LikeCount        int         `json:"like_count" example:"5"`
+	LikedByUser      bool        `json:"liked_by_user" example:"false"`
+	CreatedAt        string      `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt        string      `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
 
 // @Summary      Create a comment
@@ -86,16 +87,20 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, toCommentResponse(comment, 0, false))
+	user, _ := h.userService.GetByID(c.Request.Context(), userID)
+
+	response.Created(c, toCommentResponse(comment, 0, false, user))
 }
 
 // @Summary      Get comments for a review
-// @Description  List all comments on a review
+// @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest.
 // @Tags         comments
 // @Produce      json
 // @Security     BearerAuth
 // @Param        reviewId path string true "Review ID" format(uuid)
-// @Success      200 {object} response.Response{data=[]CommentResponse} "List of comments"
+// @Param        offset query int false "Offset for pagination" default(0)
+// @Param        limit query int false "Limit for pagination" default(20)
+// @Success      200 {object} response.PaginatedResponse{data=[]CommentResponse} "List of comments"
 // @Failure      400 {object} response.Response "Invalid review ID"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /reviews/{reviewId}/comments [get]
@@ -106,12 +111,14 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 		return
 	}
 
+	offset, limit := parsePagination(c)
+
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	comments, err := h.commentService.GetByReviewID(c.Request.Context(), reviewID, requestingUserID)
+	comments, total, err := h.commentService.GetByReviewID(c.Request.Context(), reviewID, requestingUserID, offset, limit)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -119,10 +126,14 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 
 	resp := make([]CommentResponse, len(comments))
 	for i, cm := range comments {
-		resp[i] = toCommentResponse(cm.Comment, cm.LikeCount, cm.LikedByUser)
+		resp[i] = toCommentResponse(cm.Comment, cm.LikeCount, cm.LikedByUser, cm.User)
 	}
 
-	response.Success(c, resp)
+	response.SuccessPaginated(c, resp, &response.Pagination{
+		Offset: offset,
+		Limit:  limit,
+		Total:  total,
+	})
 }
 
 // @Summary      Update a comment
@@ -170,7 +181,9 @@ func (h *CommentHandler) Update(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toCommentResponse(comment, 0, false))
+	user, _ := h.userService.GetByID(c.Request.Context(), userID)
+
+	response.Success(c, toCommentResponse(comment, 0, false, user))
 }
 
 // @Summary      Delete a comment
@@ -274,10 +287,9 @@ func (h *CommentHandler) Unlike(c *gin.Context) {
 	c.Status(204)
 }
 
-func toCommentResponse(comment *domain.Comment, likeCount int, likedByUser bool) CommentResponse {
-	return CommentResponse{
+func toCommentResponse(comment *domain.Comment, likeCount int, likedByUser bool, user *domain.User) CommentResponse {
+	resp := CommentResponse{
 		ID:               comment.ID.String(),
-		UserID:           comment.UserID.String(),
 		ReviewID:         comment.ReviewID.String(),
 		Content:          comment.Content,
 		ContainsSpoilers: comment.ContainsSpoilers,
@@ -286,4 +298,18 @@ func toCommentResponse(comment *domain.Comment, likeCount int, likedByUser bool)
 		CreatedAt:        comment.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:        comment.UpdatedAt.Format(time.RFC3339),
 	}
+
+	if user != nil {
+		resp.User = UserSummary{
+			ID:        user.ID.String(),
+			Username:  user.Username,
+			AvatarURL: user.AvatarURL,
+		}
+	} else {
+		resp.User = UserSummary{
+			ID: comment.UserID.String(),
+		}
+	}
+
+	return resp
 }

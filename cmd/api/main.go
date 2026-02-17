@@ -76,7 +76,7 @@ func main() {
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
-	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo)
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -86,8 +86,8 @@ func main() {
 	})
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
-	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, collectionService)
-	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, collectionService, userRepo)
+	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo)
 	movieService := services.NewMovieService(tmdbClient, reviewRepo)
 	actorService := services.NewActorService(tmdbClient, reviewRepo)
 
@@ -128,8 +128,8 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
-	reviewHandler := handlers.NewReviewHandler(reviewService)
-	commentHandler := handlers.NewCommentHandler(commentService)
+	reviewHandler := handlers.NewReviewHandler(reviewService, userService)
+	commentHandler := handlers.NewCommentHandler(commentService, userService)
 
 	router := http.NewRouter(
 		http.RouterConfig{

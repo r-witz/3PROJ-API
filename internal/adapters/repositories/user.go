@@ -154,6 +154,37 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	return err
 }
 
+func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.User, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	query := `
+		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		FROM users WHERE id = ANY($1)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		user := &domain.User{}
+		err := rows.Scan(
+			&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
+			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, rows.Err()
+}
+
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Pool.Exec(ctx, query, id)

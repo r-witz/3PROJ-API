@@ -47,12 +47,12 @@ func (r *CommentRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 	return comment, err
 }
 
-func (r *CommentRepository) GetByReviewID(ctx context.Context, reviewID uuid.UUID) ([]*domain.Comment, error) {
+func (r *CommentRepository) GetByReviewID(ctx context.Context, reviewID uuid.UUID, offset, limit int) ([]*domain.Comment, error) {
 	query := `
 		SELECT id, user_id, review_id, content, contains_spoilers, created_at, updated_at
-		FROM comments WHERE review_id = $1 ORDER BY created_at
+		FROM comments WHERE review_id = $1 ORDER BY created_at LIMIT $2 OFFSET $3
 	`
-	rows, err := r.db.Pool.Query(ctx, query, reviewID)
+	rows, err := r.db.Pool.Query(ctx, query, reviewID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +70,12 @@ func (r *CommentRepository) GetByReviewID(ctx context.Context, reviewID uuid.UUI
 		comments = append(comments, comment)
 	}
 	return comments, rows.Err()
+}
+
+func (r *CommentRepository) CountByReviewID(ctx context.Context, reviewID uuid.UUID) (int, error) {
+	var count int
+	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM comments WHERE review_id = $1`, reviewID).Scan(&count)
+	return count, err
 }
 
 func (r *CommentRepository) Update(ctx context.Context, comment *domain.Comment) error {

@@ -14,17 +14,20 @@ type commentService struct {
 	commentRepo     ports.CommentRepository
 	commentLikeRepo ports.CommentLikeRepository
 	reviewRepo      ports.ReviewRepository
+	userRepo        ports.UserRepository
 }
 
 func NewCommentService(
 	commentRepo ports.CommentRepository,
 	commentLikeRepo ports.CommentLikeRepository,
 	reviewRepo ports.ReviewRepository,
+	userRepo ports.UserRepository,
 ) ports.CommentService {
 	return &commentService{
 		commentRepo:     commentRepo,
 		commentLikeRepo: commentLikeRepo,
 		reviewRepo:      reviewRepo,
+		userRepo:        userRepo,
 	}
 }
 
@@ -59,22 +62,48 @@ func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID 
 	return comment, nil
 }
 
-func (s *commentService) GetByReviewID(ctx context.Context, reviewID uuid.UUID, requestingUserID *uuid.UUID) ([]*ports.CommentWithMeta, error) {
-	comments, err := s.commentRepo.GetByReviewID(ctx, reviewID)
+func (s *commentService) GetByReviewID(ctx context.Context, reviewID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int) ([]*ports.CommentWithMeta, int, error) {
+	comments, err := s.commentRepo.GetByReviewID(ctx, reviewID, offset, limit)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, 0, domain.ErrInternal
+	}
+
+	total, err := s.commentRepo.CountByReviewID(ctx, reviewID)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
+	// Collect unique user IDs
+	userIDSet := make(map[uuid.UUID]struct{})
+	for _, c := range comments {
+		userIDSet[c.UserID] = struct{}{}
+	}
+	userIDs := make([]uuid.UUID, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+
+	// Batch fetch users
+	users, err := s.userRepo.GetByIDs(ctx, userIDs)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+	userMap := make(map[uuid.UUID]*domain.User, len(users))
+	for _, u := range users {
+		userMap[u.ID] = u
 	}
 
 	result := make([]*ports.CommentWithMeta, len(comments))
 	for i, comment := range comments {
 		enriched, err := s.enrichComment(ctx, comment, requestingUserID)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		enriched.User = userMap[comment.UserID]
 		result[i] = enriched
 	}
 
-	return result, nil
+	return result, total, nil
 }
 
 func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateCommentInput) (*domain.Comment, error) {

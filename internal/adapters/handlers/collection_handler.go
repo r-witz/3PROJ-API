@@ -34,8 +34,7 @@ type UpdateCollectionRequest struct {
 }
 
 type AddItemRequest struct {
-	TMDBID  int   `json:"tmdb_id" binding:"required" example:"550"`
-	Runtime int16 `json:"runtime" example:"139"`
+	TMDBID int `json:"tmdb_id" binding:"required" example:"550"`
 }
 
 type CollectionResponse struct {
@@ -51,10 +50,13 @@ type CollectionResponse struct {
 }
 
 type CollectionItemResponse struct {
-	CollectionID string `json:"collection_id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	TMDBID       int    `json:"tmdb_id" example:"550"`
-	AddedAt      string `json:"added_at" example:"2024-01-15T10:30:00Z"`
-	Runtime      int16  `json:"runtime" example:"139"`
+	CollectionID string  `json:"collection_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	TMDBID       int     `json:"tmdb_id" example:"550"`
+	AddedAt      string  `json:"added_at" example:"2024-01-15T10:30:00Z"`
+	Title        string  `json:"title" example:"Fight Club"`
+	Poster       *string `json:"poster,omitempty" example:"/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"`
+	ReleaseDate  string  `json:"release_date" example:"1999-10-15"`
+	Runtime      *int    `json:"runtime,omitempty" example:"139"`
 }
 
 // @Summary      Create a collection
@@ -302,7 +304,7 @@ func (h *CollectionHandler) Delete(c *gin.Context) {
 }
 
 // @Summary      Add item to collection
-// @Description  Add a movie to a collection by TMDB ID
+// @Description  Add a movie to a collection by TMDB ID. Runtime is automatically fetched from TMDB.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -344,24 +346,26 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 		return
 	}
 
-	item, err := h.collectionService.AddItem(c.Request.Context(), userID, slug, req.TMDBID, req.Runtime)
+	item, err := h.collectionService.AddItem(c.Request.Context(), userID, slug, req.TMDBID)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Created(c, toCollectionItemResponse(item))
+	response.Created(c, toSimpleCollectionItemResponse(item))
 }
 
 // @Summary      Get collection items
-// @Description  Get all items in a collection. Respects visibility rules.
+// @Description  Get all items in a collection with pagination and TMDB movie details. Respects visibility rules.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        slug path string true "Collection slug"
-// @Success      200 {object} response.Response{data=[]CollectionItemResponse} "List of items"
+// @Param        offset query int false "Offset for pagination" default(0)
+// @Param        limit query int false "Limit for pagination" default(20)
+// @Success      200 {object} response.PaginatedResponse{data=[]CollectionItemResponse} "List of items"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -374,13 +378,15 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 	}
 
 	slug := c.Param("slug")
+	offset, limit := parsePagination(c)
+	language := middleware.GetLocale(c)
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	items, err := h.collectionService.GetItems(c.Request.Context(), userID, slug, requestingUserID)
+	items, total, err := h.collectionService.GetItems(c.Request.Context(), userID, slug, requestingUserID, offset, limit, language)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -391,7 +397,11 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 		resp[i] = toCollectionItemResponse(item)
 	}
 
-	response.Success(c, resp)
+	response.SuccessPaginated(c, resp, &response.Pagination{
+		Offset: offset,
+		Limit:  limit,
+		Total:  total,
+	})
 }
 
 // @Summary      Remove item from collection
@@ -459,11 +469,22 @@ func toCollectionResponse(collection *domain.Collection) CollectionResponse {
 	}
 }
 
-func toCollectionItemResponse(item *domain.CollectionItem) CollectionItemResponse {
+func toCollectionItemResponse(item *ports.CollectionItemWithDetails) CollectionItemResponse {
 	return CollectionItemResponse{
-		CollectionID: item.CollectionID.String(),
-		TMDBID:       item.TMDBID,
-		AddedAt:      item.AddedAt.Format(time.RFC3339),
+		CollectionID: item.Item.CollectionID.String(),
+		TMDBID:       item.Item.TMDBID,
+		AddedAt:      item.Item.AddedAt.Format(time.RFC3339),
+		Title:        item.Title,
+		Poster:       item.Poster,
+		ReleaseDate:  item.ReleaseDate,
 		Runtime:      item.Runtime,
+	}
+}
+
+func toSimpleCollectionItemResponse(item *domain.CollectionItem) map[string]interface{} {
+	return map[string]interface{}{
+		"collection_id": item.CollectionID.String(),
+		"tmdb_id":       item.TMDBID,
+		"added_at":      item.AddedAt.Format(time.RFC3339),
 	}
 }

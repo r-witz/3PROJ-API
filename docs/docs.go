@@ -1580,7 +1580,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews for a movie by TMDB ID",
+                "description": "List all reviews for a movie by TMDB ID with pagination. Supports sorting by likes (default) or chronological order.",
                 "produces": [
                     "application/json"
                 ],
@@ -1595,6 +1595,27 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "likes",
+                        "description": "Sort order: 'likes' (default) or 'recent'",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1603,7 +1624,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -1989,7 +2010,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all comments on a review",
+                "description": "List all comments on a review with pagination. Comments are sorted from oldest to newest.",
                 "produces": [
                     "application/json"
                 ],
@@ -2005,6 +2026,20 @@ const docTemplate = `{
                         "name": "reviewId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2013,7 +2048,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3039,7 +3074,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all items in a collection. Respects visibility rules.",
+                "description": "Get all items in a collection with pagination and TMDB movie details. Respects visibility rules.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3065,6 +3100,20 @@ const docTemplate = `{
                         "name": "slug",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3073,7 +3122,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3115,7 +3164,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Add a movie to a collection by TMDB ID",
+                "description": "Add a movie to a collection by TMDB ID. Runtime is automatically fetched from TMDB.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3296,7 +3345,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews by a specific user",
+                "description": "List all reviews by a specific user with pagination. Supports sorting by likes or chronological order (default).",
                 "produces": [
                     "application/json"
                 ],
@@ -3312,6 +3361,27 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "recent",
+                        "description": "Sort order: 'recent' (default) or 'likes'",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3320,7 +3390,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/response.Response"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3359,10 +3429,6 @@ const docTemplate = `{
                 "tmdb_id"
             ],
             "properties": {
-                "runtime": {
-                    "type": "integer",
-                    "example": 139
-                },
                 "tmdb_id": {
                     "type": "integer",
                     "example": 550
@@ -3399,9 +3465,21 @@ const docTemplate = `{
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
+                "poster": {
+                    "type": "string",
+                    "example": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+                },
+                "release_date": {
+                    "type": "string",
+                    "example": "1999-10-15"
+                },
                 "runtime": {
                     "type": "integer",
                     "example": 139
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Fight Club"
                 },
                 "tmdb_id": {
                     "type": "integer",
@@ -3485,9 +3563,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-15T10:30:00Z"
                 },
-                "user_id": {
-                    "type": "string",
-                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                "user": {
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
@@ -3551,10 +3628,6 @@ const docTemplate = `{
                 "rating": {
                     "type": "number",
                     "example": 4.5
-                },
-                "runtime": {
-                    "type": "integer",
-                    "example": 139
                 }
             }
         },
@@ -3757,9 +3830,8 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2024-01-15T10:30:00Z"
                 },
-                "user_id": {
-                    "type": "string",
-                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                "user": {
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
@@ -3987,6 +4059,23 @@ const docTemplate = `{
                 "following_count": {
                     "type": "integer",
                     "example": 75
+                }
+            }
+        },
+        "handlers.UserSummary": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string",
+                    "example": "https://example.com/avatar.jpg"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "660e8400-e29b-41d4-a716-446655440000"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },

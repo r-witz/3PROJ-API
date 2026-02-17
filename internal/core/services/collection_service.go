@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"duskforge-api/internal/core/domain"
@@ -18,15 +19,18 @@ var slugRegex = regexp.MustCompile(`[^a-z0-9-]+`)
 type collectionService struct {
 	collectionRepo     ports.CollectionRepository
 	collectionItemRepo ports.CollectionItemRepository
+	tmdbClient         ports.TMDBClient
 }
 
 func NewCollectionService(
 	collectionRepo ports.CollectionRepository,
 	collectionItemRepo ports.CollectionItemRepository,
+	tmdbClient ports.TMDBClient,
 ) ports.CollectionService {
 	return &collectionService{
 		collectionRepo:     collectionRepo,
 		collectionItemRepo: collectionItemRepo,
+		tmdbClient:         tmdbClient,
 	}
 }
 
@@ -233,7 +237,7 @@ func (s *collectionService) Delete(ctx context.Context, userID uuid.UUID, slug s
 	return nil
 }
 
-func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int, runtime int16) (*domain.CollectionItem, error) {
+func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) (*domain.CollectionItem, error) {
 	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -248,6 +252,13 @@ func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug 
 	}
 	if existing != nil {
 		return nil, domain.ErrCollectionItemAlreadyExists
+	}
+
+	// Fetch runtime from TMDB
+	var runtime int16
+	details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en")
+	if err == nil && details != nil && details.Runtime != nil {
+		runtime = int16(*details.Runtime)
 	}
 
 	item := &domain.CollectionItem{
@@ -289,25 +300,60 @@ func (s *collectionService) RemoveItem(ctx context.Context, userID uuid.UUID, sl
 	return nil
 }
 
-func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) ([]*domain.CollectionItem, error) {
+func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string) ([]*ports.CollectionItemWithDetails, int, error) {
 	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, 0, domain.ErrInternal
 	}
 	if collection == nil {
-		return nil, domain.ErrCollectionNotFound
+		return nil, 0, domain.ErrCollectionNotFound
 	}
 
 	if !canViewCollection(collection, requestingUserID) {
-		return nil, domain.ErrCollectionNotFound
+		return nil, 0, domain.ErrCollectionNotFound
 	}
 
-	items, err := s.collectionItemRepo.GetByCollectionID(ctx, collection.ID)
+	items, err := s.collectionItemRepo.GetByCollectionIDPaginated(ctx, collection.ID, offset, limit)
 	if err != nil {
-		return nil, domain.ErrInternal
+		return nil, 0, domain.ErrInternal
 	}
 
-	return items, nil
+	total, err := s.collectionItemRepo.CountByCollectionID(ctx, collection.ID)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
+	// Enrich items with TMDB details concurrently
+	result := make([]*ports.CollectionItemWithDetails, len(items))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for i, item := range items {
+		wg.Add(1)
+		go func(idx int, it *domain.CollectionItem) {
+			defer wg.Done()
+
+			detail := &ports.CollectionItemWithDetails{
+				Item: it,
+			}
+
+			details, err := s.tmdbClient.GetMovieDetails(ctx, it.TMDBID, language)
+			if err == nil && details != nil {
+				detail.Title = details.Title
+				detail.Poster = details.PosterPath
+				detail.ReleaseDate = details.ReleaseDate
+				detail.Runtime = details.Runtime
+			}
+
+			mu.Lock()
+			result[idx] = detail
+			mu.Unlock()
+		}(i, item)
+	}
+
+	wg.Wait()
+
+	return result, total, nil
 }
 
 func generateSlug(name string) string {
