@@ -1,15 +1,15 @@
-name: Build and Push Docker Image
+name: Build and Push Migrations Image
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
+    paths:
+      - 'migrations/**'
+      - 'Dockerfile.migrate'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -36,18 +36,16 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/r-witz/3proj-migrate
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      - name: Build and push migrations image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile.migrate
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
