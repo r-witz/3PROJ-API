@@ -20,14 +20,6 @@ type UpdateCollectionInput struct {
 	Visibility  *string `json:"visibility"`
 }
 
-type CollectionItemWithDetails struct {
-	Item        *domain.CollectionItem
-	Title       string
-	Poster      *string
-	ReleaseDate string
-	Runtime     *int
-}
-
 type CollectionService interface {
 	CreateDefaultCollections(ctx context.Context, userID uuid.UUID) error
 	Create(ctx context.Context, userID uuid.UUID, input CreateCollectionInput) (*domain.Collection, error)
@@ -38,5 +30,5 @@ type CollectionService interface {
 	Delete(ctx context.Context, userID uuid.UUID, slug string) error
 	AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) (*domain.CollectionItem, error)
 	RemoveItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) error
-	GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string) ([]*CollectionItemWithDetails, int, error)
+	GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string) ([]MovieSearchResult, int, error)
 }

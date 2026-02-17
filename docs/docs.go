@@ -1580,7 +1580,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews for a movie by TMDB ID with pagination. Supports sorting by likes (default) or chronological order.",
+                "description": "List all reviews for a movie by TMDB ID with pagination and sorting.",
                 "produces": [
                     "application/json"
                 ],
@@ -1611,9 +1611,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "+likes",
+                            "-likes",
+                            "+rating",
+                            "-rating",
+                            "+created_at",
+                            "-created_at"
+                        ],
                         "type": "string",
-                        "default": "likes",
-                        "description": "Sort order: 'likes' (default) or 'recent'",
+                        "default": "-likes",
+                        "description": "Sort field with direction prefix (+asc, -desc)",
                         "name": "sort",
                         "in": "query"
                     }
@@ -3120,22 +3128,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of items",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.PaginatedResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.CollectionItemResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "400": {
@@ -3205,19 +3198,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Item added",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/handlers.CollectionItemResponse"
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
@@ -3345,7 +3326,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews by a specific user with pagination. Supports sorting by likes or chronological order (default).",
+                "description": "List all reviews by a specific user with pagination and sorting.",
                 "produces": [
                     "application/json"
                 ],
@@ -3377,9 +3358,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "+likes",
+                            "-likes",
+                            "+rating",
+                            "-rating",
+                            "+created_at",
+                            "-created_at"
+                        ],
                         "type": "string",
-                        "default": "recent",
-                        "description": "Sort order: 'recent' (default) or 'likes'",
+                        "default": "-created_at",
+                        "description": "Sort field with direction prefix (+asc, -desc)",
                         "name": "sort",
                         "in": "query"
                     }
@@ -3451,39 +3440,6 @@ const docTemplate = `{
                     "maxLength": 72,
                     "minLength": 8,
                     "example": "newpassword456"
-                }
-            }
-        },
-        "handlers.CollectionItemResponse": {
-            "type": "object",
-            "properties": {
-                "added_at": {
-                    "type": "string",
-                    "example": "2024-01-15T10:30:00Z"
-                },
-                "collection_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "poster": {
-                    "type": "string",
-                    "example": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
-                },
-                "release_date": {
-                    "type": "string",
-                    "example": "1999-10-15"
-                },
-                "runtime": {
-                    "type": "integer",
-                    "example": 139
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Fight Club"
-                },
-                "tmdb_id": {
-                    "type": "integer",
-                    "example": 550
                 }
             }
         },

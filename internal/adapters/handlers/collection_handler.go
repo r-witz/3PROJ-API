@@ -49,15 +49,6 @@ type CollectionResponse struct {
 	UpdatedAt   string  `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
 
-type CollectionItemResponse struct {
-	CollectionID string  `json:"collection_id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	TMDBID       int     `json:"tmdb_id" example:"550"`
-	AddedAt      string  `json:"added_at" example:"2024-01-15T10:30:00Z"`
-	Title        string  `json:"title" example:"Fight Club"`
-	Poster       *string `json:"poster,omitempty" example:"/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"`
-	ReleaseDate  string  `json:"release_date" example:"1999-10-15"`
-	Runtime      *int    `json:"runtime,omitempty" example:"139"`
-}
 
 // @Summary      Create a collection
 // @Description  Create a new custom collection for the authenticated user
@@ -312,7 +303,7 @@ func (h *CollectionHandler) Delete(c *gin.Context) {
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        slug path string true "Collection slug"
 // @Param        request body AddItemRequest true "Movie to add"
-// @Success      201 {object} response.Response{data=CollectionItemResponse} "Item added"
+// @Success      201 {object} response.Response "Item added"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Forbidden"
@@ -365,7 +356,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Param        slug path string true "Collection slug"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Success      200 {object} response.PaginatedResponse{data=[]CollectionItemResponse} "List of items"
+// @Success      200 {object} response.PaginatedResponse "List of items"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -392,12 +383,7 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 		return
 	}
 
-	resp := make([]CollectionItemResponse, len(items))
-	for i, item := range items {
-		resp[i] = toCollectionItemResponse(item)
-	}
-
-	response.SuccessPaginated(c, resp, &response.Pagination{
+	response.SuccessPaginated(c, items, &response.Pagination{
 		Offset: offset,
 		Limit:  limit,
 		Total:  total,
@@ -469,17 +455,6 @@ func toCollectionResponse(collection *domain.Collection) CollectionResponse {
 	}
 }
 
-func toCollectionItemResponse(item *ports.CollectionItemWithDetails) CollectionItemResponse {
-	return CollectionItemResponse{
-		CollectionID: item.Item.CollectionID.String(),
-		TMDBID:       item.Item.TMDBID,
-		AddedAt:      item.Item.AddedAt.Format(time.RFC3339),
-		Title:        item.Title,
-		Poster:       item.Poster,
-		ReleaseDate:  item.ReleaseDate,
-		Runtime:      item.Runtime,
-	}
-}
 
 func toSimpleCollectionItemResponse(item *domain.CollectionItem) map[string]interface{} {
 	return map[string]interface{}{

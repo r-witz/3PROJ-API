@@ -104,14 +104,14 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get reviews for a movie
-// @Description  List all reviews for a movie by TMDB ID with pagination. Supports sorting by likes (default) or chronological order.
+// @Description  List all reviews for a movie by TMDB ID with pagination and sorting.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id path int true "TMDB movie ID"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Param        sort query string false "Sort order: 'likes' (default) or 'recent'" default(likes)
+// @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-likes)
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid movie ID"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -124,14 +124,14 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 	}
 
 	offset, limit := parsePagination(c)
-	sort := c.DefaultQuery("sort", "likes")
+	sort := parseReviewSort(c.DefaultQuery("sort", "-likes"))
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	reviews, total, err := h.reviewService.GetByTMDBID(c.Request.Context(), tmdbID, requestingUserID, offset, limit)
+	reviews, total, err := h.reviewService.GetByTMDBID(c.Request.Context(), tmdbID, requestingUserID, offset, limit, sort)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -140,10 +140,6 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
 		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.LikedByUser, r.User)
-	}
-
-	if sort == "likes" {
-		sortReviewsByLikes(resp)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -186,14 +182,14 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      Get reviews by user
-// @Description  List all reviews by a specific user with pagination. Supports sorting by likes or chronological order (default).
+// @Description  List all reviews by a specific user with pagination and sorting.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Param        sort query string false "Sort order: 'recent' (default) or 'likes'" default(recent)
+// @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-created_at)
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -206,14 +202,14 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 	}
 
 	offset, limit := parsePagination(c)
-	sort := c.DefaultQuery("sort", "recent")
+	sort := parseReviewSort(c.DefaultQuery("sort", "-created_at"))
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	reviews, total, err := h.reviewService.GetByUserID(c.Request.Context(), userID, requestingUserID, offset, limit)
+	reviews, total, err := h.reviewService.GetByUserID(c.Request.Context(), userID, requestingUserID, offset, limit, sort)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -222,10 +218,6 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
 		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.LikedByUser, r.User)
-	}
-
-	if sort == "likes" {
-		sortReviewsByLikes(resp)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -433,10 +425,33 @@ func parsePagination(c *gin.Context) (offset, limit int) {
 	return offset, limit
 }
 
-func sortReviewsByLikes(reviews []ReviewResponse) {
-	for i := 1; i < len(reviews); i++ {
-		for j := i; j > 0 && reviews[j].LikeCount > reviews[j-1].LikeCount; j-- {
-			reviews[j], reviews[j-1] = reviews[j-1], reviews[j]
+func parseReviewSort(s string) ports.ReviewSort {
+	if s == "" {
+		return ports.ReviewSort{Field: ports.ReviewSortByCreatedAt, Asc: false}
+	}
+
+	asc := false
+	field := s
+
+	if len(s) > 0 {
+		switch s[0] {
+		case '+':
+			asc = true
+			field = s[1:]
+		case '-':
+			asc = false
+			field = s[1:]
 		}
+	}
+
+	switch field {
+	case "likes":
+		return ports.ReviewSort{Field: ports.ReviewSortByLikes, Asc: asc}
+	case "rating":
+		return ports.ReviewSort{Field: ports.ReviewSortByRating, Asc: asc}
+	case "created_at":
+		return ports.ReviewSort{Field: ports.ReviewSortByCreatedAt, Asc: asc}
+	default:
+		return ports.ReviewSort{Field: ports.ReviewSortByCreatedAt, Asc: false}
 	}
 }

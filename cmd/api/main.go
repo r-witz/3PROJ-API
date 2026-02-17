@@ -76,7 +76,7 @@ func main() {
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
-	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient)
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient, reviewRepo)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,

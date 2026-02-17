@@ -96,8 +96,8 @@ func (s *reviewService) GetByID(ctx context.Context, id uuid.UUID, requestingUse
 	return enriched, nil
 }
 
-func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID, offset, limit int) ([]*ports.ReviewWithMeta, int, error) {
-	reviews, err := s.reviewRepo.GetByTMDBID(ctx, tmdbID, offset, limit)
+func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*ports.ReviewWithMeta, int, error) {
+	reviews, err := s.reviewRepo.GetByTMDBID(ctx, tmdbID, offset, limit, sort)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
@@ -115,8 +115,8 @@ func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingU
 	return result, total, nil
 }
 
-func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int) ([]*ports.ReviewWithMeta, int, error) {
-	reviews, err := s.reviewRepo.GetByUserID(ctx, userID, offset, limit)
+func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*ports.ReviewWithMeta, int, error) {
+	reviews, err := s.reviewRepo.GetByUserID(ctx, userID, offset, limit, sort)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}

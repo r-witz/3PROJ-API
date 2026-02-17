@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
@@ -48,11 +49,16 @@ func (r *ReviewRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.R
 	return review, err
 }
 
-func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Review, error) {
-	query := `
-		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
-		FROM reviews WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
-	`
+func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
+	orderClause := buildReviewOrderClause(sort)
+	query := fmt.Sprintf(`
+		SELECT r.id, r.user_id, r.tmdb_id, r.rating, r.content, r.contains_spoilers, r.featured_at, r.created_at, r.updated_at
+		FROM reviews r
+		LEFT JOIN (SELECT review_id, COUNT(*) AS like_count FROM review_likes GROUP BY review_id) rl ON rl.review_id = r.id
+		WHERE r.user_id = $1
+		ORDER BY %s
+		LIMIT $2 OFFSET $3
+	`, orderClause)
 	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -73,11 +79,16 @@ func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, of
 	return reviews, rows.Err()
 }
 
-func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int, offset, limit int) ([]*domain.Review, error) {
-	query := `
-		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
-		FROM reviews WHERE tmdb_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
-	`
+func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
+	orderClause := buildReviewOrderClause(sort)
+	query := fmt.Sprintf(`
+		SELECT r.id, r.user_id, r.tmdb_id, r.rating, r.content, r.contains_spoilers, r.featured_at, r.created_at, r.updated_at
+		FROM reviews r
+		LEFT JOIN (SELECT review_id, COUNT(*) AS like_count FROM review_likes GROUP BY review_id) rl ON rl.review_id = r.id
+		WHERE r.tmdb_id = $1
+		ORDER BY %s
+		LIMIT $2 OFFSET $3
+	`, orderClause)
 	rows, err := r.db.Pool.Query(ctx, query, tmdbID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -204,4 +215,20 @@ func (r *ReviewRepository) GetRatingStatsByTMDBIDs(ctx context.Context, tmdbIDs 
 		}
 	}
 	return result, rows.Err()
+}
+
+func buildReviewOrderClause(sort ports.ReviewSort) string {
+	dir := "DESC"
+	if sort.Asc {
+		dir = "ASC"
+	}
+
+	switch sort.Field {
+	case ports.ReviewSortByLikes:
+		return fmt.Sprintf("COALESCE(rl.like_count, 0) %s, r.created_at DESC", dir)
+	case ports.ReviewSortByRating:
+		return fmt.Sprintf("r.rating %s, r.created_at DESC", dir)
+	default:
+		return fmt.Sprintf("r.created_at %s", dir)
+	}
 }

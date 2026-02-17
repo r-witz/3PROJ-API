@@ -22,30 +22,6 @@ definitions:
     - current_password
     - new_password
     type: object
-  handlers.CollectionItemResponse:
-    properties:
-      added_at:
-        example: "2024-01-15T10:30:00Z"
-        type: string
-      collection_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      poster:
-        example: /pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg
-        type: string
-      release_date:
-        example: "1999-10-15"
-        type: string
-      runtime:
-        example: 139
-        type: integer
-      title:
-        example: Fight Club
-        type: string
-      tmdb_id:
-        example: 550
-        type: integer
-    type: object
   handlers.CollectionResponse:
     properties:
       created_at:
@@ -1390,8 +1366,7 @@ paths:
       - movies
   /movies/{id}/reviews:
     get:
-      description: List all reviews for a movie by TMDB ID with pagination. Supports
-        sorting by likes (default) or chronological order.
+      description: List all reviews for a movie by TMDB ID with pagination and sorting.
       parameters:
       - description: TMDB movie ID
         in: path
@@ -1408,8 +1383,15 @@ paths:
         in: query
         name: limit
         type: integer
-      - default: likes
-        description: 'Sort order: ''likes'' (default) or ''recent'''
+      - default: -likes
+        description: Sort field with direction prefix (+asc, -desc)
+        enum:
+        - +likes
+        - -likes
+        - +rating
+        - -rating
+        - +created_at
+        - -created_at
         in: query
         name: sort
         type: string
@@ -2304,14 +2286,7 @@ paths:
         "200":
           description: List of items
           schema:
-            allOf:
-            - $ref: '#/definitions/response.PaginatedResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/handlers.CollectionItemResponse'
-                  type: array
-              type: object
+            $ref: '#/definitions/response.PaginatedResponse'
         "400":
           description: Invalid user ID
           schema:
@@ -2358,12 +2333,7 @@ paths:
         "201":
           description: Item added
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/handlers.CollectionItemResponse'
-              type: object
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid request body
           schema:
@@ -2447,8 +2417,7 @@ paths:
       - collections
   /users/{userId}/reviews:
     get:
-      description: List all reviews by a specific user with pagination. Supports sorting
-        by likes or chronological order (default).
+      description: List all reviews by a specific user with pagination and sorting.
       parameters:
       - description: User ID
         format: uuid
@@ -2466,8 +2435,15 @@ paths:
         in: query
         name: limit
         type: integer
-      - default: recent
-        description: 'Sort order: ''recent'' (default) or ''likes'''
+      - default: -created_at
+        description: Sort field with direction prefix (+asc, -desc)
+        enum:
+        - +likes
+        - -likes
+        - +rating
+        - -rating
+        - +created_at
+        - -created_at
         in: query
         name: sort
         type: string
