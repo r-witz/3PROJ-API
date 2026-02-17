@@ -46,7 +46,7 @@ func (s *collectionService) CreateDefaultCollections(ctx context.Context, userID
 		Name:       "Watched",
 		Slug:       "watched",
 		Type:       domain.CollectionTypeSystem,
-		Visibility: domain.CollectionVisibilityPrivate,
+		Visibility: domain.CollectionVisibilityPublic,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
@@ -57,7 +57,7 @@ func (s *collectionService) CreateDefaultCollections(ctx context.Context, userID
 		Name:       "To Watch",
 		Slug:       "to-watch",
 		Type:       domain.CollectionTypeSystem,
-		Visibility: domain.CollectionVisibilityPrivate,
+		Visibility: domain.CollectionVisibilityPublic,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
