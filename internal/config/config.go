@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/viper"
@@ -71,14 +72,14 @@ func LoadConfig() (config Config, err error) {
 	viper.SetDefault("MINIO_USE_SSL", false)
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 
-	viper.SetConfigFile(".env")
-	if readErr := viper.ReadInConfig(); readErr != nil {
-		if _, ok := readErr.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("No .env file found, loading from environment variables.")
-		} else {
+	if _, statErr := os.Stat(".env"); statErr == nil {
+		viper.SetConfigFile(".env")
+		if readErr := viper.ReadInConfig(); readErr != nil {
 			err = readErr
 			return
 		}
+	} else {
+		fmt.Println("No .env file found, loading from environment variables.")
 	}
 
 	err = viper.Unmarshal(&config)
