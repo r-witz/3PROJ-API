@@ -394,6 +394,23 @@ func (s *movieService) GetReleaseDates(ctx context.Context, movieID int) (*ports
 	return &ports.MovieReleaseDatesResult{Regions: regions}, nil
 }
 
+func (s *movieService) GetGenres(ctx context.Context, language string) ([]ports.Genre, error) {
+	genres, err := s.tmdbClient.GetGenres(ctx, language)
+	if err != nil {
+		return nil, domain.ErrTMDBError
+	}
+
+	result := make([]ports.Genre, len(genres))
+	for i, g := range genres {
+		result[i] = ports.Genre{
+			ID:   g.ID,
+			Name: g.Name,
+		}
+	}
+
+	return result, nil
+}
+
 func releaseTypeName(typeCode int) string {
 	switch typeCode {
 	case 1:

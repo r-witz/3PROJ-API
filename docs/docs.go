@@ -1290,6 +1290,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/movies/genres": {
+            "get": {
+                "description": "Get a list of all movie genres with their IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movies"
+                ],
+                "summary": "Get all movie genres",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of genres",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "502": {
+                        "description": "External service error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/movies/popular": {
             "get": {
                 "description": "Get a list of currently popular movies",

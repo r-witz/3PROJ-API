@@ -118,4 +118,5 @@ type MovieService interface {
 	GetTrailer(ctx context.Context, movieID int, language string) (*MovieTrailerResult, error)
 	GetCast(ctx context.Context, movieID int, language string) (*MovieCastResult, error)
 	GetReleaseDates(ctx context.Context, movieID int) (*MovieReleaseDatesResult, error)
+	GetGenres(ctx context.Context, language string) ([]Genre, error)
 }

@@ -1567,6 +1567,30 @@ paths:
       summary: Discover movies with filters
       tags:
       - movies
+  /movies/genres:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all movie genres with their IDs
+      parameters:
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of genres
+          schema:
+            $ref: '#/definitions/response.Response'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all movie genres
+      tags:
+      - movies
   /movies/popular:
     get:
       consumes:

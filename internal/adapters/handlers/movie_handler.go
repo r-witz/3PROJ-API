@@ -117,6 +117,27 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 	})
 }
 
+// @Summary      Get all movie genres
+// @Description  Get a list of all movie genres with their IDs
+// @Tags         movies
+// @Accept       json
+// @Produce      json
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
+// @Success      200 {object} response.Response "List of genres"
+// @Failure      502 {object} response.Response "External service error"
+// @Router       /movies/genres [get]
+func (h *MovieHandler) GetGenres(c *gin.Context) {
+	language := middleware.GetLocale(c)
+
+	genres, err := h.movieService.GetGenres(c.Request.Context(), language)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, genres)
+}
+
 // @Summary      Get movie details
 // @Description  Get detailed information about a movie by its TMDB ID
 // @Tags         movies
