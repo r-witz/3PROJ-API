@@ -72,7 +72,11 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 		user.Bio = input.Bio
 	}
 	if input.Website != nil {
-		user.Website = input.Website
+		if *input.Website == "" {
+			user.Website = nil
+		} else {
+			user.Website = input.Website
+		}
 	}
 	if input.Theme != nil {
 		user.Theme = *input.Theme

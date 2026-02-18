@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/url"
 	"time"
 
 	"duskforge-api/internal/adapters/middleware"
@@ -76,7 +77,7 @@ type UpdateUserRequest struct {
 	Username    *string                   `json:"username" binding:"omitempty,min=3,max=50" example:"newusername"`
 	AvatarURL   *string                   `json:"avatar_url" binding:"omitempty,url" example:"https://example.com/new-avatar.jpg"`
 	Bio         *string                   `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
-	Website     *string                   `json:"website" binding:"omitempty,url" example:"https://newwebsite.com"`
+	Website     *string                   `json:"website" example:"https://newwebsite.com"`
 	Preferences *UpdatePreferencesRequest `json:"preferences" binding:"omitempty"`
 }
 
@@ -152,6 +153,14 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 		}
 		response.BadRequest(c, "Invalid request body", err.Error())
 		return
+	}
+
+	if req.Website != nil && *req.Website != "" {
+		u, err := url.ParseRequestURI(*req.Website)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+			response.BadRequest(c, "Invalid website URL", nil)
+			return
+		}
 	}
 
 	input := ports.UpdateUserInput{
