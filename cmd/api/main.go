@@ -76,6 +76,10 @@ func main() {
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
+	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
+		logger.Logger.Fatal("Failed to create upload directory", zap.Error(err))
+	}
+
 	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient, reviewRepo)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
@@ -124,7 +128,7 @@ func main() {
 
 	authHandler := handlers.NewAuthHandler(authService)
 	oauthHandler := handlers.NewOAuthHandler(oauthService, cfg.OAuthRedirectBase)
-	userHandler := handlers.NewUserHandler(userService, followService)
+	userHandler := handlers.NewUserHandler(userService, followService, cfg.UploadDir)
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
@@ -134,6 +138,7 @@ func main() {
 	router := http.NewRouter(
 		http.RouterConfig{
 			AccessTokenSecret: cfg.AccessTokenSecret,
+			UploadDir:         cfg.UploadDir,
 		},
 		authHandler,
 		oauthHandler,

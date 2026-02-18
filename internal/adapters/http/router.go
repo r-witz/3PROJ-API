@@ -15,6 +15,7 @@ import (
 
 type RouterConfig struct {
 	AccessTokenSecret string
+	UploadDir         string
 }
 
 type Router struct {
@@ -65,6 +66,7 @@ func (r *Router) Setup() *gin.Engine {
 	r.engine.GET("/", r.root)
 
 	r.engine.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.engine.Static("/uploads", r.config.UploadDir)
 
 	v1 := r.engine.Group("/api/v1")
 	{
@@ -110,6 +112,8 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/search", r.userHandler.Search)
 		users.GET("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.GetCurrentUser)
 		users.PATCH("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.UpdateCurrentUser)
+		users.PUT("/me/avatar", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.UploadAvatar)
+		users.DELETE("/me/avatar", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteAvatar)
 		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)

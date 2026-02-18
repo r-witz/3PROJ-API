@@ -362,9 +362,6 @@ definitions:
     type: object
   handlers.UpdateUserRequest:
     properties:
-      avatar_url:
-        example: https://example.com/new-avatar.jpg
-        type: string
       bio:
         example: Updated bio
         maxLength: 500
@@ -2641,6 +2638,74 @@ paths:
       security:
       - BearerAuth: []
       summary: Update current user
+      tags:
+      - users
+  /users/me/avatar:
+    delete:
+      description: Remove the avatar image of the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile without avatar
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.UserResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete avatar
+      tags:
+      - users
+    put:
+      consumes:
+      - multipart/form-data
+      description: Upload a new avatar image for the current user. Replaces existing
+        avatar if one exists. Accepts JPEG, PNG, GIF, and WebP (max 5MB).
+      parameters:
+      - description: Avatar image file
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile with new avatar
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.UserResponse'
+              type: object
+        "400":
+          description: Invalid file or file too large
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Upload or update avatar
       tags:
       - users
   /users/me/password:

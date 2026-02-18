@@ -65,9 +65,6 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 		user.Username = *input.Username
 	}
 
-	if input.AvatarURL != nil {
-		user.AvatarURL = input.AvatarURL
-	}
 	if input.Bio != nil {
 		user.Bio = input.Bio
 	}
@@ -85,6 +82,44 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 		user.Locale = *input.Locale
 	}
 
+	user.UpdatedAt = time.Now()
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return user, nil
+}
+
+func (s *userService) UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) (*domain.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if user == nil {
+		return nil, domain.ErrUserNotFound
+	}
+
+	user.AvatarURL = &avatarURL
+	user.UpdatedAt = time.Now()
+
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return user, nil
+}
+
+func (s *userService) DeleteAvatar(ctx context.Context, userID uuid.UUID) (*domain.User, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if user == nil {
+		return nil, domain.ErrUserNotFound
+	}
+
+	user.AvatarURL = nil
 	user.UpdatedAt = time.Now()
 
 	if err := s.userRepo.Update(ctx, user); err != nil {

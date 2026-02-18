@@ -9,13 +9,12 @@ import (
 )
 
 type UpdateUserInput struct {
-	Email     *string
-	Username  *string
-	AvatarURL *string
-	Bio       *string
-	Website   *string
-	Theme     *domain.UserTheme
-	Locale    *domain.UserLocale
+	Email    *string
+	Username *string
+	Bio      *string
+	Website  *string
+	Theme    *domain.UserTheme
+	Locale   *domain.UserLocale
 }
 
 type ChangePasswordInput struct {
@@ -42,6 +41,8 @@ type UserService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	GetCurrentUser(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	UpdateCurrentUser(ctx context.Context, userID uuid.UUID, input UpdateUserInput) (*domain.User, error)
+	UpdateAvatar(ctx context.Context, userID uuid.UUID, avatarURL string) (*domain.User, error)
+	DeleteAvatar(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, input ChangePasswordInput) error
 	DeleteCurrentUser(ctx context.Context, userID uuid.UUID) error
 	SearchUsers(ctx context.Context, input SearchUsersInput) (*SearchUsersResult, error)

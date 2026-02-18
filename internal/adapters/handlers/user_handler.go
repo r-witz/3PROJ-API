@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"fmt"
+	"io"
 	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"duskforge-api/internal/adapters/middleware"
@@ -17,10 +22,11 @@ import (
 type UserHandler struct {
 	userService   ports.UserService
 	followService ports.FollowService
+	uploadDir     string
 }
 
-func NewUserHandler(userService ports.UserService, followService ports.FollowService) *UserHandler {
-	return &UserHandler{userService: userService, followService: followService}
+func NewUserHandler(userService ports.UserService, followService ports.FollowService, uploadDir string) *UserHandler {
+	return &UserHandler{userService: userService, followService: followService, uploadDir: uploadDir}
 }
 
 type UserPreferences struct {
@@ -75,7 +81,6 @@ type UpdatePreferencesRequest struct {
 type UpdateUserRequest struct {
 	Email       *string                   `json:"email" binding:"omitempty,email" example:"newemail@example.com"`
 	Username    *string                   `json:"username" binding:"omitempty,min=3,max=50" example:"newusername"`
-	AvatarURL   *string                   `json:"avatar_url" binding:"omitempty,url" example:"https://example.com/new-avatar.jpg"`
 	Bio         *string                   `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
 	Website     *string                   `json:"website" example:"https://newwebsite.com"`
 	Preferences *UpdatePreferencesRequest `json:"preferences" binding:"omitempty"`
@@ -164,11 +169,10 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	}
 
 	input := ports.UpdateUserInput{
-		Email:     req.Email,
-		Username:  req.Username,
-		AvatarURL: req.AvatarURL,
-		Bio:       req.Bio,
-		Website:   req.Website,
+		Email:    req.Email,
+		Username: req.Username,
+		Bio:      req.Bio,
+		Website:  req.Website,
 	}
 
 	if req.Preferences != nil {
@@ -202,6 +206,161 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	}
 
 	response.Success(c, toUserResponse(user, stats))
+}
+
+// @Summary      Upload or update avatar
+// @Description  Upload a new avatar image for the current user. Replaces existing avatar if one exists. Accepts JPEG, PNG, GIF, and WebP (max 5MB).
+// @Tags         users
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        avatar formData file true "Avatar image file"
+// @Success      200 {object} response.Response{data=UserResponse} "Updated user profile with new avatar"
+// @Failure      400 {object} response.Response "Invalid file or file too large"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/me/avatar [put]
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	file, header, err := c.Request.FormFile("avatar")
+	if err != nil {
+		response.BadRequest(c, "Avatar file is required", nil)
+		return
+	}
+	defer file.Close()
+
+	const maxSize = 5 << 20 // 5MB
+	if header.Size > maxSize {
+		response.BadRequest(c, "File too large, maximum size is 5MB", nil)
+		return
+	}
+
+	contentType := header.Header.Get("Content-Type")
+	allowedTypes := map[string]string{
+		"image/jpeg": ".jpg",
+		"image/png":  ".png",
+		"image/gif":  ".gif",
+		"image/webp": ".webp",
+	}
+
+	ext, allowed := allowedTypes[contentType]
+	if !allowed {
+		response.BadRequest(c, "Invalid file type, allowed: JPEG, PNG, GIF, WebP", nil)
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Delete old avatar file if exists
+	user, err := h.userService.GetCurrentUser(ctx, userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	if user.AvatarURL != nil {
+		oldPath := strings.TrimPrefix(*user.AvatarURL, "/uploads/")
+		oldFullPath := filepath.Join(h.uploadDir, oldPath)
+		os.Remove(oldFullPath)
+	}
+
+	avatarDir := filepath.Join(h.uploadDir, "avatars")
+	if err := os.MkdirAll(avatarDir, 0755); err != nil {
+		response.InternalError(c)
+		return
+	}
+
+	filename := fmt.Sprintf("%s%s", userID.String(), ext)
+	filePath := filepath.Join(avatarDir, filename)
+
+	dst, err := os.Create(filePath)
+	if err != nil {
+		response.InternalError(c)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		os.Remove(filePath)
+		response.InternalError(c)
+		return
+	}
+
+	avatarURL := fmt.Sprintf("/uploads/avatars/%s", filename)
+	updatedUser, err := h.userService.UpdateAvatar(ctx, userID, avatarURL)
+	if err != nil {
+		os.Remove(filePath)
+		response.HandleError(c, err)
+		return
+	}
+
+	followStats, err := h.followService.GetStats(ctx, userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	stats := UserStats{
+		FollowersCount: followStats.FollowersCount,
+		FollowingCount: followStats.FollowingCount,
+	}
+
+	response.Success(c, toUserResponse(updatedUser, stats))
+}
+
+// @Summary      Delete avatar
+// @Description  Remove the avatar image of the current user
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} response.Response{data=UserResponse} "Updated user profile without avatar"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/me/avatar [delete]
+func (h *UserHandler) DeleteAvatar(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	user, err := h.userService.GetCurrentUser(ctx, userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	if user.AvatarURL != nil {
+		oldPath := strings.TrimPrefix(*user.AvatarURL, "/uploads/")
+		oldFullPath := filepath.Join(h.uploadDir, oldPath)
+		os.Remove(oldFullPath)
+	}
+
+	updatedUser, err := h.userService.DeleteAvatar(ctx, userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	followStats, err := h.followService.GetStats(ctx, userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	stats := UserStats{
+		FollowersCount: followStats.FollowersCount,
+		FollowingCount: followStats.FollowingCount,
+	}
+
+	response.Success(c, toUserResponse(updatedUser, stats))
 }
 
 // @Summary      Change or set password
