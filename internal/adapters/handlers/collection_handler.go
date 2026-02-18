@@ -354,6 +354,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        slug path string true "Collection slug"
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
 // @Success      200 {object} response.PaginatedResponse "List of items"

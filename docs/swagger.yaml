@@ -2296,6 +2296,10 @@ paths:
         name: slug
         required: true
         type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       - default: 0
         description: Offset for pagination
         in: query

@@ -259,7 +259,7 @@ func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug 
 
 	// Fetch runtime from TMDB
 	var runtime int16
-	details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en")
+	details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en-US")
 	if err == nil && details != nil && details.Runtime != nil {
 		runtime = int16(*details.Runtime)
 	}

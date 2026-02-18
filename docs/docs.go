@@ -3141,6 +3141,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
+                    {
                         "type": "integer",
                         "default": 0,
                         "description": "Offset for pagination",
