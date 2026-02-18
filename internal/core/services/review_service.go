@@ -70,6 +70,11 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 		// silently ignore — non-critical
 	}
 
+	err = s.collectionSvc.RemoveItem(ctx, userID, "to-watch", tmdbID)
+	if err != nil && !errors.Is(err, domain.ErrCollectionItemNotFound) {
+		// silently ignore — non-critical
+	}
+
 	return review, nil
 }
 
