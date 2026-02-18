@@ -15,7 +15,6 @@ import (
 
 type RouterConfig struct {
 	AccessTokenSecret string
-	UploadDir         string
 }
 
 type Router struct {
@@ -66,7 +65,6 @@ func (r *Router) Setup() *gin.Engine {
 	r.engine.GET("/", r.root)
 
 	r.engine.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.engine.Static("/uploads", r.config.UploadDir)
 
 	v1 := r.engine.Group("/api/v1")
 	{

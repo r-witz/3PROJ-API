@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"net/url"
-	"os"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 
@@ -14,6 +12,7 @@ import (
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/query"
+	"duskforge-api/pkg/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,11 +21,11 @@ import (
 type UserHandler struct {
 	userService   ports.UserService
 	followService ports.FollowService
-	uploadDir     string
+	storage       *storage.MinioStorage
 }
 
-func NewUserHandler(userService ports.UserService, followService ports.FollowService, uploadDir string) *UserHandler {
-	return &UserHandler{userService: userService, followService: followService, uploadDir: uploadDir}
+func NewUserHandler(userService ports.UserService, followService ports.FollowService, storage *storage.MinioStorage) *UserHandler {
+	return &UserHandler{userService: userService, followService: followService, storage: storage}
 }
 
 type UserPreferences struct {
@@ -256,7 +255,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Delete old avatar file if exists
+	// Delete old avatar from storage if exists
 	user, err := h.userService.GetCurrentUser(ctx, userID)
 	if err != nil {
 		response.HandleError(c, err)
@@ -264,37 +263,22 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		oldPath := strings.TrimPrefix(*user.AvatarURL, "/uploads/")
-		oldFullPath := filepath.Join(h.uploadDir, oldPath)
-		os.Remove(oldFullPath)
+		oldObjectName := extractObjectName(*user.AvatarURL)
+		if oldObjectName != "" {
+			h.storage.Delete(ctx, oldObjectName)
+		}
 	}
 
-	avatarDir := filepath.Join(h.uploadDir, "avatars")
-	if err := os.MkdirAll(avatarDir, 0755); err != nil {
-		response.InternalError(c)
-		return
-	}
-
-	filename := fmt.Sprintf("%s%s", userID.String(), ext)
-	filePath := filepath.Join(avatarDir, filename)
-
-	dst, err := os.Create(filePath)
+	objectName := fmt.Sprintf("avatars/%s%s", userID.String(), ext)
+	avatarURL, err := h.storage.Upload(ctx, objectName, file, header.Size, contentType)
 	if err != nil {
 		response.InternalError(c)
 		return
 	}
-	defer dst.Close()
 
-	if _, err := io.Copy(dst, file); err != nil {
-		os.Remove(filePath)
-		response.InternalError(c)
-		return
-	}
-
-	avatarURL := fmt.Sprintf("/uploads/avatars/%s", filename)
 	updatedUser, err := h.userService.UpdateAvatar(ctx, userID, avatarURL)
 	if err != nil {
-		os.Remove(filePath)
+		h.storage.Delete(ctx, objectName)
 		response.HandleError(c, err)
 		return
 	}
@@ -338,9 +322,10 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		oldPath := strings.TrimPrefix(*user.AvatarURL, "/uploads/")
-		oldFullPath := filepath.Join(h.uploadDir, oldPath)
-		os.Remove(oldFullPath)
+		objectName := extractObjectName(*user.AvatarURL)
+		if objectName != "" {
+			h.storage.Delete(ctx, objectName)
+		}
 	}
 
 	updatedUser, err := h.userService.DeleteAvatar(ctx, userID)
@@ -361,6 +346,26 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	}
 
 	response.Success(c, toUserResponse(updatedUser, stats))
+}
+
+// extractObjectName extracts the MinIO object name (e.g. "avatars/uuid.jpg") from a full URL.
+func extractObjectName(avatarURL string) string {
+	u, err := url.Parse(avatarURL)
+	if err != nil {
+		return ""
+	}
+	// URL format: {publicURL}/{bucket}/{objectName}
+	// Path will be: /{bucket}/avatars/uuid.ext
+	parts := strings.SplitN(strings.TrimPrefix(u.Path, "/"), "/", 2)
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[1]
+}
+
+// avatarObjectName builds the MinIO object key for a user's avatar.
+func avatarObjectName(userID uuid.UUID, ext string) string {
+	return path.Join("avatars", userID.String()+ext)
 }
 
 // @Summary      Change or set password

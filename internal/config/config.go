@@ -17,8 +17,13 @@ type Config struct {
 	RefreshTokenSecret string        `mapstructure:"REFRESH_TOKEN_SECRET"`
 	RefreshTokenExpiry time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRY"`
 
-	// Upload Configuration
-	UploadDir string `mapstructure:"UPLOAD_DIR"`
+	// MinIO Configuration
+	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
+	MinioAccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
+	MinioSecretKey string `mapstructure:"MINIO_SECRET_KEY"`
+	MinioBucket    string `mapstructure:"MINIO_BUCKET"`
+	MinioUseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
+	MinioPublicURL string `mapstructure:"MINIO_PUBLIC_URL"`
 
 	// OAuth Configuration
 	GitHubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
@@ -45,8 +50,13 @@ func LoadConfig() (config Config, err error) {
 	viper.BindEnv("REFRESH_TOKEN_SECRET")
 	viper.BindEnv("REFRESH_TOKEN_EXPIRY")
 
-	// Upload configuration bindings
-	viper.BindEnv("UPLOAD_DIR")
+	// MinIO configuration bindings
+	viper.BindEnv("MINIO_ENDPOINT")
+	viper.BindEnv("MINIO_ACCESS_KEY")
+	viper.BindEnv("MINIO_SECRET_KEY")
+	viper.BindEnv("MINIO_BUCKET")
+	viper.BindEnv("MINIO_USE_SSL")
+	viper.BindEnv("MINIO_PUBLIC_URL")
 
 	// OAuth configuration bindings
 	viper.BindEnv("GITHUB_CLIENT_ID")
@@ -60,7 +70,9 @@ func LoadConfig() (config Config, err error) {
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("ACCESS_TOKEN_EXPIRY", 15*time.Minute)
 	viper.SetDefault("REFRESH_TOKEN_EXPIRY", 7*24*time.Hour)
-	viper.SetDefault("UPLOAD_DIR", "./uploads")
+	viper.SetDefault("MINIO_ENDPOINT", "minio:9000")
+	viper.SetDefault("MINIO_BUCKET", "duskforge")
+	viper.SetDefault("MINIO_USE_SSL", false)
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 
 	err = viper.ReadInConfig()

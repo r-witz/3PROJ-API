@@ -15,6 +15,7 @@ import (
 	"duskforge-api/pkg/database"
 	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/oauth"
+	"duskforge-api/pkg/storage"
 	"duskforge-api/pkg/tmdb"
 
 	_ "duskforge-api/docs" // Import generated docs
@@ -76,9 +77,18 @@ func main() {
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
 
-	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
-		logger.Logger.Fatal("Failed to create upload directory", zap.Error(err))
+	minioStorage, err := storage.NewMinioStorage(
+		cfg.MinioEndpoint,
+		cfg.MinioAccessKey,
+		cfg.MinioSecretKey,
+		cfg.MinioBucket,
+		cfg.MinioUseSSL,
+		cfg.MinioPublicURL,
+	)
+	if err != nil {
+		logger.Logger.Fatal("Failed to create MinIO storage client", zap.Error(err))
 	}
+	logger.Logger.Info("MinIO storage client initialized", zap.String("endpoint", cfg.MinioEndpoint))
 
 	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient, reviewRepo)
 
@@ -128,7 +138,7 @@ func main() {
 
 	authHandler := handlers.NewAuthHandler(authService)
 	oauthHandler := handlers.NewOAuthHandler(oauthService, cfg.OAuthRedirectBase)
-	userHandler := handlers.NewUserHandler(userService, followService, cfg.UploadDir)
+	userHandler := handlers.NewUserHandler(userService, followService, minioStorage)
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
@@ -138,7 +148,6 @@ func main() {
 	router := http.NewRouter(
 		http.RouterConfig{
 			AccessTokenSecret: cfg.AccessTokenSecret,
-			UploadDir:         cfg.UploadDir,
 		},
 		authHandler,
 		oauthHandler,
