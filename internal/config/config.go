@@ -35,10 +35,6 @@ type Config struct {
 }
 
 func LoadConfig() (config Config, err error) {
-	viper.AddConfigPath(".")
-	viper.SetConfigName("app")
-	viper.SetConfigType("env")
-
 	viper.AutomaticEnv()
 
 	viper.BindEnv("SERVER_PORT")
@@ -75,11 +71,12 @@ func LoadConfig() (config Config, err error) {
 	viper.SetDefault("MINIO_USE_SSL", false)
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 
-	err = viper.ReadInConfig()
-	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("No app.env file found, loading config from environment variables.")
+	viper.SetConfigFile(".env")
+	if readErr := viper.ReadInConfig(); readErr != nil {
+		if _, ok := readErr.(viper.ConfigFileNotFoundError); ok {
+			fmt.Println("No .env file found, loading from environment variables.")
 		} else {
+			err = readErr
 			return
 		}
 	}
