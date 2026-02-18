@@ -340,6 +340,31 @@ func (h *OAuthHandler) UnlinkGoogle(c *gin.Context) {
 	response.Success(c, gin.H{"message": "Google account unlinked successfully"})
 }
 
+// @Summary      Get linked OAuth providers
+// @Description  Get the linked OAuth providers for the current authenticated user
+// @Tags         oauth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} response.Response{data=ports.LinkedProvidersResult} "Linked providers status"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /auth/oauth/providers [get]
+func (h *OAuthHandler) GetLinkedProviders(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	result, err := h.oauthService.GetLinkedProviders(c.Request.Context(), userID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, result)
+}
+
 // redirectWithTokens redirects to the frontend URL with tokens in the URL fragment
 func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *ports.OAuthAuthResult) {
 	fragment := url.Values{}

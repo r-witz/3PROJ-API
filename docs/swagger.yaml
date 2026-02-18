@@ -450,6 +450,13 @@ definitions:
         example: johndoe
         type: string
     type: object
+  ports.LinkedProvidersResult:
+    properties:
+      github:
+        type: boolean
+      google:
+        type: boolean
+    type: object
   response.ErrorInfo:
     properties:
       code:
@@ -1010,6 +1017,34 @@ paths:
       security:
       - BearerAuth: []
       summary: Unlink Google account
+      tags:
+      - oauth
+  /auth/oauth/providers:
+    get:
+      description: Get the linked OAuth providers for the current authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Linked providers status
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/ports.LinkedProvidersResult'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get linked OAuth providers
       tags:
       - oauth
   /auth/refresh:

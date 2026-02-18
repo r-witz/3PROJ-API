@@ -218,6 +218,23 @@ func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, prov
 	return nil
 }
 
+func (s *oauthService) GetLinkedProviders(ctx context.Context, userID uuid.UUID) (*ports.LinkedProvidersResult, error) {
+	githubAccount, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGitHub))
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	googleAccount, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGoogle))
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return &ports.LinkedProvidersResult{
+		GitHub: githubAccount != nil,
+		Google: googleAccount != nil,
+	}, nil
+}
+
 func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuthProvider, info *oauth.UserInfo) (*domain.User, error) {
 	username, err := s.generateUniqueUsername(ctx, info.Username)
 	if err != nil {

@@ -89,6 +89,8 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 
 		oauth := auth.Group("/oauth")
 		{
+			oauth.GET("/providers", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.GetLinkedProviders)
+
 			oauth.GET("/github", r.oauthHandler.GitHubRedirect)
 			oauth.GET("/github/callback", r.oauthHandler.GitHubCallback)
 			oauth.POST("/github/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGitHub)
