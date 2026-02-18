@@ -11,13 +11,11 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/query"
 	"duskforge-api/pkg/storage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 type UserHandler struct {
@@ -274,7 +272,6 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	objectName := fmt.Sprintf("avatars/%s%s", userID.String(), ext)
 	avatarURL, err := h.storage.Upload(ctx, objectName, file, header.Size, contentType)
 	if err != nil {
-		logger.Logger.Error("Failed to upload avatar to storage", zap.Error(err), zap.String("object", objectName))
 		response.InternalError(c)
 		return
 	}
