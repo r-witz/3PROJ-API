@@ -3787,6 +3787,10 @@ const docTemplate = `{
         "handlers.ReviewResponse": {
             "type": "object",
             "properties": {
+                "comment_count": {
+                    "type": "integer",
+                    "example": 5
+                },
                 "contains_spoilers": {
                     "type": "boolean",
                     "example": false

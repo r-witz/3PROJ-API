@@ -242,6 +242,9 @@ definitions:
     type: object
   handlers.ReviewResponse:
     properties:
+      comment_count:
+        example: 5
+        type: integer
       contains_spoilers:
         example: false
         type: boolean

@@ -86,7 +86,7 @@ func main() {
 	})
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
-	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, collectionService, userRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo)
 	movieService := services.NewMovieService(tmdbClient, reviewRepo)
 	actorService := services.NewActorService(tmdbClient, reviewRepo)

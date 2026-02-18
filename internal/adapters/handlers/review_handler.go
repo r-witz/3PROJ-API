@@ -48,6 +48,7 @@ type ReviewResponse struct {
 	Content          *string     `json:"content,omitempty" example:"Great movie!"`
 	ContainsSpoilers bool        `json:"contains_spoilers" example:"false"`
 	LikeCount        int         `json:"like_count" example:"12"`
+	CommentCount     int         `json:"comment_count" example:"5"`
 	LikedByUser      bool        `json:"liked_by_user" example:"false"`
 	CreatedAt        string      `json:"created_at" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt        string      `json:"updated_at" example:"2024-01-15T10:30:00Z"`
@@ -100,7 +101,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
 
-	response.Created(c, toReviewResponse(review, 0, false, user))
+	response.Created(c, toReviewResponse(review, 0, 0, false, user))
 }
 
 // @Summary      Get reviews for a movie
@@ -139,7 +140,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
-		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.LikedByUser, r.User)
+		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -178,7 +179,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toReviewResponse(review.Review, review.LikeCount, review.LikedByUser, review.User))
+	response.Success(c, toReviewResponse(review.Review, review.LikeCount, review.CommentCount, review.LikedByUser, review.User))
 }
 
 // @Summary      Get reviews by user
@@ -217,7 +218,7 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
-		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.LikedByUser, r.User)
+		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -275,7 +276,7 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
 
-	response.Success(c, toReviewResponse(review, 0, false, user))
+	response.Success(c, toReviewResponse(review, 0, 0, false, user))
 }
 
 // @Summary      Delete a review
@@ -379,7 +380,7 @@ func (h *ReviewHandler) Unlike(c *gin.Context) {
 	c.Status(204)
 }
 
-func toReviewResponse(review *domain.Review, likeCount int, likedByUser bool, user *domain.User) ReviewResponse {
+func toReviewResponse(review *domain.Review, likeCount int, commentCount int, likedByUser bool, user *domain.User) ReviewResponse {
 	resp := ReviewResponse{
 		ID:               review.ID.String(),
 		TMDBID:           review.TMDBID,
@@ -387,6 +388,7 @@ func toReviewResponse(review *domain.Review, likeCount int, likedByUser bool, us
 		Content:          review.Content,
 		ContainsSpoilers: review.ContainsSpoilers,
 		LikeCount:        likeCount,
+		CommentCount:     commentCount,
 		LikedByUser:      likedByUser,
 		CreatedAt:        review.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:        review.UpdatedAt.Format(time.RFC3339),

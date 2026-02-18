@@ -15,6 +15,7 @@ import (
 type reviewService struct {
 	reviewRepo     ports.ReviewRepository
 	reviewLikeRepo ports.ReviewLikeRepository
+	commentRepo    ports.CommentRepository
 	collectionSvc  ports.CollectionService
 	userRepo       ports.UserRepository
 }
@@ -22,12 +23,14 @@ type reviewService struct {
 func NewReviewService(
 	reviewRepo ports.ReviewRepository,
 	reviewLikeRepo ports.ReviewLikeRepository,
+	commentRepo ports.CommentRepository,
 	collectionSvc ports.CollectionService,
 	userRepo ports.UserRepository,
 ) ports.ReviewService {
 	return &reviewService{
 		reviewRepo:     reviewRepo,
 		reviewLikeRepo: reviewLikeRepo,
+		commentRepo:    commentRepo,
 		collectionSvc:  collectionSvc,
 		userRepo:       userRepo,
 	}
@@ -291,6 +294,11 @@ func (s *reviewService) enrichReview(ctx context.Context, review *domain.Review,
 		return nil, domain.ErrInternal
 	}
 
+	commentCount, err := s.commentRepo.CountByReviewID(ctx, review.ID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
 	likedByUser := false
 	if requestingUserID != nil {
 		existing, err := s.reviewLikeRepo.GetByUserIDAndReviewID(ctx, *requestingUserID, review.ID)
@@ -301,8 +309,9 @@ func (s *reviewService) enrichReview(ctx context.Context, review *domain.Review,
 	}
 
 	return &ports.ReviewWithMeta{
-		Review:      review,
-		LikeCount:   likeCount,
-		LikedByUser: likedByUser,
+		Review:       review,
+		LikeCount:    likeCount,
+		LikedByUser:  likedByUser,
+		CommentCount: commentCount,
 	}, nil
 }

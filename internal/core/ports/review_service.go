@@ -21,10 +21,11 @@ type UpdateReviewInput struct {
 }
 
 type ReviewWithMeta struct {
-	Review      *domain.Review
-	LikeCount   int
-	LikedByUser bool
-	User        *domain.User
+	Review       *domain.Review
+	LikeCount    int
+	LikedByUser  bool
+	CommentCount int
+	User         *domain.User
 }
 
 type ReviewService interface {
