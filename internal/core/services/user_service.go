@@ -99,16 +99,14 @@ func (s *userService) ChangePassword(ctx context.Context, userID uuid.UUID, inpu
 		return domain.ErrUserNotFound
 	}
 
-	if user.PasswordHash == nil {
-		return domain.ErrNoPasswordSet
-	}
-
-	match, err := auth.ComparePassword(*user.PasswordHash, input.CurrentPassword)
-	if err != nil {
-		return domain.ErrInternal
-	}
-	if !match {
-		return domain.ErrIncorrectPassword
+	if user.PasswordHash != nil {
+		match, err := auth.ComparePassword(*user.PasswordHash, input.CurrentPassword)
+		if err != nil {
+			return domain.ErrInternal
+		}
+		if !match {
+			return domain.ErrIncorrectPassword
+		}
 	}
 
 	newHash, err := auth.HashPassword(input.NewPassword)

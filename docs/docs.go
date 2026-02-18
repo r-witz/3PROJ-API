@@ -2500,7 +2500,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change the password of the currently authenticated user",
+                "description": "Change the password of the currently authenticated user. OAuth-only users can omit current_password to set a password for the first time.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2510,10 +2510,10 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Change password",
+                "summary": "Change or set password",
                 "parameters": [
                     {
-                        "description": "Current and new password",
+                        "description": "New password (current_password optional for OAuth-only accounts)",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -2537,12 +2537,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized or incorrect current password",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "No password set (OAuth-only account)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3464,7 +3458,6 @@ const docTemplate = `{
         "handlers.ChangePasswordRequest": {
             "type": "object",
             "required": [
-                "current_password",
                 "new_password"
             ],
             "properties": {

@@ -81,7 +81,7 @@ type UpdateUserRequest struct {
 }
 
 type ChangePasswordRequest struct {
-	CurrentPassword string `json:"current_password" binding:"required" example:"oldpassword123"`
+	CurrentPassword string `json:"current_password" binding:"omitempty" example:"oldpassword123"`
 	NewPassword     string `json:"new_password" binding:"required,min=8,max=72" example:"newpassword456"`
 }
 
@@ -195,17 +195,16 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	response.Success(c, toUserResponse(user, stats))
 }
 
-// @Summary      Change password
-// @Description  Change the password of the currently authenticated user
+// @Summary      Change or set password
+// @Description  Change the password of the currently authenticated user. OAuth-only users can omit current_password to set a password for the first time.
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request body ChangePasswordRequest true "Current and new password"
+// @Param        request body ChangePasswordRequest true "New password (current_password optional for OAuth-only accounts)"
 // @Success      200 {object} response.Response "Password changed successfully"
 // @Failure      400 {object} response.Response "Invalid request body or password too short/long"
 // @Failure      401 {object} response.Response "Unauthorized or incorrect current password"
-// @Failure      409 {object} response.Response "No password set (OAuth-only account)"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/me/password [put]
 func (h *UserHandler) ChangePassword(c *gin.Context) {

@@ -19,7 +19,6 @@ definitions:
         minLength: 8
         type: string
     required:
-    - current_password
     - new_password
     type: object
   handlers.CollectionResponse:
@@ -2609,9 +2608,10 @@ paths:
     put:
       consumes:
       - application/json
-      description: Change the password of the currently authenticated user
+      description: Change the password of the currently authenticated user. OAuth-only
+        users can omit current_password to set a password for the first time.
       parameters:
-      - description: Current and new password
+      - description: New password (current_password optional for OAuth-only accounts)
         in: body
         name: request
         required: true
@@ -2632,17 +2632,13 @@ paths:
           description: Unauthorized or incorrect current password
           schema:
             $ref: '#/definitions/response.Response'
-        "409":
-          description: No password set (OAuth-only account)
-          schema:
-            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Change password
+      summary: Change or set password
       tags:
       - users
   /users/search:
