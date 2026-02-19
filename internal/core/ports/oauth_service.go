@@ -29,6 +29,7 @@ type OAuthAuthResult struct {
 	Tokens              *AuthTokens
 	IsNewUser           bool
 	FrontendRedirectURI string
+	LinkedProvider      string
 }
 
 type LinkedProvidersResult struct {
@@ -37,7 +38,7 @@ type LinkedProvidersResult struct {
 }
 
 type OAuthService interface {
-	GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string) (authURL string, state string, err error)
+	GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string, mode string, userID string) (authURL string, state string, err error)
 	HandleCallback(ctx context.Context, input OAuthCallbackInput) (*OAuthAuthResult, error)
 	LinkAccount(ctx context.Context, input OAuthLinkInput) error
 	UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error

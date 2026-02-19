@@ -50,13 +50,13 @@ func NewOAuthService(
 	}
 }
 
-func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string) (string, string, error) {
+func (s *oauthService) GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string, mode string, userID string) (string, string, error) {
 	p, ok := s.providers[provider]
 	if !ok {
 		return "", "", domain.ErrOAuthProviderNotSupported
 	}
 
-	state, err := s.stateManager.Generate(frontendRedirectURI)
+	state, err := s.stateManager.Generate(frontendRedirectURI, mode, userID)
 	if err != nil {
 		return "", "", domain.ErrInternal
 	}
@@ -86,6 +86,56 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 		return nil, domain.ErrInternal
 	}
 
+	// Link mode: link OAuth account to the authenticated user embedded in state
+	if stateData.Mode == "link" {
+		userID, err := uuid.Parse(stateData.UserID)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+
+		user, err := s.userRepo.GetByID(ctx, userID)
+		if err != nil || user == nil {
+			return nil, domain.ErrInternal
+		}
+
+		// Check if this OAuth account is already linked to another user
+		existingOAuth, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+		if existingOAuth != nil {
+			if existingOAuth.UserID != userID {
+				return nil, domain.ErrOAuthAccountAlreadyLinked
+			}
+			// Already linked to same user — no-op
+			return &ports.OAuthAuthResult{
+				FrontendRedirectURI: stateData.RedirectURI,
+				LinkedProvider:      string(input.Provider),
+			}, nil
+		}
+
+		// Remove existing link for same provider (switching OAuth accounts)
+		existingLink, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(input.Provider))
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+		if existingLink != nil {
+			if err := s.oauthRepo.Delete(ctx, existingLink.Provider, existingLink.ProviderUserID); err != nil {
+				return nil, domain.ErrInternal
+			}
+		}
+
+		if err := s.linkOAuthAccount(ctx, userID, input.Provider, oauthUserInfo); err != nil {
+			return nil, err
+		}
+
+		return &ports.OAuthAuthResult{
+			FrontendRedirectURI: stateData.RedirectURI,
+			LinkedProvider:      string(input.Provider),
+		}, nil
+	}
+
+	// Default login/register flow
 	oauthAccount, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
 	if err != nil {
 		return nil, domain.ErrInternal

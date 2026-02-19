@@ -25,6 +25,8 @@ type StateData struct {
 	Timestamp   int64  `json:"t"`
 	Nonce       string `json:"n"`
 	RedirectURI string `json:"r,omitempty"`
+	Mode        string `json:"m,omitempty"`
+	UserID      string `json:"u,omitempty"`
 }
 
 func NewStateManager(secret string, expiry time.Duration) *StateManager {
@@ -34,7 +36,7 @@ func NewStateManager(secret string, expiry time.Duration) *StateManager {
 	}
 }
 
-func (m *StateManager) Generate(redirectURI string) (string, error) {
+func (m *StateManager) Generate(redirectURI string, mode string, userID string) (string, error) {
 	nonceBytes := make([]byte, 16)
 	if _, err := rand.Read(nonceBytes); err != nil {
 		return "", err
@@ -44,6 +46,8 @@ func (m *StateManager) Generate(redirectURI string) (string, error) {
 		Timestamp:   time.Now().Unix(),
 		Nonce:       base64.URLEncoding.EncodeToString(nonceBytes),
 		RedirectURI: redirectURI,
+		Mode:        mode,
+		UserID:      userID,
 	}
 
 	payload, err := json.Marshal(data)

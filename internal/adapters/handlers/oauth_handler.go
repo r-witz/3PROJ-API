@@ -65,8 +65,19 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 		return
 	}
 
+	mode := c.Query("mode")
+	var userIDStr string
+	if mode == "link" {
+		userID, ok := middleware.GetUserID(c)
+		if !ok {
+			response.Unauthorized(c, "Authentication required for account linking")
+			return
+		}
+		userIDStr = userID.String()
+	}
+
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI, mode, userIDStr)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -109,6 +120,12 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
+	// Link mode: redirect with link result (no tokens)
+	if result.LinkedProvider != "" {
+		h.redirectWithLinkResult(c, result)
+		return
+	}
+
 	// If frontend redirect URI was provided, redirect with tokens in fragment
 	if result.FrontendRedirectURI != "" {
 		h.redirectWithTokens(c, result)
@@ -142,8 +159,19 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 		return
 	}
 
+	mode := c.Query("mode")
+	var userIDStr string
+	if mode == "link" {
+		userID, ok := middleware.GetUserID(c)
+		if !ok {
+			response.Unauthorized(c, "Authentication required for account linking")
+			return
+		}
+		userIDStr = userID.String()
+	}
+
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI, mode, userIDStr)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -183,6 +211,12 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 	})
 	if err != nil {
 		response.HandleError(c, err)
+		return
+	}
+
+	// Link mode: redirect with link result (no tokens)
+	if result.LinkedProvider != "" {
+		h.redirectWithLinkResult(c, result)
 		return
 	}
 
@@ -373,6 +407,16 @@ func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *ports.OAuthAut
 	fragment.Set("token_type", "Bearer")
 	fragment.Set("expires_in", fmt.Sprintf("%d", result.Tokens.ExpiresIn))
 	fragment.Set("is_new_user", fmt.Sprintf("%t", result.IsNewUser))
+
+	redirectURL := fmt.Sprintf("%s#%s", result.FrontendRedirectURI, fragment.Encode())
+	c.Redirect(http.StatusFound, redirectURL)
+}
+
+// redirectWithLinkResult redirects to the frontend URL with link result in the URL fragment
+func (h *OAuthHandler) redirectWithLinkResult(c *gin.Context, result *ports.OAuthAuthResult) {
+	fragment := url.Values{}
+	fragment.Set("linked", "true")
+	fragment.Set("provider", result.LinkedProvider)
 
 	redirectURL := fmt.Sprintf("%s#%s", result.FrontendRedirectURI, fragment.Encode())
 	c.Redirect(http.StatusFound, redirectURL)
