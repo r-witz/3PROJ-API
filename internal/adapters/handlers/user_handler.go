@@ -269,7 +269,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 		}
 	}
 
-	objectName := fmt.Sprintf("avatars/%s%s", userID.String(), ext)
+	objectName := fmt.Sprintf("avatars/%s_%d%s", userID.String(), time.Now().UnixNano(), ext)
 	avatarURL, err := h.storage.Upload(ctx, objectName, file, header.Size, contentType)
 	if err != nil {
 		response.InternalError(c)
