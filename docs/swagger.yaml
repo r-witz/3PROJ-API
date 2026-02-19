@@ -145,16 +145,6 @@ definitions:
     required:
     - refresh_token
     type: object
-  handlers.OAuthLinkRequest:
-    properties:
-      code:
-        type: string
-      state:
-        type: string
-    required:
-    - code
-    - state
-    type: object
   handlers.OAuthRedirectResponse:
     properties:
       authorization_url:
@@ -720,20 +710,12 @@ paths:
     get:
       description: Get the GitHub authorization URL to redirect the user for OAuth
         authentication. The redirect_uri must match the origin of the request (Origin
-        or Referer header). Use mode=link with a Bearer token to link a GitHub account
-        to the authenticated user.
+        or Referer header).
       parameters:
       - description: Frontend URL to redirect to after OAuth callback (must match
           request origin)
         in: query
         name: redirect_uri
-        type: string
-      - description: 'OAuth flow mode: empty for login/register, ''link'' to link
-          account (requires Bearer token)'
-        enum:
-        - link
-        in: query
-        name: mode
         type: string
       produces:
       - application/json
@@ -751,16 +733,10 @@ paths:
           description: Invalid redirect_uri
           schema:
             $ref: '#/definitions/response.Response'
-        "401":
-          description: Authentication required when mode=link
-          schema:
-            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
       summary: Get GitHub OAuth URL
       tags:
       - oauth
@@ -815,34 +791,35 @@ paths:
       tags:
       - oauth
   /auth/oauth/github/link:
-    post:
-      consumes:
-      - application/json
-      description: Link a GitHub account to the current authenticated user
+    get:
+      description: Initiate OAuth flow to link a GitHub account to the authenticated
+        user. Returns an authorization URL to redirect the user to GitHub. After authorization,
+        the callback will link the account and redirect to the frontend with linked=true&provider=github
+        in the URL fragment.
       parameters:
-      - description: OAuth code and state
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.OAuthLinkRequest'
+      - description: Frontend URL to redirect to after OAuth callback (must match
+          request origin)
+        in: query
+        name: redirect_uri
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
+              type: object
         "400":
-          description: Bad Request
+          description: Invalid redirect_uri
           schema:
             $ref: '#/definitions/response.Response'
         "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "409":
-          description: Conflict
+          description: User not authenticated
           schema:
             $ref: '#/definitions/response.Response'
         "500":
@@ -889,20 +866,12 @@ paths:
     get:
       description: Get the Google authorization URL to redirect the user for OAuth
         authentication. The redirect_uri must match the origin of the request (Origin
-        or Referer header). Use mode=link with a Bearer token to link a Google account
-        to the authenticated user.
+        or Referer header).
       parameters:
       - description: Frontend URL to redirect to after OAuth callback (must match
           request origin)
         in: query
         name: redirect_uri
-        type: string
-      - description: 'OAuth flow mode: empty for login/register, ''link'' to link
-          account (requires Bearer token)'
-        enum:
-        - link
-        in: query
-        name: mode
         type: string
       produces:
       - application/json
@@ -920,16 +889,10 @@ paths:
           description: Invalid redirect_uri
           schema:
             $ref: '#/definitions/response.Response'
-        "401":
-          description: Authentication required when mode=link
-          schema:
-            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
       summary: Get Google OAuth URL
       tags:
       - oauth
@@ -984,34 +947,35 @@ paths:
       tags:
       - oauth
   /auth/oauth/google/link:
-    post:
-      consumes:
-      - application/json
-      description: Link a Google account to the current authenticated user
+    get:
+      description: Initiate OAuth flow to link a Google account to the authenticated
+        user. Returns an authorization URL to redirect the user to Google. After authorization,
+        the callback will link the account and redirect to the frontend with linked=true&provider=google
+        in the URL fragment.
       parameters:
-      - description: OAuth code and state
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.OAuthLinkRequest'
+      - description: Frontend URL to redirect to after OAuth callback (must match
+          request origin)
+        in: query
+        name: redirect_uri
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
+              type: object
         "400":
-          description: Bad Request
+          description: Invalid redirect_uri
           schema:
             $ref: '#/definitions/response.Response'
         "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "409":
-          description: Conflict
+          description: User not authenticated
           schema:
             $ref: '#/definitions/response.Response'
         "500":

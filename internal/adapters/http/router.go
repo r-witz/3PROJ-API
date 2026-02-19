@@ -91,14 +91,14 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 		{
 			oauth.GET("/providers", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.GetLinkedProviders)
 
-			oauth.GET("/github", middleware.OptionalAuth(r.config.AccessTokenSecret), r.oauthHandler.GitHubRedirect)
+			oauth.GET("/github", r.oauthHandler.GitHubRedirect)
 			oauth.GET("/github/callback", r.oauthHandler.GitHubCallback)
-			oauth.POST("/github/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGitHub)
+			oauth.GET("/github/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGitHub)
 			oauth.DELETE("/github/unlink", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.UnlinkGitHub)
 
-			oauth.GET("/google", middleware.OptionalAuth(r.config.AccessTokenSecret), r.oauthHandler.GoogleRedirect)
+			oauth.GET("/google", r.oauthHandler.GoogleRedirect)
 			oauth.GET("/google/callback", r.oauthHandler.GoogleCallback)
-			oauth.POST("/google/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGoogle)
+			oauth.GET("/google/link", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.LinkGoogle)
 			oauth.DELETE("/google/unlink", middleware.Auth(r.config.AccessTokenSecret), r.oauthHandler.UnlinkGoogle)
 		}
 	}

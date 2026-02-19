@@ -16,14 +16,6 @@ type OAuthCallbackInput struct {
 	RedirectURI string
 }
 
-type OAuthLinkInput struct {
-	UserID      uuid.UUID
-	Provider    oauth.OAuthProvider
-	Code        string
-	State       string
-	RedirectURI string
-}
-
 type OAuthAuthResult struct {
 	User                *domain.User
 	Tokens              *AuthTokens
@@ -40,7 +32,6 @@ type LinkedProvidersResult struct {
 type OAuthService interface {
 	GetAuthorizationURL(provider oauth.OAuthProvider, redirectURI string, frontendRedirectURI string, mode string, userID string) (authURL string, state string, err error)
 	HandleCallback(ctx context.Context, input OAuthCallbackInput) (*OAuthAuthResult, error)
-	LinkAccount(ctx context.Context, input OAuthLinkInput) error
 	UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error
 	GetLinkedProviders(ctx context.Context, userID uuid.UUID) (*LinkedProvidersResult, error)
 }

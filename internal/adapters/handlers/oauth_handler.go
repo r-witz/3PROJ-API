@@ -43,21 +43,13 @@ type OAuthTokensResponse struct {
 	IsNewUser    bool   `json:"is_new_user" example:"true"`
 }
 
-type OAuthLinkRequest struct {
-	Code  string `json:"code" binding:"required"`
-	State string `json:"state" binding:"required"`
-}
-
 // @Summary      Get GitHub OAuth URL
-// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a GitHub account to the authenticated user.
+// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
 // @Tags         oauth
 // @Produce      json
 // @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
-// @Param        mode query string false "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)" Enums(link)
-// @Security     BearerAuth
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      400 {object} response.Response "Invalid redirect_uri"
-// @Failure      401 {object} response.Response "Authentication required when mode=link"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github [get]
 func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
@@ -68,19 +60,8 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 		return
 	}
 
-	mode := c.Query("mode")
-	var userIDStr string
-	if mode == "link" {
-		userID, ok := middleware.GetUserID(c)
-		if !ok {
-			response.Unauthorized(c, "Authentication required for account linking")
-			return
-		}
-		userIDStr = userID.String()
-	}
-
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI, mode, userIDStr)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI, "", "")
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -147,15 +128,12 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 }
 
 // @Summary      Get Google OAuth URL
-// @Description  Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a Google account to the authenticated user.
+// @Description  Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
 // @Tags         oauth
 // @Produce      json
 // @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
-// @Param        mode query string false "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)" Enums(link)
-// @Security     BearerAuth
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      400 {object} response.Response "Invalid redirect_uri"
-// @Failure      401 {object} response.Response "Authentication required when mode=link"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google [get]
 func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
@@ -166,19 +144,8 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 		return
 	}
 
-	mode := c.Query("mode")
-	var userIDStr string
-	if mode == "link" {
-		userID, ok := middleware.GetUserID(c)
-		if !ok {
-			response.Unauthorized(c, "Authentication required for account linking")
-			return
-		}
-		userIDStr = userID.String()
-	}
-
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI, mode, userIDStr)
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI, "", "")
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -245,18 +212,16 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 }
 
 // @Summary      Link GitHub account
-// @Description  Link a GitHub account to the current authenticated user
+// @Description  Initiate OAuth flow to link a GitHub account to the authenticated user. Returns an authorization URL to redirect the user to GitHub. After authorization, the callback will link the account and redirect to the frontend with linked=true&provider=github in the URL fragment.
 // @Tags         oauth
-// @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request body OAuthLinkRequest true "OAuth code and state"
-// @Success      200 {object} response.Response
-// @Failure      400 {object} response.Response
-// @Failure      401 {object} response.Response
-// @Failure      409 {object} response.Response
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
+// @Success      200 {object} response.Response{data=OAuthRedirectResponse}
+// @Failure      400 {object} response.Response "Invalid redirect_uri"
+// @Failure      401 {object} response.Response "User not authenticated"
 // @Failure      500 {object} response.Response
-// @Router       /auth/oauth/github/link [post]
+// @Router       /auth/oauth/github/link [get]
 func (h *OAuthHandler) LinkGitHub(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -264,26 +229,23 @@ func (h *OAuthHandler) LinkGitHub(c *gin.Context) {
 		return
 	}
 
-	var req OAuthLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request body", err.Error())
+	frontendRedirectURI := c.Query("redirect_uri")
+	if err := validateRedirectURI(frontendRedirectURI, getRequestOrigin(c)); err != nil {
+		response.BadRequest(c, err.Error(), nil)
 		return
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
-	err := h.oauthService.LinkAccount(c.Request.Context(), ports.OAuthLinkInput{
-		UserID:      userID,
-		Provider:    oauth.ProviderGitHub,
-		Code:        req.Code,
-		State:       req.State,
-		RedirectURI: redirectURI,
-	})
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGitHub, redirectURI, frontendRedirectURI, "link", userID.String())
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, gin.H{"message": "GitHub account linked successfully"})
+	response.Success(c, OAuthRedirectResponse{
+		AuthorizationURL: authURL,
+		State:            state,
+	})
 }
 
 // @Summary      Unlink GitHub account
@@ -314,18 +276,16 @@ func (h *OAuthHandler) UnlinkGitHub(c *gin.Context) {
 }
 
 // @Summary      Link Google account
-// @Description  Link a Google account to the current authenticated user
+// @Description  Initiate OAuth flow to link a Google account to the authenticated user. Returns an authorization URL to redirect the user to Google. After authorization, the callback will link the account and redirect to the frontend with linked=true&provider=google in the URL fragment.
 // @Tags         oauth
-// @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        request body OAuthLinkRequest true "OAuth code and state"
-// @Success      200 {object} response.Response
-// @Failure      400 {object} response.Response
-// @Failure      401 {object} response.Response
-// @Failure      409 {object} response.Response
+// @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
+// @Success      200 {object} response.Response{data=OAuthRedirectResponse}
+// @Failure      400 {object} response.Response "Invalid redirect_uri"
+// @Failure      401 {object} response.Response "User not authenticated"
 // @Failure      500 {object} response.Response
-// @Router       /auth/oauth/google/link [post]
+// @Router       /auth/oauth/google/link [get]
 func (h *OAuthHandler) LinkGoogle(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
 	if !ok {
@@ -333,26 +293,23 @@ func (h *OAuthHandler) LinkGoogle(c *gin.Context) {
 		return
 	}
 
-	var req OAuthLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request body", err.Error())
+	frontendRedirectURI := c.Query("redirect_uri")
+	if err := validateRedirectURI(frontendRedirectURI, getRequestOrigin(c)); err != nil {
+		response.BadRequest(c, err.Error(), nil)
 		return
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
-	err := h.oauthService.LinkAccount(c.Request.Context(), ports.OAuthLinkInput{
-		UserID:      userID,
-		Provider:    oauth.ProviderGoogle,
-		Code:        req.Code,
-		State:       req.State,
-		RedirectURI: redirectURI,
-	})
+	authURL, state, err := h.oauthService.GetAuthorizationURL(oauth.ProviderGoogle, redirectURI, frontendRedirectURI, "link", userID.String())
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, gin.H{"message": "Google account linked successfully"})
+	response.Success(c, OAuthRedirectResponse{
+		AuthorizationURL: authURL,
+		State:            state,
+	})
 }
 
 // @Summary      Unlink Google account

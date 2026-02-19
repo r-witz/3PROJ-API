@@ -349,12 +349,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a GitHub account to the authenticated user.",
+                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
                 "produces": [
                     "application/json"
                 ],
@@ -367,15 +362,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "link"
-                        ],
-                        "type": "string",
-                        "description": "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)",
-                        "name": "mode",
                         "in": "query"
                     }
                 ],
@@ -400,12 +386,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid redirect_uri",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Authentication required when mode=link",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -495,16 +475,13 @@ const docTemplate = `{
             }
         },
         "/auth/oauth/github/link": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Link a GitHub account to the current authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Initiate OAuth flow to link a GitHub account to the authenticated user. Returns an authorization URL to redirect the user to GitHub. After authorization, the callback will link the account and redirect to the frontend with linked=true\u0026provider=github in the URL fragment.",
                 "produces": [
                     "application/json"
                 ],
@@ -514,36 +491,39 @@ const docTemplate = `{
                 "summary": "Link GitHub account",
                 "parameters": [
                     {
-                        "description": "OAuth code and state",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.OAuthLinkRequest"
-                        }
+                        "type": "string",
+                        "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
+                        "name": "redirect_uri",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid redirect_uri",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
+                        "description": "User not authenticated",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -608,12 +588,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a Google account to the authenticated user.",
+                "description": "Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
                 "produces": [
                     "application/json"
                 ],
@@ -626,15 +601,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "link"
-                        ],
-                        "type": "string",
-                        "description": "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)",
-                        "name": "mode",
                         "in": "query"
                     }
                 ],
@@ -659,12 +625,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid redirect_uri",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Authentication required when mode=link",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -754,16 +714,13 @@ const docTemplate = `{
             }
         },
         "/auth/oauth/google/link": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Link a Google account to the current authenticated user",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Initiate OAuth flow to link a Google account to the authenticated user. Returns an authorization URL to redirect the user to Google. After authorization, the callback will link the account and redirect to the frontend with linked=true\u0026provider=google in the URL fragment.",
                 "produces": [
                     "application/json"
                 ],
@@ -773,36 +730,39 @@ const docTemplate = `{
                 "summary": "Link Google account",
                 "parameters": [
                     {
-                        "description": "OAuth code and state",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.OAuthLinkRequest"
-                        }
+                        "type": "string",
+                        "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
+                        "name": "redirect_uri",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid redirect_uri",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
+                        "description": "User not authenticated",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3864,21 +3824,6 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string",
                     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                }
-            }
-        },
-        "handlers.OAuthLinkRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "state"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
                 }
             }
         },

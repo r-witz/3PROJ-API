@@ -186,50 +186,6 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 	}, nil
 }
 
-func (s *oauthService) LinkAccount(ctx context.Context, input ports.OAuthLinkInput) error {
-	if _, err := s.stateManager.Validate(input.State); err != nil {
-		return domain.ErrOAuthStateMismatch
-	}
-
-	provider, ok := s.providers[input.Provider]
-	if !ok {
-		return domain.ErrOAuthProviderNotSupported
-	}
-
-	accessToken, err := provider.ExchangeCode(ctx, input.Code, input.RedirectURI)
-	if err != nil {
-		return domain.ErrInternal
-	}
-
-	oauthUserInfo, err := provider.GetUserInfo(ctx, accessToken)
-	if err != nil {
-		return domain.ErrInternal
-	}
-
-	existingOAuth, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
-	if err != nil {
-		return domain.ErrInternal
-	}
-	if existingOAuth != nil {
-		if existingOAuth.UserID != input.UserID {
-			return domain.ErrOAuthAccountAlreadyLinked
-		}
-		return nil
-	}
-
-	existingLink, err := s.oauthRepo.GetByUserIDAndProvider(ctx, input.UserID, string(input.Provider))
-	if err != nil {
-		return domain.ErrInternal
-	}
-	if existingLink != nil {
-		if err := s.oauthRepo.Delete(ctx, existingLink.Provider, existingLink.ProviderUserID); err != nil {
-			return domain.ErrInternal
-		}
-	}
-
-	return s.linkOAuthAccount(ctx, input.UserID, input.Provider, oauthUserInfo)
-}
-
 func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
