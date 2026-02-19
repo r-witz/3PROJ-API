@@ -12,6 +12,7 @@ import (
 	"duskforge-api/internal/adapters/repositories"
 	"duskforge-api/internal/config"
 	"duskforge-api/internal/core/services"
+	"duskforge-api/pkg/cache"
 	"duskforge-api/pkg/database"
 	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/oauth"
@@ -66,6 +67,14 @@ func main() {
 		logger.Logger.Warn("Failed to initialize TMDB configuration", zap.Error(err))
 	}
 
+	redisClient, err := cache.New(cfg.RedisURL)
+	if err != nil {
+		logger.Logger.Fatal("Failed to connect to Redis", zap.Error(err))
+	}
+	defer redisClient.Close()
+
+	cachedTMDB := tmdb.NewCachedClient(tmdbClient, redisClient)
+
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
 	oauthRepo := repositories.NewOAuthAccountRepository(db)
@@ -90,7 +99,7 @@ func main() {
 	}
 	logger.Logger.Info("MinIO storage client initialized", zap.String("endpoint", cfg.MinioEndpoint))
 
-	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, tmdbClient, reviewRepo)
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo)
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -102,8 +111,8 @@ func main() {
 	followService := services.NewFollowService(followRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo)
-	movieService := services.NewMovieService(tmdbClient, reviewRepo)
-	actorService := services.NewActorService(tmdbClient, reviewRepo)
+	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
+	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
 	if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {

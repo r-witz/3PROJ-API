@@ -26,6 +26,9 @@ type Config struct {
 	MinioUseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
 	MinioPublicURL string `mapstructure:"MINIO_PUBLIC_URL"`
 
+	// Redis Configuration
+	RedisURL string `mapstructure:"REDIS_URL"`
+
 	// OAuth Configuration
 	GitHubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
 	GitHubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET"`
@@ -55,6 +58,9 @@ func LoadConfig() (config Config, err error) {
 	viper.BindEnv("MINIO_USE_SSL")
 	viper.BindEnv("MINIO_PUBLIC_URL")
 
+	// Redis configuration bindings
+	viper.BindEnv("REDIS_URL")
+
 	// OAuth configuration bindings
 	viper.BindEnv("GITHUB_CLIENT_ID")
 	viper.BindEnv("GITHUB_CLIENT_SECRET")
@@ -70,6 +76,7 @@ func LoadConfig() (config Config, err error) {
 	viper.SetDefault("MINIO_ENDPOINT", "minio:9000")
 	viper.SetDefault("MINIO_BUCKET", "duskforge")
 	viper.SetDefault("MINIO_USE_SSL", false)
+	viper.SetDefault("REDIS_URL", "redis://localhost:6379/0")
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 
 	if _, statErr := os.Stat(".env"); statErr == nil {

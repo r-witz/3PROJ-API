@@ -1,10 +1,25 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: duskforge-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build: .
     ports:
       - "8080:8080"
     environment:
       - DATABASE_URL=postgres://duskforge:password@db:5432/duskforge?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
       - PORT=8080
       - GIN_MODE=release
     depends_on:
@@ -12,6 +27,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      redis:
+        condition: service_healthy
 
   migrate:
     image: migrate/migrate:v4.19.1
@@ -41,3 +58,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
