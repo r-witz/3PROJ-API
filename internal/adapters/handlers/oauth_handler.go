@@ -49,12 +49,15 @@ type OAuthLinkRequest struct {
 }
 
 // @Summary      Get GitHub OAuth URL
-// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
+// @Description  Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a GitHub account to the authenticated user.
 // @Tags         oauth
 // @Produce      json
 // @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
+// @Param        mode query string false "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)" Enums(link)
+// @Security     BearerAuth
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      400 {object} response.Response "Invalid redirect_uri"
+// @Failure      401 {object} response.Response "Authentication required when mode=link"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github [get]
 func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
@@ -90,15 +93,16 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 }
 
 // @Summary      GitHub OAuth callback
-// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.
+// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=github instead of tokens.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from GitHub"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
-// @Success      302 "Redirects to frontend with tokens in URL fragment"
+// @Success      302 "Redirects to frontend with tokens or link result in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
+// @Failure      409 {object} response.Response "OAuth account already linked to another user (link mode)"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github/callback [get]
 func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
@@ -143,12 +147,15 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 }
 
 // @Summary      Get Google OAuth URL
-// @Description  Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).
+// @Description  Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a Google account to the authenticated user.
 // @Tags         oauth
 // @Produce      json
 // @Param        redirect_uri query string false "Frontend URL to redirect to after OAuth callback (must match request origin)"
+// @Param        mode query string false "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)" Enums(link)
+// @Security     BearerAuth
 // @Success      200 {object} response.Response{data=OAuthRedirectResponse}
 // @Failure      400 {object} response.Response "Invalid redirect_uri"
+// @Failure      401 {object} response.Response "Authentication required when mode=link"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google [get]
 func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
@@ -184,15 +191,16 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 }
 
 // @Summary      Google OAuth callback
-// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.
+// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=google instead of tokens.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from Google"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
-// @Success      302 "Redirects to frontend with tokens in URL fragment"
+// @Success      302 "Redirects to frontend with tokens or link result in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
+// @Failure      409 {object} response.Response "OAuth account already linked to another user (link mode)"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google/callback [get]
 func (h *OAuthHandler) GoogleCallback(c *gin.Context) {

@@ -349,7 +349,12 @@ const docTemplate = `{
         },
         "/auth/oauth/github": {
             "get": {
-                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the GitHub authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a GitHub account to the authenticated user.",
                 "produces": [
                     "application/json"
                 ],
@@ -362,6 +367,15 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "link"
+                        ],
+                        "type": "string",
+                        "description": "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)",
+                        "name": "mode",
                         "in": "query"
                     }
                 ],
@@ -390,6 +404,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "401": {
+                        "description": "Authentication required when mode=link",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -401,7 +421,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github/callback": {
             "get": {
-                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.",
+                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=github instead of tokens.",
                 "produces": [
                     "application/json"
                 ],
@@ -445,7 +465,7 @@ const docTemplate = `{
                         }
                     },
                     "302": {
-                        "description": "Redirects to frontend with tokens in URL fragment"
+                        "description": "Redirects to frontend with tokens or link result in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -455,6 +475,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "OAuth account already linked to another user (link mode)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -582,7 +608,12 @@ const docTemplate = `{
         },
         "/auth/oauth/google": {
             "get": {
-                "description": "Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header).",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the Google authorization URL to redirect the user for OAuth authentication. The redirect_uri must match the origin of the request (Origin or Referer header). Use mode=link with a Bearer token to link a Google account to the authenticated user.",
                 "produces": [
                     "application/json"
                 ],
@@ -595,6 +626,15 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Frontend URL to redirect to after OAuth callback (must match request origin)",
                         "name": "redirect_uri",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "link"
+                        ],
+                        "type": "string",
+                        "description": "OAuth flow mode: empty for login/register, 'link' to link account (requires Bearer token)",
+                        "name": "mode",
                         "in": "query"
                     }
                 ],
@@ -623,6 +663,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "401": {
+                        "description": "Authentication required when mode=link",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -634,7 +680,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google/callback": {
             "get": {
-                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON.",
+                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=google instead of tokens.",
                 "produces": [
                     "application/json"
                 ],
@@ -678,7 +724,7 @@ const docTemplate = `{
                         }
                     },
                     "302": {
-                        "description": "Redirects to frontend with tokens in URL fragment"
+                        "description": "Redirects to frontend with tokens or link result in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -688,6 +734,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "OAuth account already linked to another user (link mode)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
