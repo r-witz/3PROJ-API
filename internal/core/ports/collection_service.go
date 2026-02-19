@@ -25,7 +25,7 @@ type CollectionService interface {
 	Create(ctx context.Context, userID uuid.UUID, input CreateCollectionInput) (*domain.Collection, error)
 	GetBySlug(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) (*domain.Collection, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]*domain.Collection, error)
-	GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]*domain.Collection, error)
+	GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]CollectionWithPresence, error)
 	Update(ctx context.Context, userID uuid.UUID, slug string, input UpdateCollectionInput) (*domain.Collection, error)
 	Delete(ctx context.Context, userID uuid.UUID, slug string) error
 	AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) (*domain.CollectionItem, error)

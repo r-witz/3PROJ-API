@@ -2885,7 +2885,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. Optionally filter by TMDB movie ID to find collections containing a specific movie.",
+                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2907,7 +2907,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Filter by TMDB movie ID",
+                        "description": "TMDB movie ID - when provided, adds has_movie flag to each collection",
                         "name": "tmdb_id",
                         "in": "query"
                     }
@@ -3664,6 +3664,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "A collection of my favorite movies"
+                },
+                "has_movie": {
+                    "type": "boolean",
+                    "example": true
                 },
                 "id": {
                     "type": "string",

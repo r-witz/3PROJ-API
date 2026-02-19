@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type CollectionWithPresence struct {
+	Collection *domain.Collection
+	HasMovie   bool
+}
+
 type CollectionRepository interface {
 	Create(ctx context.Context, collection *domain.Collection) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Collection, error)

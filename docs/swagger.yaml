@@ -29,6 +29,9 @@ definitions:
       description:
         example: A collection of my favorite movies
         type: string
+      has_movie:
+        example: true
+        type: boolean
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
@@ -2061,8 +2064,9 @@ paths:
       consumes:
       - application/json
       description: Get all collections for a user. Returns all collections if the
-        requester is the owner, only public ones otherwise. Optionally filter by TMDB
-        movie ID to find collections containing a specific movie.
+        requester is the owner, only public ones otherwise. When tmdb_id is provided,
+        each collection includes a has_movie flag indicating whether the movie is
+        in that collection.
       parameters:
       - description: User ID
         format: uuid
@@ -2070,7 +2074,7 @@ paths:
         name: userId
         required: true
         type: string
-      - description: Filter by TMDB movie ID
+      - description: TMDB movie ID - when provided, adds has_movie flag to each collection
         in: query
         name: tmdb_id
         type: integer

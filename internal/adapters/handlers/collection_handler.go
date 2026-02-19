@@ -45,6 +45,7 @@ type CollectionResponse struct {
 	Type        string  `json:"type" example:"custom"`
 	Visibility  string  `json:"visibility" example:"private"`
 	Description *string `json:"description,omitempty" example:"A collection of my favorite movies"`
+	HasMovie    *bool   `json:"has_movie,omitempty" example:"true"`
 	CreatedAt   string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt   string  `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
@@ -141,13 +142,13 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 }
 
 // @Summary      Get user's collections
-// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. Optionally filter by TMDB movie ID to find collections containing a specific movie.
+// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
-// @Param        tmdb_id query int false "Filter by TMDB movie ID"
+// @Param        tmdb_id query int false "TMDB movie ID - when provided, adds has_movie flag to each collection"
 // @Success      200 {object} response.Response{data=[]CollectionResponse} "List of collections"
 // @Failure      400 {object} response.Response "Invalid user ID or TMDB ID"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -164,25 +165,33 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 		requestingUserID = &uid
 	}
 
-	var collections []*domain.Collection
-
 	if tmdbIDStr := c.Query("tmdb_id"); tmdbIDStr != "" {
 		tmdbID, err := strconv.Atoi(tmdbIDStr)
 		if err != nil {
 			response.BadRequest(c, "Invalid TMDB ID", nil)
 			return
 		}
-		collections, err = h.collectionService.GetByUserIDAndTMDBID(c.Request.Context(), userID, tmdbID, requestingUserID)
+		collectionsWithPresence, err := h.collectionService.GetByUserIDAndTMDBID(c.Request.Context(), userID, tmdbID, requestingUserID)
 		if err != nil {
 			response.HandleError(c, err)
 			return
 		}
-	} else {
-		collections, err = h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID)
-		if err != nil {
-			response.HandleError(c, err)
-			return
+
+		resp := make([]CollectionResponse, len(collectionsWithPresence))
+		for i, cwp := range collectionsWithPresence {
+			resp[i] = toCollectionResponse(cwp.Collection)
+			hasMovie := cwp.HasMovie
+			resp[i].HasMovie = &hasMovie
 		}
+
+		response.Success(c, resp)
+		return
+	}
+
+	collections, err := h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
 	}
 
 	resp := make([]CollectionResponse, len(collections))

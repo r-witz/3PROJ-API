@@ -150,25 +150,35 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 	return visible, nil
 }
 
-func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]*domain.Collection, error) {
-	collections, err := s.collectionRepo.GetByUserIDAndTMDBID(ctx, userID, tmdbID)
+func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]ports.CollectionWithPresence, error) {
+	allCollections, err := s.collectionRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrInternal
 	}
 
+	matchingCollections, err := s.collectionRepo.GetByUserIDAndTMDBID(ctx, userID, tmdbID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	matchingIDs := make(map[uuid.UUID]bool, len(matchingCollections))
+	for _, c := range matchingCollections {
+		matchingIDs[c.ID] = true
+	}
+
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
-	if isOwner {
-		return collections, nil
-	}
-
-	var visible []*domain.Collection
-	for _, c := range collections {
-		if c.Visibility == domain.CollectionVisibilityPublic {
-			visible = append(visible, c)
+	var result []ports.CollectionWithPresence
+	for _, c := range allCollections {
+		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
+			continue
 		}
+		result = append(result, ports.CollectionWithPresence{
+			Collection: c,
+			HasMovie:   matchingIDs[c.ID],
+		})
 	}
-	return visible, nil
+	return result, nil
 }
 
 func (s *collectionService) Update(ctx context.Context, userID uuid.UUID, slug string, input ports.UpdateCollectionInput) (*domain.Collection, error) {
