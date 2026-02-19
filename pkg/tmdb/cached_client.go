@@ -261,6 +261,12 @@ func buildDiscoverKey(params DiscoverMoviesParams) string {
 	if params.PrimaryReleaseYear > 0 {
 		parts = append(parts, strconv.Itoa(params.PrimaryReleaseYear))
 	}
+	if params.PrimaryReleaseDateGTE != "" {
+		parts = append(parts, "gte:"+params.PrimaryReleaseDateGTE)
+	}
+	if params.PrimaryReleaseDateLTE != "" {
+		parts = append(parts, "lte:"+params.PrimaryReleaseDateLTE)
+	}
 	if len(params.WithGenres) > 0 {
 		ids := make([]string, len(params.WithGenres))
 		for i, id := range params.WithGenres {
