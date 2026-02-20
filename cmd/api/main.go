@@ -101,12 +101,14 @@ func main() {
 
 	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo)
 
-	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, services.AuthServiceConfig{
+	tokenConfig := services.TokenConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
 		AccessTokenExpiry:  cfg.AccessTokenExpiry,
 		RefreshTokenSecret: cfg.RefreshTokenSecret,
 		RefreshTokenExpiry: cfg.RefreshTokenExpiry,
-	})
+	}
+
+	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
 	userService := services.NewUserService(userRepo)
 	followService := services.NewFollowService(followRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo)
@@ -137,12 +139,7 @@ func main() {
 		collectionService,
 		stateManager,
 		providers,
-		services.OAuthServiceConfig{
-			AccessTokenSecret:  cfg.AccessTokenSecret,
-			AccessTokenExpiry:  cfg.AccessTokenExpiry,
-			RefreshTokenSecret: cfg.RefreshTokenSecret,
-			RefreshTokenExpiry: cfg.RefreshTokenExpiry,
-		},
+		tokenConfig,
 	)
 
 	authHandler := handlers.NewAuthHandler(authService)
@@ -156,7 +153,8 @@ func main() {
 
 	router := http.NewRouter(
 		http.RouterConfig{
-			AccessTokenSecret: cfg.AccessTokenSecret,
+			AccessTokenSecret:  cfg.AccessTokenSecret,
+			CORSAllowedOrigins: cfg.CORSAllowedOrigins,
 		},
 		authHandler,
 		oauthHandler,
@@ -186,7 +184,7 @@ func main() {
 
 	logger.Logger.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {

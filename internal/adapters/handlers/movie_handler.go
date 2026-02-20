@@ -40,8 +40,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 		return
 	}
 
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, limit := parsePagination(c)
 	year, _ := strconv.Atoi(c.Query("year"))
 	language := middleware.GetLocale(c)
 
@@ -80,8 +79,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Failure      502 {object} response.Response "External service error"
 // @Router       /movies/discover [get]
 func (h *MovieHandler) Discover(c *gin.Context) {
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, limit := parsePagination(c)
 	yearFrom, _ := strconv.Atoi(c.Query("year_from"))
 	yearTo, _ := strconv.Atoi(c.Query("year_to"))
 	sort := c.DefaultQuery("sort", "-popularity")
@@ -181,8 +179,7 @@ func (h *MovieHandler) GetByID(c *gin.Context) {
 // @Failure      502 {object} response.Response "External service error"
 // @Router       /movies/popular [get]
 func (h *MovieHandler) GetPopular(c *gin.Context) {
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, limit := parsePagination(c)
 	language := middleware.GetLocale(c)
 
 	result, err := h.movieService.GetPopular(c.Request.Context(), offset, limit, language)

@@ -7,18 +7,10 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	"duskforge-api/pkg/auth"
 	"duskforge-api/pkg/oauth"
 
 	"github.com/google/uuid"
 )
-
-type OAuthServiceConfig struct {
-	AccessTokenSecret  string
-	AccessTokenExpiry  time.Duration
-	RefreshTokenSecret string
-	RefreshTokenExpiry time.Duration
-}
 
 type oauthService struct {
 	userRepo          ports.UserRepository
@@ -27,7 +19,7 @@ type oauthService struct {
 	collectionService ports.CollectionService
 	stateManager      *oauth.StateManager
 	providers         map[oauth.OAuthProvider]oauth.Provider
-	config            OAuthServiceConfig
+	config            TokenConfig
 }
 
 func NewOAuthService(
@@ -37,7 +29,7 @@ func NewOAuthService(
 	collectionService ports.CollectionService,
 	stateManager *oauth.StateManager,
 	providers map[oauth.OAuthProvider]oauth.Provider,
-	config OAuthServiceConfig,
+	config TokenConfig,
 ) ports.OAuthService {
 	return &oauthService{
 		userRepo:          userRepo,
@@ -86,7 +78,6 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 		return nil, domain.ErrInternal
 	}
 
-	// Link mode: link OAuth account to the authenticated user embedded in state
 	if stateData.Mode == "link" {
 		userID, err := uuid.Parse(stateData.UserID)
 		if err != nil {
@@ -98,7 +89,6 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 			return nil, domain.ErrInternal
 		}
 
-		// Check if this OAuth account is already linked to another user
 		existingOAuth, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
 		if err != nil {
 			return nil, domain.ErrInternal
@@ -107,14 +97,12 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 			if existingOAuth.UserID != userID {
 				return nil, domain.ErrOAuthAccountAlreadyLinked
 			}
-			// Already linked to same user — no-op
 			return &ports.OAuthAuthResult{
 				FrontendRedirectURI: stateData.RedirectURI,
 				LinkedProvider:      string(input.Provider),
 			}, nil
 		}
 
-		// Remove existing link for same provider (switching OAuth accounts)
 		existingLink, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(input.Provider))
 		if err != nil {
 			return nil, domain.ErrInternal
@@ -135,7 +123,6 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 		}, nil
 	}
 
-	// Default login/register flow
 	oauthAccount, err := s.oauthRepo.GetByProviderAndProviderUserID(ctx, string(input.Provider), oauthUserInfo.ProviderUserID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -173,7 +160,7 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 		}
 	}
 
-	tokens, err := s.createSession(ctx, user)
+	tokens, err := createSession(ctx, s.sessionRepo, user, s.config)
 	if err != nil {
 		return nil, err
 	}
@@ -192,29 +179,30 @@ func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, prov
 		return domain.ErrInternal
 	}
 
-	hasPassword := user.PasswordHash != nil
-
-	githubOAuth, _ := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGitHub))
-	googleOAuth, _ := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(oauth.ProviderGoogle))
-
-	oauthCount := 0
-	if githubOAuth != nil {
-		oauthCount++
-	}
-	if googleOAuth != nil {
-		oauthCount++
-	}
-
-	if !hasPassword && oauthCount <= 1 {
-		return domain.ErrCannotUnlinkOnlyAuth
-	}
-
 	oauthAccount, err := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(provider))
 	if err != nil {
 		return domain.ErrInternal
 	}
 	if oauthAccount == nil {
 		return domain.ErrOAuthAccountNotFound
+	}
+
+	hasPassword := user.PasswordHash != nil
+
+	otherProviders := []oauth.OAuthProvider{oauth.ProviderGitHub, oauth.ProviderGoogle}
+	otherLinked := 0
+	for _, p := range otherProviders {
+		if p == provider {
+			continue
+		}
+		link, _ := s.oauthRepo.GetByUserIDAndProvider(ctx, userID, string(p))
+		if link != nil {
+			otherLinked++
+		}
+	}
+
+	if !hasPassword && otherLinked == 0 {
+		return domain.ErrCannotUnlinkOnlyAuth
 	}
 
 	if err := s.oauthRepo.Delete(ctx, oauthAccount.Provider, oauthAccount.ProviderUserID); err != nil {
@@ -314,40 +302,4 @@ func (s *oauthService) generateUniqueUsername(ctx context.Context, baseUsername 
 	}
 
 	return fmt.Sprintf("%s_%s", baseUsername, uuid.New().String()[:8]), nil
-}
-
-func (s *oauthService) createSession(ctx context.Context, user *domain.User) (*ports.AuthTokens, error) {
-	sessionID := uuid.New()
-
-	accessToken, err := auth.GenerateAccessToken(
-		user.ID, string(user.Role), s.config.AccessTokenSecret, s.config.AccessTokenExpiry,
-	)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	refreshToken, err := auth.GenerateRefreshToken(
-		sessionID, s.config.RefreshTokenSecret, s.config.RefreshTokenExpiry,
-	)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	session := &domain.Session{
-		ID:               sessionID,
-		UserID:           user.ID,
-		RefreshTokenHash: auth.HashToken(refreshToken),
-		ExpiresAt:        time.Now().Add(s.config.RefreshTokenExpiry),
-		CreatedAt:        time.Now(),
-	}
-
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	return &ports.AuthTokens{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),
-	}, nil
 }

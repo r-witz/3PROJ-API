@@ -73,12 +73,10 @@ type Genre struct {
 	Name string `json:"name"`
 }
 
-// Trailer result
 type MovieTrailerResult struct {
 	EmbedURL *string `json:"embed_url"`
 }
 
-// Unified person result for cast/crew
 type PersonResult struct {
 	ID      int     `json:"id"`
 	Name    string  `json:"name"`
@@ -86,7 +84,6 @@ type PersonResult struct {
 	Picture *string `json:"picture"`
 }
 
-// Cast result with categorized roles
 type MovieCastResult struct {
 	Cast      []PersonResult `json:"cast"`
 	Directors []PersonResult `json:"directors"`
@@ -94,7 +91,6 @@ type MovieCastResult struct {
 	Crew      []PersonResult `json:"crew"`
 }
 
-// Release dates result
 type ReleaseDateItem struct {
 	Date          string `json:"date"`
 	Type          string `json:"type"`

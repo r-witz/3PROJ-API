@@ -79,6 +79,9 @@ func (s *collectionService) Create(ctx context.Context, userID uuid.UUID, input 
 	}
 
 	slug := generateSlug(input.Name)
+	if slug == "" {
+		return nil, domain.ErrInvalidInput
+	}
 
 	existing, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
@@ -267,7 +270,6 @@ func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug 
 		return nil, domain.ErrCollectionItemAlreadyExists
 	}
 
-	// Fetch runtime from TMDB
 	var runtime int16
 	details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en-US")
 	if err == nil && details != nil && details.Runtime != nil {
@@ -345,7 +347,6 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		tmdbIDs[i] = item.TMDBID
 	}
 
-	// Fetch TMDB details concurrently
 	type movieInfo struct {
 		title      string
 		poster     *string
@@ -353,37 +354,34 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		tmdbRating *float64
 	}
 	movieInfos := make([]movieInfo, len(items))
-	var mu sync.Mutex
 	var wg sync.WaitGroup
+	sem := make(chan struct{}, 10)
 
 	for i, item := range items {
 		wg.Add(1)
 		go func(idx int, tmdbID int) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 
 			details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, language)
 			if err != nil || details == nil {
 				return
 			}
 
-			info := movieInfo{
+			movieInfos[idx] = movieInfo{
 				title:  details.Title,
 				poster: details.PosterPath,
 				date:   details.ReleaseDate,
 			}
 			if details.VoteCount > 0 {
 				rating := details.VoteAverage / 2
-				info.tmdbRating = &rating
+				movieInfos[idx].tmdbRating = &rating
 			}
-
-			mu.Lock()
-			movieInfos[idx] = info
-			mu.Unlock()
 		}(i, item.TMDBID)
 	}
 	wg.Wait()
 
-	// Fetch duskforge ratings
 	ratings, err := s.reviewRepo.GetAverageRatingsByTMDBIDs(ctx, tmdbIDs)
 	if err != nil {
 		ratings = make(map[int]float64)

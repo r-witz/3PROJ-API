@@ -466,10 +466,16 @@ func toCollectionResponse(collection *domain.Collection) CollectionResponse {
 }
 
 
-func toSimpleCollectionItemResponse(item *domain.CollectionItem) map[string]interface{} {
-	return map[string]interface{}{
-		"collection_id": item.CollectionID.String(),
-		"tmdb_id":       item.TMDBID,
-		"added_at":      item.AddedAt.Format(time.RFC3339),
+type SimpleCollectionItemResponse struct {
+	CollectionID string `json:"collection_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	TMDBID       int    `json:"tmdb_id" example:"550"`
+	AddedAt      string `json:"added_at" example:"2024-01-15T10:30:00Z"`
+}
+
+func toSimpleCollectionItemResponse(item *domain.CollectionItem) SimpleCollectionItemResponse {
+	return SimpleCollectionItemResponse{
+		CollectionID: item.CollectionID.String(),
+		TMDBID:       item.TMDBID,
+		AddedAt:      item.AddedAt.Format(time.RFC3339),
 	}
 }

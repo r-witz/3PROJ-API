@@ -14,4 +14,6 @@ type ReviewLikeRepository interface {
 	GetByUserIDAndReviewID(ctx context.Context, userID, reviewID uuid.UUID) (*domain.ReviewLike, error)
 	Delete(ctx context.Context, userID, reviewID uuid.UUID) error
 	CountByReviewID(ctx context.Context, reviewID uuid.UUID) (int, error)
+	CountByReviewIDs(ctx context.Context, reviewIDs []uuid.UUID) (map[uuid.UUID]int, error)
+	GetLikedByUser(ctx context.Context, userID uuid.UUID, reviewIDs []uuid.UUID) (map[uuid.UUID]bool, error)
 }

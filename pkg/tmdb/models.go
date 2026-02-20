@@ -140,7 +140,6 @@ type SearchMoviesResponse = PaginatedResponse[MovieSummary]
 type DiscoverMoviesResponse = PaginatedResponse[MovieSummary]
 type PopularMoviesResponse = PaginatedResponse[MovieSummary]
 
-// Person types
 type PersonSummary struct {
 	ID                 int      `json:"id"`
 	Name               string   `json:"name"`
@@ -208,7 +207,6 @@ type PersonCrewCredit struct {
 
 type SearchPersonResponse = PaginatedResponse[PersonSummary]
 
-// Video types (for trailer)
 type Video struct {
 	ID       string `json:"id"`
 	Key      string `json:"key"`
@@ -223,7 +221,6 @@ type VideosResponse struct {
 	Results []Video `json:"results"`
 }
 
-// Release date types
 type ReleaseDate struct {
 	Certification string `json:"certification"`
 	ReleaseDate   string `json:"release_date"`

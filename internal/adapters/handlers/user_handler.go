@@ -3,8 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/url"
-	"path"
-	"strings"
 	"time"
 
 	"duskforge-api/internal/adapters/middleware"
@@ -263,10 +261,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		oldObjectName := extractObjectName(*user.AvatarURL)
-		if oldObjectName != "" {
-			h.storage.Delete(ctx, oldObjectName)
-		}
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
 	objectName := fmt.Sprintf("avatars/%s_%d%s", userID.String(), time.Now().UnixNano(), ext)
@@ -322,10 +317,7 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		objectName := extractObjectName(*user.AvatarURL)
-		if objectName != "" {
-			h.storage.Delete(ctx, objectName)
-		}
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
 	updatedUser, err := h.userService.DeleteAvatar(ctx, userID)
@@ -348,25 +340,6 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	response.Success(c, toUserResponse(updatedUser, stats))
 }
 
-// extractObjectName extracts the MinIO object name (e.g. "avatars/uuid.jpg") from a full URL.
-func extractObjectName(avatarURL string) string {
-	u, err := url.Parse(avatarURL)
-	if err != nil {
-		return ""
-	}
-	// URL format: {publicURL}/{bucket}/{objectName}
-	// Path will be: /{bucket}/avatars/uuid.ext
-	parts := strings.SplitN(strings.TrimPrefix(u.Path, "/"), "/", 2)
-	if len(parts) < 2 {
-		return ""
-	}
-	return parts[1]
-}
-
-// avatarObjectName builds the MinIO object key for a user's avatar.
-func avatarObjectName(userID uuid.UUID, ext string) string {
-	return path.Join("avatars", userID.String()+ext)
-}
 
 // @Summary      Change or set password
 // @Description  Change the password of the currently authenticated user. OAuth-only users can omit current_password to set a password for the first time.
@@ -427,9 +400,21 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.DeleteCurrentUser(c.Request.Context(), userID); err != nil {
+	ctx := c.Request.Context()
+
+	user, err := h.userService.GetCurrentUser(ctx, userID)
+	if err != nil {
 		response.HandleError(c, err)
 		return
+	}
+
+	if err := h.userService.DeleteCurrentUser(ctx, userID); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	if user.AvatarURL != nil {
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
 	c.Status(204)

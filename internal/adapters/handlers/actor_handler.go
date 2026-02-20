@@ -38,8 +38,7 @@ func (h *ActorHandler) Search(c *gin.Context) {
 		return
 	}
 
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, limit := parsePagination(c)
 	language := middleware.GetLocale(c)
 
 	result, err := h.actorService.Search(c.Request.Context(), ports.SearchActorsInput{
@@ -114,8 +113,7 @@ func (h *ActorHandler) GetFilmography(c *gin.Context) {
 		return
 	}
 
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	offset, limit := parsePagination(c)
 	sortParam := c.DefaultQuery("sort", "-release_date")
 	language := middleware.GetLocale(c)
 

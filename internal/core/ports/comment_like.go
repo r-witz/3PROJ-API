@@ -14,4 +14,6 @@ type CommentLikeRepository interface {
 	GetByUserIDAndCommentID(ctx context.Context, userID, commentID uuid.UUID) (*domain.CommentLike, error)
 	Delete(ctx context.Context, userID, commentID uuid.UUID) error
 	CountByCommentID(ctx context.Context, commentID uuid.UUID) (int, error)
+	CountByCommentIDs(ctx context.Context, commentIDs []uuid.UUID) (map[uuid.UUID]int, error)
+	GetLikedByUser(ctx context.Context, userID uuid.UUID, commentIDs []uuid.UUID) (map[uuid.UUID]bool, error)
 }

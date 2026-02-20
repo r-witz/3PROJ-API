@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"math"
 	"time"
 
 	"duskforge-api/internal/core/domain"
@@ -40,7 +39,7 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 	if input.Rating < 0.5 || input.Rating > 5.0 {
 		return nil, domain.ErrInvalidInput
 	}
-	if math.Mod(input.Rating, 0.5) != 0 {
+	if input.Rating*2 != float64(int(input.Rating*2)) {
 		return nil, domain.ErrInvalidInput
 	}
 
@@ -142,7 +141,7 @@ func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, reque
 	return result, total, nil
 }
 
-func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateReviewInput) (*domain.Review, error) {
+func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateReviewInput) (*ports.ReviewWithMeta, error) {
 	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -159,7 +158,7 @@ func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UU
 		if *input.Rating < 0.5 || *input.Rating > 5.0 {
 			return nil, domain.ErrInvalidInput
 		}
-		if math.Mod(*input.Rating, 0.5) != 0 {
+		if *input.Rating*2 != float64(int(*input.Rating*2)) {
 			return nil, domain.ErrInvalidInput
 		}
 		review.Rating = *input.Rating
@@ -177,7 +176,18 @@ func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UU
 		return nil, domain.ErrInternal
 	}
 
-	return review, nil
+	enriched, err := s.enrichReview(ctx, review, &userID)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	enriched.User = user
+
+	return enriched, nil
 }
 
 func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
@@ -255,17 +265,21 @@ func (s *reviewService) Unlike(ctx context.Context, reviewID uuid.UUID, userID u
 }
 
 func (s *reviewService) enrichReviews(ctx context.Context, reviews []*domain.Review, requestingUserID *uuid.UUID) ([]*ports.ReviewWithMeta, error) {
-	// Collect unique user IDs
+	if len(reviews) == 0 {
+		return []*ports.ReviewWithMeta{}, nil
+	}
+
 	userIDSet := make(map[uuid.UUID]struct{})
-	for _, r := range reviews {
+	reviewIDs := make([]uuid.UUID, len(reviews))
+	for i, r := range reviews {
 		userIDSet[r.UserID] = struct{}{}
+		reviewIDs[i] = r.ID
 	}
 	userIDs := make([]uuid.UUID, 0, len(userIDSet))
 	for id := range userIDSet {
 		userIDs = append(userIDs, id)
 	}
 
-	// Batch fetch users
 	users, err := s.userRepo.GetByIDs(ctx, userIDs)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -275,14 +289,33 @@ func (s *reviewService) enrichReviews(ctx context.Context, reviews []*domain.Rev
 		userMap[u.ID] = u
 	}
 
+	likeCounts, err := s.reviewLikeRepo.CountByReviewIDs(ctx, reviewIDs)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	commentCounts, err := s.commentRepo.CountByReviewIDs(ctx, reviewIDs)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	var likedByUser map[uuid.UUID]bool
+	if requestingUserID != nil {
+		likedByUser, err = s.reviewLikeRepo.GetLikedByUser(ctx, *requestingUserID, reviewIDs)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+	}
+
 	result := make([]*ports.ReviewWithMeta, len(reviews))
 	for i, review := range reviews {
-		enriched, err := s.enrichReview(ctx, review, requestingUserID)
-		if err != nil {
-			return nil, err
+		result[i] = &ports.ReviewWithMeta{
+			Review:       review,
+			LikeCount:    likeCounts[review.ID],
+			CommentCount: commentCounts[review.ID],
+			LikedByUser:  likedByUser[review.ID],
+			User:         userMap[review.UserID],
 		}
-		enriched.User = userMap[review.UserID]
-		result[i] = enriched
 	}
 
 	return result, nil

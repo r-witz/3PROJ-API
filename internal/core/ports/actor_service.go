@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// Input DTOs
+
 type SearchActorsInput struct {
 	Query    string
 	Offset   int
@@ -20,7 +20,6 @@ type GetActorFilmographyInput struct {
 	Language string
 }
 
-// Output DTOs
 type ActorSearchResult struct {
 	ID                 int     `json:"id"`
 	Name               string  `json:"name"`
@@ -64,7 +63,6 @@ type ActorFilmographyResult struct {
 	Results []ActorFilmCredit
 }
 
-// Interface
 type ActorService interface {
 	Search(ctx context.Context, input SearchActorsInput) (*SearchActorsResult, error)
 	GetByID(ctx context.Context, actorID int, language string) (*ActorDetailsResult, error)

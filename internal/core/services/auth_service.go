@@ -12,25 +12,18 @@ import (
 	"github.com/google/uuid"
 )
 
-type AuthServiceConfig struct {
-	AccessTokenSecret  string
-	AccessTokenExpiry  time.Duration
-	RefreshTokenSecret string
-	RefreshTokenExpiry time.Duration
-}
-
 type authService struct {
 	userRepo          ports.UserRepository
 	sessionRepo       ports.SessionRepository
 	collectionService ports.CollectionService
-	config            AuthServiceConfig
+	config            TokenConfig
 }
 
 func NewAuthService(
 	userRepo ports.UserRepository,
 	sessionRepo ports.SessionRepository,
 	collectionService ports.CollectionService,
-	config AuthServiceConfig,
+	config TokenConfig,
 ) ports.AuthService {
 	return &authService{
 		userRepo:          userRepo,
@@ -85,7 +78,7 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 		}
 	}
 
-	tokens, err := s.createSession(ctx, user)
+	tokens, err := createSession(ctx, s.sessionRepo, user, s.config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,7 +108,7 @@ func (s *authService) Login(ctx context.Context, input ports.LoginInput) (*domai
 		return nil, nil, domain.ErrInvalidCredentials
 	}
 
-	tokens, err := s.createSession(ctx, user)
+	tokens, err := createSession(ctx, s.sessionRepo, user, s.config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -186,42 +179,6 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	return s.sessionRepo.Delete(ctx, session.ID)
-}
-
-func (s *authService) createSession(ctx context.Context, user *domain.User) (*ports.AuthTokens, error) {
-	sessionID := uuid.New()
-
-	accessToken, err := auth.GenerateAccessToken(
-		user.ID, string(user.Role), s.config.AccessTokenSecret, s.config.AccessTokenExpiry,
-	)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	refreshToken, err := auth.GenerateRefreshToken(
-		sessionID, s.config.RefreshTokenSecret, s.config.RefreshTokenExpiry,
-	)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	session := &domain.Session{
-		ID:               sessionID,
-		UserID:           user.ID,
-		RefreshTokenHash: auth.HashToken(refreshToken),
-		ExpiresAt:        time.Now().Add(s.config.RefreshTokenExpiry),
-		CreatedAt:        time.Now(),
-	}
-
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	return &ports.AuthTokens{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(s.config.AccessTokenExpiry.Seconds()),
-	}, nil
 }
 
 func mapPasswordError(err error) error {

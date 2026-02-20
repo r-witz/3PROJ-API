@@ -77,3 +77,50 @@ func (r *ReviewLikeRepository) CountByReviewID(ctx context.Context, reviewID uui
 	err := r.db.Pool.QueryRow(ctx, query, reviewID).Scan(&count)
 	return count, err
 }
+
+func (r *ReviewLikeRepository) CountByReviewIDs(ctx context.Context, reviewIDs []uuid.UUID) (map[uuid.UUID]int, error) {
+	result := make(map[uuid.UUID]int, len(reviewIDs))
+	if len(reviewIDs) == 0 {
+		return result, nil
+	}
+
+	query := `SELECT review_id, COUNT(*) FROM review_likes WHERE review_id = ANY($1) GROUP BY review_id`
+	rows, err := r.db.Pool.Query(ctx, query, reviewIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uuid.UUID
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+		result[id] = count
+	}
+	return result, rows.Err()
+}
+
+func (r *ReviewLikeRepository) GetLikedByUser(ctx context.Context, userID uuid.UUID, reviewIDs []uuid.UUID) (map[uuid.UUID]bool, error) {
+	result := make(map[uuid.UUID]bool, len(reviewIDs))
+	if len(reviewIDs) == 0 {
+		return result, nil
+	}
+
+	query := `SELECT review_id FROM review_likes WHERE user_id = $1 AND review_id = ANY($2)`
+	rows, err := r.db.Pool.Query(ctx, query, userID, reviewIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		result[id] = true
+	}
+	return result, rows.Err()
+}

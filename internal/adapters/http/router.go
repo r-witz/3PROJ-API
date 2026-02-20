@@ -14,7 +14,8 @@ import (
 )
 
 type RouterConfig struct {
-	AccessTokenSecret string
+	AccessTokenSecret  string
+	CORSAllowedOrigins string
 }
 
 type Router struct {
@@ -59,7 +60,7 @@ func NewRouter(
 }
 
 func (r *Router) Setup() *gin.Engine {
-	r.engine.Use(middleware.CORS())
+	r.engine.Use(middleware.CORS(r.config.CORSAllowedOrigins))
 
 	r.engine.GET("/health", r.healthCheck)
 	r.engine.GET("/", r.root)

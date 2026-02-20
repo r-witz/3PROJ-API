@@ -110,7 +110,7 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 	}
 
 	searchQuery := fmt.Sprintf(`
-		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE username ILIKE $1
 		ORDER BY %s
 		LIMIT $2 OFFSET $3
@@ -126,7 +126,7 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 	for rows.Next() {
 		user := &domain.User{}
 		err := rows.Scan(
-			&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+			&user.ID, &user.Email, &user.Username,
 			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 		)
@@ -160,7 +160,7 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 	}
 
 	query := `
-		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE id = ANY($1)
 	`
 	rows, err := r.db.Pool.Query(ctx, query, ids)
@@ -173,7 +173,7 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 	for rows.Next() {
 		user := &domain.User{}
 		err := rows.Scan(
-			&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+			&user.ID, &user.Email, &user.Username,
 			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 		)

@@ -73,17 +73,21 @@ func (s *commentService) GetByReviewID(ctx context.Context, reviewID uuid.UUID, 
 		return nil, 0, domain.ErrInternal
 	}
 
-	// Collect unique user IDs
+	if len(comments) == 0 {
+		return []*ports.CommentWithMeta{}, total, nil
+	}
+
 	userIDSet := make(map[uuid.UUID]struct{})
-	for _, c := range comments {
+	commentIDs := make([]uuid.UUID, len(comments))
+	for i, c := range comments {
 		userIDSet[c.UserID] = struct{}{}
+		commentIDs[i] = c.ID
 	}
 	userIDs := make([]uuid.UUID, 0, len(userIDSet))
 	for id := range userIDSet {
 		userIDs = append(userIDs, id)
 	}
 
-	// Batch fetch users
 	users, err := s.userRepo.GetByIDs(ctx, userIDs)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
@@ -93,20 +97,33 @@ func (s *commentService) GetByReviewID(ctx context.Context, reviewID uuid.UUID, 
 		userMap[u.ID] = u
 	}
 
+	likeCounts, err := s.commentLikeRepo.CountByCommentIDs(ctx, commentIDs)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
+	var likedByUser map[uuid.UUID]bool
+	if requestingUserID != nil {
+		likedByUser, err = s.commentLikeRepo.GetLikedByUser(ctx, *requestingUserID, commentIDs)
+		if err != nil {
+			return nil, 0, domain.ErrInternal
+		}
+	}
+
 	result := make([]*ports.CommentWithMeta, len(comments))
 	for i, comment := range comments {
-		enriched, err := s.enrichComment(ctx, comment, requestingUserID)
-		if err != nil {
-			return nil, 0, err
+		result[i] = &ports.CommentWithMeta{
+			Comment:     comment,
+			LikeCount:   likeCounts[comment.ID],
+			LikedByUser: likedByUser[comment.ID],
+			User:        userMap[comment.UserID],
 		}
-		enriched.User = userMap[comment.UserID]
-		result[i] = enriched
 	}
 
 	return result, total, nil
 }
 
-func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateCommentInput) (*domain.Comment, error) {
+func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateCommentInput) (*ports.CommentWithMeta, error) {
 	comment, err := s.commentRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -135,7 +152,29 @@ func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.U
 		return nil, domain.ErrInternal
 	}
 
-	return comment, nil
+	likeCount, err := s.commentLikeRepo.CountByCommentID(ctx, comment.ID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	likedByUser := false
+	existing, err := s.commentLikeRepo.GetByUserIDAndCommentID(ctx, userID, comment.ID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	likedByUser = existing != nil
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return &ports.CommentWithMeta{
+		Comment:     comment,
+		LikeCount:   likeCount,
+		LikedByUser: likedByUser,
+		User:        user,
+	}, nil
 }
 
 func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
@@ -212,24 +251,3 @@ func (s *commentService) Unlike(ctx context.Context, commentID uuid.UUID, userID
 	return nil
 }
 
-func (s *commentService) enrichComment(ctx context.Context, comment *domain.Comment, requestingUserID *uuid.UUID) (*ports.CommentWithMeta, error) {
-	likeCount, err := s.commentLikeRepo.CountByCommentID(ctx, comment.ID)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-
-	likedByUser := false
-	if requestingUserID != nil {
-		existing, err := s.commentLikeRepo.GetByUserIDAndCommentID(ctx, *requestingUserID, comment.ID)
-		if err != nil {
-			return nil, domain.ErrInternal
-		}
-		likedByUser = existing != nil
-	}
-
-	return &ports.CommentWithMeta{
-		Comment:     comment,
-		LikeCount:   likeCount,
-		LikedByUser: likedByUser,
-	}, nil
-}

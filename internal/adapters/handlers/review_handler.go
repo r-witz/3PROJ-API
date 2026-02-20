@@ -268,15 +268,13 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 		ContainsSpoilers: req.ContainsSpoilers,
 	}
 
-	review, err := h.reviewService.Update(c.Request.Context(), reviewID, userID, input)
+	result, err := h.reviewService.Update(c.Request.Context(), reviewID, userID, input)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	user, _ := h.userService.GetByID(c.Request.Context(), userID)
-
-	response.Success(c, toReviewResponse(review, 0, 0, false, user))
+	response.Success(c, toReviewResponse(result.Review, result.LikeCount, result.CommentCount, result.LikedByUser, result.User))
 }
 
 // @Summary      Delete a review
@@ -435,15 +433,13 @@ func parseReviewSort(s string) ports.ReviewSort {
 	asc := false
 	field := s
 
-	if len(s) > 0 {
-		switch s[0] {
-		case '+':
-			asc = true
-			field = s[1:]
-		case '-':
-			asc = false
-			field = s[1:]
-		}
+	switch s[0] {
+	case '+':
+		asc = true
+		field = s[1:]
+	case '-':
+		asc = false
+		field = s[1:]
 	}
 
 	switch field {

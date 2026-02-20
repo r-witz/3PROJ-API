@@ -173,7 +173,6 @@ func (s *actorService) GetFilmography(ctx context.Context, input ports.GetActorF
 		}
 	}
 
-	// Convert map to slice
 	allCredits := make([]ports.ActorFilmCredit, 0, len(movieMap))
 	tmdbIDs := make([]int, 0, len(movieMap))
 	for id, credit := range movieMap {
@@ -181,7 +180,6 @@ func (s *actorService) GetFilmography(ctx context.Context, input ports.GetActorF
 		tmdbIDs = append(tmdbIDs, id)
 	}
 
-	// Fetch Duskforge ratings
 	ratings, err := s.reviewRepo.GetAverageRatingsByTMDBIDs(ctx, tmdbIDs)
 	if err != nil {
 		ratings = make(map[int]float64)
@@ -192,12 +190,10 @@ func (s *actorService) GetFilmography(ctx context.Context, input ports.GetActorF
 		}
 	}
 
-	// Sort credits
 	sortFilmography(allCredits, input.Sort)
 
 	totalResults := len(allCredits)
 
-	// Apply pagination
 	start := input.Offset
 	if start >= len(allCredits) {
 		return &ports.ActorFilmographyResult{
@@ -228,15 +224,13 @@ func sortFilmography(credits []ports.ActorFilmCredit, sortOption string) {
 
 	ascending := false
 	field := sortOption
-	if len(sortOption) > 0 {
-		switch sortOption[0] {
-		case '+':
-			ascending = true
-			field = sortOption[1:]
-		case '-':
-			ascending = false
-			field = sortOption[1:]
-		}
+	switch sortOption[0] {
+	case '+':
+		ascending = true
+		field = sortOption[1:]
+	case '-':
+		ascending = false
+		field = sortOption[1:]
 	}
 
 	sort.Slice(credits, func(i, j int) bool {

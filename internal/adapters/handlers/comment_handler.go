@@ -175,15 +175,13 @@ func (h *CommentHandler) Update(c *gin.Context) {
 		ContainsSpoilers: req.ContainsSpoilers,
 	}
 
-	comment, err := h.commentService.Update(c.Request.Context(), commentID, userID, input)
+	result, err := h.commentService.Update(c.Request.Context(), commentID, userID, input)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	user, _ := h.userService.GetByID(c.Request.Context(), userID)
-
-	response.Success(c, toCommentResponse(comment, 0, false, user))
+	response.Success(c, toCommentResponse(result.Comment, result.LikeCount, result.LikedByUser, result.User))
 }
 
 // @Summary      Delete a comment

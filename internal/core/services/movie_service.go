@@ -74,7 +74,6 @@ func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesI
 		WithGenres: input.Genres,
 	}
 
-	// Year range filter
 	if input.YearFrom > 0 {
 		params.PrimaryReleaseDateGTE = fmt.Sprintf("%d-01-01", input.YearFrom)
 	}
@@ -82,7 +81,6 @@ func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesI
 		params.PrimaryReleaseDateLTE = fmt.Sprintf("%d-12-31", input.YearTo)
 	}
 
-	// Sorting
 	params.SortBy = parseSort(input.Sort)
 
 	result, err := s.tmdbClient.DiscoverMovies(ctx, params)
@@ -110,7 +108,6 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 		}
 	}
 
-	// TMDB rating - null if no votes
 	tmdbRating := ports.RatingInfo{
 		Rating: nil,
 		Count:  movie.VoteCount,
@@ -120,7 +117,6 @@ func (s *movieService) GetByID(ctx context.Context, movieID int, language string
 		tmdbRating.Rating = &rating
 	}
 
-	// Duskforge rating - null if no reviews
 	duskforgeRating := ports.RatingInfo{
 		Rating: nil,
 		Count:  0,
@@ -182,15 +178,13 @@ func parseSort(sort string) tmdb.SortBy {
 	order := ".desc"
 	field := sort
 
-	if len(sort) > 0 {
-		switch sort[0] {
-		case '+':
-			order = ".asc"
-			field = sort[1:]
-		case '-':
-			order = ".desc"
-			field = sort[1:]
-		}
+	switch sort[0] {
+	case '+':
+		order = ".asc"
+		field = sort[1:]
+	case '-':
+		order = ".desc"
+		field = sort[1:]
 	}
 
 	switch field {
@@ -215,7 +209,6 @@ func (s *movieService) transformMoviesWithOffset(ctx context.Context, movies []t
 		}, nil
 	}
 
-	// Slice movies based on offset within page and limit
 	start := offsetInPage
 	if start >= len(movies) {
 		return &ports.SearchMoviesResult{
@@ -325,7 +318,6 @@ func (s *movieService) GetCast(ctx context.Context, movieID int, language string
 		return nil, domain.ErrTMDBError
 	}
 
-	// Transform cast
 	cast := make([]ports.PersonResult, len(credits.Cast))
 	for i, c := range credits.Cast {
 		cast[i] = ports.PersonResult{
@@ -336,7 +328,6 @@ func (s *movieService) GetCast(ctx context.Context, movieID int, language string
 		}
 	}
 
-	// Categorize crew
 	var directors, writers, crew []ports.PersonResult
 	writerJobs := map[string]bool{"Writer": true, "Screenplay": true, "Story": true}
 

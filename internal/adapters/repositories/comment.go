@@ -78,6 +78,30 @@ func (r *CommentRepository) CountByReviewID(ctx context.Context, reviewID uuid.U
 	return count, err
 }
 
+func (r *CommentRepository) CountByReviewIDs(ctx context.Context, reviewIDs []uuid.UUID) (map[uuid.UUID]int, error) {
+	result := make(map[uuid.UUID]int, len(reviewIDs))
+	if len(reviewIDs) == 0 {
+		return result, nil
+	}
+
+	query := `SELECT review_id, COUNT(*) FROM comments WHERE review_id = ANY($1) GROUP BY review_id`
+	rows, err := r.db.Pool.Query(ctx, query, reviewIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uuid.UUID
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+		result[id] = count
+	}
+	return result, rows.Err()
+}
+
 func (r *CommentRepository) Update(ctx context.Context, comment *domain.Comment) error {
 	query := `
 		UPDATE comments
