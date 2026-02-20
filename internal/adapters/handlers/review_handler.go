@@ -183,7 +183,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      Get reviews by user
-// @Description  List all reviews by a specific user with pagination and sorting. Only reviews with content are returned.
+// @Description  List all reviews by a specific user with pagination and sorting.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth

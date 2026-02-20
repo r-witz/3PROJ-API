@@ -52,7 +52,7 @@ func (r *ReviewRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.R
 func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
 	orderClause := buildReviewOrderClause(sort)
 
-	where := "WHERE r.user_id = $1 AND r.content IS NOT NULL AND r.content != ''"
+	where := "WHERE r.user_id = $1"
 	args := []any{userID}
 	paramIdx := 2
 
@@ -164,10 +164,10 @@ func (r *ReviewRepository) CountByTMDBID(ctx context.Context, tmdbID int, exclud
 func (r *ReviewRepository) CountByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int) (int, error) {
 	var count int
 	if tmdbID != nil {
-		err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE user_id = $1 AND tmdb_id = $2 AND content IS NOT NULL AND content != ''`, userID, *tmdbID).Scan(&count)
+		err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE user_id = $1 AND tmdb_id = $2`, userID, *tmdbID).Scan(&count)
 		return count, err
 	}
-	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE user_id = $1 AND content IS NOT NULL AND content != ''`, userID).Scan(&count)
+	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE user_id = $1`, userID).Scan(&count)
 	return count, err
 }
 

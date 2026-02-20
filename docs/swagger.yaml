@@ -2488,7 +2488,6 @@ paths:
   /users/{userId}/reviews:
     get:
       description: List all reviews by a specific user with pagination and sorting.
-        Only reviews with content are returned.
       parameters:
       - description: User ID
         format: uuid

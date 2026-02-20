@@ -3538,7 +3538,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews by a specific user with pagination and sorting. Only reviews with content are returned.",
+                "description": "List all reviews by a specific user with pagination and sorting.",
                 "produces": [
                     "application/json"
                 ],
