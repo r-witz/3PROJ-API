@@ -6,11 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"duskforge-api/pkg/logger"
-
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"go.uber.org/zap"
 )
 
 type MinioStorage struct {
@@ -66,41 +63,5 @@ func (s *MinioStorage) DeleteByURL(ctx context.Context, fileURL string) error {
 	if objectName == "" {
 		return fmt.Errorf("empty object name from URL: %s", fileURL)
 	}
-
-	// Check if the object exists before attempting deletion
-	_, err := s.client.StatObject(ctx, s.bucket, objectName, minio.StatObjectOptions{})
-	if err != nil {
-		logger.Logger.Warn("Object not found in storage before deletion attempt",
-			zap.String("bucket", s.bucket),
-			zap.String("object_name", objectName),
-			zap.String("file_url", fileURL),
-			zap.String("prefix_used", prefix),
-			zap.Error(err),
-		)
-	} else {
-		logger.Logger.Info("Object found in storage, proceeding with deletion",
-			zap.String("bucket", s.bucket),
-			zap.String("object_name", objectName),
-		)
-	}
-
-	if err := s.Delete(ctx, objectName); err != nil {
-		return err
-	}
-
-	// Verify the object was actually deleted
-	_, err = s.client.StatObject(ctx, s.bucket, objectName, minio.StatObjectOptions{})
-	if err == nil {
-		logger.Logger.Error("Object still exists in storage after deletion",
-			zap.String("bucket", s.bucket),
-			zap.String("object_name", objectName),
-		)
-	} else {
-		logger.Logger.Info("Object successfully deleted from storage",
-			zap.String("bucket", s.bucket),
-			zap.String("object_name", objectName),
-		)
-	}
-
-	return nil
+	return s.Delete(ctx, objectName)
 }

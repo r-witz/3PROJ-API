@@ -9,12 +9,10 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
-	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/query"
 	"duskforge-api/pkg/storage"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 	"github.com/google/uuid"
 )
 
@@ -263,16 +261,10 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		if err := h.storage.DeleteByURL(ctx, *user.AvatarURL); err != nil {
-			logger.Logger.Warn("Failed to delete old avatar from storage",
-				zap.String("user_id", userID.String()),
-				zap.String("avatar_url", *user.AvatarURL),
-				zap.Error(err),
-			)
-		}
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
-	objectName := fmt.Sprintf("avatars/%s_%d%s", userID.String(), time.Now().UnixNano(), ext)
+	objectName := fmt.Sprintf("%s_%d%s", userID.String(), time.Now().UnixNano(), ext)
 	avatarURL, err := h.storage.Upload(ctx, objectName, file, header.Size, contentType)
 	if err != nil {
 		response.InternalError(c)
@@ -325,13 +317,7 @@ func (h *UserHandler) DeleteAvatar(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		if err := h.storage.DeleteByURL(ctx, *user.AvatarURL); err != nil {
-			logger.Logger.Warn("Failed to delete avatar from storage",
-				zap.String("user_id", userID.String()),
-				zap.String("avatar_url", *user.AvatarURL),
-				zap.Error(err),
-			)
-		}
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
 	updatedUser, err := h.userService.DeleteAvatar(ctx, userID)
@@ -428,13 +414,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 	}
 
 	if user.AvatarURL != nil {
-		if err := h.storage.DeleteByURL(ctx, *user.AvatarURL); err != nil {
-			logger.Logger.Warn("Failed to delete avatar from storage on account deletion",
-				zap.String("user_id", userID.String()),
-				zap.String("avatar_url", *user.AvatarURL),
-				zap.Error(err),
-			)
-		}
+		h.storage.DeleteByURL(ctx, *user.AvatarURL)
 	}
 
 	c.Status(204)
