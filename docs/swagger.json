@@ -1447,7 +1447,7 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "Message sent",
+                        "description": "Message sent successfully",
                         "schema": {
                             "allOf": [
                                 {
@@ -4358,7 +4358,7 @@
             "type": "object",
             "properties": {
                 "last_message": {
-                    "$ref": "#/definitions/internal_adapters_handlers.MessageResponse"
+                    "$ref": "#/definitions/internal_adapters_handlers.LastMessagePreview"
                 },
                 "unread_count": {
                     "type": "integer",
@@ -4454,6 +4454,23 @@
                 "username": {
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "internal_adapters_handlers.LastMessagePreview": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Hey, have you seen this movie?"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "is_own": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

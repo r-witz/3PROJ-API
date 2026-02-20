@@ -33,10 +33,16 @@ type MessageResponse struct {
 	CreatedAt  string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
+type LastMessagePreview struct {
+	Content   string `json:"content" example:"Hey, have you seen this movie?"`
+	IsOwn     bool   `json:"is_own" example:"true"`
+	CreatedAt string `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
 type ConversationListResponse struct {
-	User        UserSummary     `json:"user"`
-	LastMessage MessageResponse `json:"last_message"`
-	UnreadCount int             `json:"unread_count" example:"3"`
+	User        UserSummary        `json:"user"`
+	LastMessage LastMessagePreview `json:"last_message"`
+	UnreadCount int                `json:"unread_count" example:"3"`
 }
 
 // @Summary      Send a message
@@ -47,7 +53,7 @@ type ConversationListResponse struct {
 // @Security     BearerAuth
 // @Param        userId path string true "Receiver user ID" format(uuid)
 // @Param        request body SendMessageRequest true "Message content"
-// @Success      201 {object} response.Response{data=MessageResponse} "Message sent"
+// @Success      201 {object} response.Response{data=MessageResponse} "Message sent successfully"
 // @Failure      400 {object} response.Response "Invalid request or cannot message self"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Not mutual follow"
@@ -157,7 +163,11 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 	resp := make([]ConversationListResponse, len(conversations))
 	for i, conv := range conversations {
 		resp[i] = ConversationListResponse{
-			LastMessage: toMessageResponse(conv.LastMessage),
+			LastMessage: LastMessagePreview{
+				Content:   conv.LastMessage.Content,
+				IsOwn:     conv.LastMessage.SenderID == userID,
+				CreatedAt: conv.LastMessage.CreatedAt.Format(time.RFC3339),
+			},
 			UnreadCount: conv.UnreadCount,
 		}
 		if conv.OtherUser != nil {

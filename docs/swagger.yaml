@@ -126,7 +126,7 @@ definitions:
   internal_adapters_handlers.ConversationListResponse:
     properties:
       last_message:
-        $ref: '#/definitions/internal_adapters_handlers.MessageResponse'
+        $ref: '#/definitions/internal_adapters_handlers.LastMessagePreview'
       unread_count:
         example: 3
         type: integer
@@ -195,6 +195,18 @@ definitions:
       username:
         example: johndoe
         type: string
+    type: object
+  internal_adapters_handlers.LastMessagePreview:
+    properties:
+      content:
+        example: Hey, have you seen this movie?
+        type: string
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      is_own:
+        example: true
+        type: boolean
     type: object
   internal_adapters_handlers.LoginRequest:
     properties:
@@ -1471,7 +1483,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: Message sent
+          description: Message sent successfully
           schema:
             allOf:
             - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
