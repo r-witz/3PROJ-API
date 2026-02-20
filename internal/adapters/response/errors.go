@@ -72,6 +72,16 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrCommentNotFound:     {http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found"},
 	domain.ErrAlreadyLiked:        {http.StatusConflict, "ALREADY_LIKED", "Already liked"},
 	domain.ErrNotLiked:            {http.StatusNotFound, "NOT_LIKED", "Not liked"},
+
+	// Follow errors
+	domain.ErrCannotFollowSelf: {http.StatusBadRequest, "CANNOT_FOLLOW_SELF", "Cannot follow yourself"},
+	domain.ErrAlreadyFollowing: {http.StatusConflict, "ALREADY_FOLLOWING", "Already following this user"},
+	domain.ErrNotFollowing:     {http.StatusNotFound, "NOT_FOLLOWING", "Not following this user"},
+
+	// Message errors
+	domain.ErrNotMutualFollow:   {http.StatusForbidden, "NOT_MUTUAL_FOLLOW", "Users must follow each other to message"},
+	domain.ErrMessageNotFound:   {http.StatusNotFound, "MESSAGE_NOT_FOUND", "Message not found"},
+	domain.ErrCannotMessageSelf: {http.StatusBadRequest, "CANNOT_MESSAGE_SELF", "Cannot send a message to yourself"},
 }
 
 func HandleError(c *gin.Context, err error) {

@@ -110,9 +110,12 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
 	userService := services.NewUserService(userRepo)
-	followService := services.NewFollowService(followRepo)
+	messageRepo := repositories.NewMessageRepository(db)
+
+	followService := services.NewFollowService(followRepo, userRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo)
+	messageService := services.NewMessageService(messageRepo, followRepo, userRepo)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 
@@ -150,6 +153,8 @@ func main() {
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
 	reviewHandler := handlers.NewReviewHandler(reviewService, userService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService)
+	followHandler := handlers.NewFollowHandler(followService)
+	messageHandler := handlers.NewMessageHandler(messageService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -164,6 +169,8 @@ func main() {
 		collectionHandler,
 		reviewHandler,
 		commentHandler,
+		followHandler,
+		messageHandler,
 		userService,
 	)
 

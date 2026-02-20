@@ -29,6 +29,8 @@ type Router struct {
 	collectionHandler *handlers.CollectionHandler
 	reviewHandler     *handlers.ReviewHandler
 	commentHandler    *handlers.CommentHandler
+	followHandler     *handlers.FollowHandler
+	messageHandler    *handlers.MessageHandler
 	userService       ports.UserService
 }
 
@@ -42,6 +44,8 @@ func NewRouter(
 	collectionHandler *handlers.CollectionHandler,
 	reviewHandler *handlers.ReviewHandler,
 	commentHandler *handlers.CommentHandler,
+	followHandler *handlers.FollowHandler,
+	messageHandler *handlers.MessageHandler,
 	userService ports.UserService,
 ) *Router {
 	return &Router{
@@ -55,6 +59,8 @@ func NewRouter(
 		collectionHandler: collectionHandler,
 		reviewHandler:     reviewHandler,
 		commentHandler:    commentHandler,
+		followHandler:     followHandler,
+		messageHandler:    messageHandler,
 		userService:       userService,
 	}
 }
@@ -75,6 +81,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupActorRoutes(v1)
 		r.setupReviewRoutes(v1)
 		r.setupCommentRoutes(v1)
+		r.setupMessageRoutes(v1)
 	}
 
 	return r.engine
@@ -117,6 +124,10 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
 		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByUserID)
+		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Follow)
+		users.DELETE("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Unfollow)
+		users.GET("/:userId/followers", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowers)
+		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowing)
 
 		collections := users.Group("/:userId/collections")
 		{
@@ -181,6 +192,17 @@ func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
 		comments.DELETE("/:commentId", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Delete)
 		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Like)
 		comments.DELETE("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Unlike)
+	}
+}
+
+func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
+	messages := rg.Group("/messages")
+	messages.Use(middleware.Auth(r.config.AccessTokenSecret))
+	{
+		messages.GET("", r.messageHandler.GetConversations)
+		messages.GET("/:userId", r.messageHandler.GetConversation)
+		messages.POST("/:userId", r.messageHandler.SendMessage)
+		messages.PUT("/:userId/read", r.messageHandler.MarkAsRead)
 	}
 }
 

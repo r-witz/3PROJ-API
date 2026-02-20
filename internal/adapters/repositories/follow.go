@@ -72,6 +72,62 @@ func (r *FollowRepository) GetFollowing(ctx context.Context, userID uuid.UUID) (
 	return follows, rows.Err()
 }
 
+func (r *FollowRepository) GetFollowersPaginated(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Follow, int, error) {
+	countQuery := `SELECT COUNT(*) FROM follows WHERE following_id = $1`
+	var total int
+	if err := r.db.Pool.QueryRow(ctx, countQuery, userID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT follower_id, following_id, created_at
+		FROM follows WHERE following_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var follows []*domain.Follow
+	for rows.Next() {
+		follow := &domain.Follow{}
+		if err := rows.Scan(&follow.FollowerID, &follow.FollowingID, &follow.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		follows = append(follows, follow)
+	}
+	return follows, total, rows.Err()
+}
+
+func (r *FollowRepository) GetFollowingPaginated(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Follow, int, error) {
+	countQuery := `SELECT COUNT(*) FROM follows WHERE follower_id = $1`
+	var total int
+	if err := r.db.Pool.QueryRow(ctx, countQuery, userID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT follower_id, following_id, created_at
+		FROM follows WHERE follower_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var follows []*domain.Follow
+	for rows.Next() {
+		follow := &domain.Follow{}
+		if err := rows.Scan(&follow.FollowerID, &follow.FollowingID, &follow.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		follows = append(follows, follow)
+	}
+	return follows, total, rows.Err()
+}
+
 func (r *FollowRepository) GetByFollowerIDAndFollowingID(ctx context.Context, followerID, followingID uuid.UUID) (*domain.Follow, error) {
 	query := `
 		SELECT follower_id, following_id, created_at

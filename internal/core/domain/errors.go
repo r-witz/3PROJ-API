@@ -71,3 +71,15 @@ var (
 	ErrAlreadyLiked        = errors.New("already liked")
 	ErrNotLiked            = errors.New("not liked")
 )
+
+var (
+	ErrCannotFollowSelf = errors.New("cannot follow yourself")
+	ErrAlreadyFollowing = errors.New("already following this user")
+	ErrNotFollowing     = errors.New("not following this user")
+)
+
+var (
+	ErrNotMutualFollow   = errors.New("users must follow each other to message")
+	ErrMessageNotFound   = errors.New("message not found")
+	ErrCannotMessageSelf = errors.New("cannot send a message to yourself")
+)
