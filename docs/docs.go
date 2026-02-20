@@ -1678,7 +1678,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned.",
+                "description": "List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded.",
                 "produces": [
                     "application/json"
                 ],

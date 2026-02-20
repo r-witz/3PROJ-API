@@ -105,7 +105,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get reviews for a movie
-// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned.
+// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth

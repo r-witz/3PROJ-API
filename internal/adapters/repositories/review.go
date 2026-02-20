@@ -92,17 +92,30 @@ func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, tm
 	return reviews, rows.Err()
 }
 
-func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
+func (r *ReviewRepository) GetByTMDBID(ctx context.Context, tmdbID int, excludeUserID *uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
 	orderClause := buildReviewOrderClause(sort)
+
+	where := "WHERE r.tmdb_id = $1 AND r.content IS NOT NULL AND r.content != ''"
+	args := []any{tmdbID}
+	paramIdx := 2
+
+	if excludeUserID != nil {
+		where += fmt.Sprintf(" AND r.user_id != $%d", paramIdx)
+		args = append(args, *excludeUserID)
+		paramIdx++
+	}
+
+	args = append(args, limit, offset)
 	query := fmt.Sprintf(`
 		SELECT r.id, r.user_id, r.tmdb_id, r.rating, r.content, r.contains_spoilers, r.featured_at, r.created_at, r.updated_at
 		FROM reviews r
 		LEFT JOIN (SELECT review_id, COUNT(*) AS like_count FROM review_likes GROUP BY review_id) rl ON rl.review_id = r.id
-		WHERE r.tmdb_id = $1 AND r.content IS NOT NULL AND r.content != ''
+		%s
 		ORDER BY %s
-		LIMIT $2 OFFSET $3
-	`, orderClause)
-	rows, err := r.db.Pool.Query(ctx, query, tmdbID, limit, offset)
+		LIMIT $%d OFFSET $%d
+	`, where, orderClause, paramIdx, paramIdx+1)
+
+	rows, err := r.db.Pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,8 +151,12 @@ func (r *ReviewRepository) GetByUserIDAndTMDBID(ctx context.Context, userID uuid
 	return review, err
 }
 
-func (r *ReviewRepository) CountByTMDBID(ctx context.Context, tmdbID int) (int, error) {
+func (r *ReviewRepository) CountByTMDBID(ctx context.Context, tmdbID int, excludeUserID *uuid.UUID) (int, error) {
 	var count int
+	if excludeUserID != nil {
+		err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE tmdb_id = $1 AND user_id != $2 AND content IS NOT NULL AND content != ''`, tmdbID, *excludeUserID).Scan(&count)
+		return count, err
+	}
 	err := r.db.Pool.QueryRow(ctx, `SELECT COUNT(*) FROM reviews WHERE tmdb_id = $1 AND content IS NOT NULL AND content != ''`, tmdbID).Scan(&count)
 	return count, err
 }

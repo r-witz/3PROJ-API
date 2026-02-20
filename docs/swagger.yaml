@@ -1406,7 +1406,8 @@ paths:
   /movies/{id}/reviews:
     get:
       description: List all reviews for a movie by TMDB ID with pagination and sorting.
-        Only reviews with content are returned.
+        Only reviews with content are returned. If authenticated, the logged-in user's
+        own review is excluded.
       parameters:
       - description: TMDB movie ID
         in: path
