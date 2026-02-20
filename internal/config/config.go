@@ -38,6 +38,19 @@ type Config struct {
 func LoadConfig() (Config, error) {
 	viper.AutomaticEnv()
 
+	viper.BindEnv("DATABASE_URL")
+	viper.BindEnv("TMDB_API_KEY")
+	viper.BindEnv("ACCESS_TOKEN_SECRET")
+	viper.BindEnv("REFRESH_TOKEN_SECRET")
+	viper.BindEnv("MINIO_ACCESS_KEY")
+	viper.BindEnv("MINIO_SECRET_KEY")
+	viper.BindEnv("MINIO_PUBLIC_URL")
+	viper.BindEnv("GITHUB_CLIENT_ID")
+	viper.BindEnv("GITHUB_CLIENT_SECRET")
+	viper.BindEnv("GOOGLE_CLIENT_ID")
+	viper.BindEnv("GOOGLE_CLIENT_SECRET")
+	viper.BindEnv("OAUTH_STATE_SECRET")
+
 	viper.SetDefault("SERVER_PORT", "8080")
 	viper.SetDefault("LOG_LEVEL", "info")
 	viper.SetDefault("ACCESS_TOKEN_EXPIRY", 15*time.Minute)
