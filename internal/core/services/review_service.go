@@ -122,13 +122,13 @@ func (s *reviewService) GetByTMDBID(ctx context.Context, tmdbID int, requestingU
 	return result, total, nil
 }
 
-func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*ports.ReviewWithMeta, int, error) {
-	reviews, err := s.reviewRepo.GetByUserID(ctx, userID, offset, limit, sort)
+func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, requestingUserID *uuid.UUID, offset, limit int, sort ports.ReviewSort) ([]*ports.ReviewWithMeta, int, error) {
+	reviews, err := s.reviewRepo.GetByUserID(ctx, userID, tmdbID, offset, limit, sort)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
 
-	total, err := s.reviewRepo.CountByUserID(ctx, userID)
+	total, err := s.reviewRepo.CountByUserID(ctx, userID, tmdbID)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}

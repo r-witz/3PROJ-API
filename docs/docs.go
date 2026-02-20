@@ -1678,7 +1678,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews for a movie by TMDB ID with pagination and sorting.",
+                "description": "List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned.",
                 "produces": [
                     "application/json"
                 ],
@@ -3538,7 +3538,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews by a specific user with pagination and sorting.",
+                "description": "List all reviews by a specific user with pagination and sorting. Only reviews with content are returned.",
                 "produces": [
                     "application/json"
                 ],
@@ -3554,6 +3554,12 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by TMDB movie ID",
+                        "name": "tmdb_id",
+                        "in": "query"
                     },
                     {
                         "type": "integer",

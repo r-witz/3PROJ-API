@@ -1406,6 +1406,7 @@ paths:
   /movies/{id}/reviews:
     get:
       description: List all reviews for a movie by TMDB ID with pagination and sorting.
+        Only reviews with content are returned.
       parameters:
       - description: TMDB movie ID
         in: path
@@ -2486,6 +2487,7 @@ paths:
   /users/{userId}/reviews:
     get:
       description: List all reviews by a specific user with pagination and sorting.
+        Only reviews with content are returned.
       parameters:
       - description: User ID
         format: uuid
@@ -2493,6 +2495,10 @@ paths:
         name: userId
         required: true
         type: string
+      - description: Filter by TMDB movie ID
+        in: query
+        name: tmdb_id
+        type: integer
       - default: 0
         description: Offset for pagination
         in: query

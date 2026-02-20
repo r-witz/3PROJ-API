@@ -105,7 +105,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get reviews for a movie
-// @Description  List all reviews for a movie by TMDB ID with pagination and sorting.
+// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -183,11 +183,12 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      Get reviews by user
-// @Description  List all reviews by a specific user with pagination and sorting.
+// @Description  List all reviews by a specific user with pagination and sorting. Only reviews with content are returned.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
+// @Param        tmdb_id query int false "Filter by TMDB movie ID"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-created_at)
@@ -202,6 +203,16 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
+	var tmdbID *int
+	if v := c.Query("tmdb_id"); v != "" {
+		parsed, err := strconv.Atoi(v)
+		if err != nil {
+			response.BadRequest(c, "Invalid tmdb_id", nil)
+			return
+		}
+		tmdbID = &parsed
+	}
+
 	offset, limit := parsePagination(c)
 	sort := parseReviewSort(c.DefaultQuery("sort", "-created_at"))
 
@@ -210,7 +221,7 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 		requestingUserID = &uid
 	}
 
-	reviews, total, err := h.reviewService.GetByUserID(c.Request.Context(), userID, requestingUserID, offset, limit, sort)
+	reviews, total, err := h.reviewService.GetByUserID(c.Request.Context(), userID, tmdbID, requestingUserID, offset, limit, sort)
 	if err != nil {
 		response.HandleError(c, err)
 		return
