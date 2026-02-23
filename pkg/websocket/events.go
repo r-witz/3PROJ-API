@@ -7,7 +7,8 @@ const (
 	EventReactionAdded    = "reaction.added"
 	EventReactionRemoved  = "reaction.removed"
 	EventConversationRead = "conversation.read"
-	EventMessagingBlocked = "messaging.blocked"
+	EventMessagingBlocked   = "messaging.blocked"
+	EventMessagingUnblocked = "messaging.unblocked"
 )
 
 type Event struct {
@@ -35,6 +36,11 @@ type ConversationReadPayload struct {
 }
 
 type MessagingBlockedPayload struct {
+	UserID string `json:"user_id"`
+	Reason string `json:"reason"`
+}
+
+type MessagingUnblockedPayload struct {
 	UserID string `json:"user_id"`
 	Reason string `json:"reason"`
 }

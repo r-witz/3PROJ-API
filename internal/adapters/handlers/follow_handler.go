@@ -58,6 +58,22 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 		return
 	}
 
+	if mutual, _ := h.followService.IsFollowing(c.Request.Context(), followingID, followerID); mutual {
+		event := ws.Event{
+			Type: ws.EventMessagingUnblocked,
+			Data: ws.MessagingUnblockedPayload{
+				UserID: followerID.String(),
+				Reason: "mutual_follow",
+			},
+		}
+		h.hub.SendToUser(followingID, event)
+		event.Data = ws.MessagingUnblockedPayload{
+			UserID: followingID.String(),
+			Reason: "mutual_follow",
+		}
+		h.hub.SendToUser(followerID, event)
+	}
+
 	c.Status(204)
 }
 

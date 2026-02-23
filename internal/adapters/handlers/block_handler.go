@@ -98,6 +98,14 @@ func (h *BlockHandler) UnblockUser(c *gin.Context) {
 		return
 	}
 
+	h.hub.SendToUser(blockedID, ws.Event{
+		Type: ws.EventMessagingUnblocked,
+		Data: ws.MessagingUnblockedPayload{
+			UserID: blockerID.String(),
+			Reason: "unblocked",
+		},
+	})
+
 	c.Status(204)
 }
 
