@@ -81,6 +81,16 @@ func (s *movieService) Discover(ctx context.Context, input ports.DiscoverMoviesI
 		params.PrimaryReleaseDateLTE = fmt.Sprintf("%d-12-31", input.YearTo)
 	}
 
+	if input.RuntimeGTE > 0 {
+		params.WithRuntimeGTE = input.RuntimeGTE
+	}
+	if input.RuntimeLTE > 0 {
+		params.WithRuntimeLTE = input.RuntimeLTE
+	}
+	if input.OriginalLanguage != "" {
+		params.WithOriginalLanguage = input.OriginalLanguage
+	}
+
 	params.SortBy = parseSort(input.Sort)
 
 	result, err := s.tmdbClient.DiscoverMovies(ctx, params)

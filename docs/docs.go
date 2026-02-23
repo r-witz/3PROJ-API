@@ -1705,7 +1705,7 @@ const docTemplate = `{
         },
         "/movies/discover": {
             "get": {
-                "description": "Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, etc.",
+                "description": "Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, runtime, original language, etc.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1747,6 +1747,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by genre IDs (comma-separated)",
                         "name": "genres",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by minimum runtime in minutes",
+                        "name": "runtime_gte",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by maximum runtime in minutes",
+                        "name": "runtime_lte",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by original language (ISO 639-1, e.g. en, fr, ko)",
+                        "name": "original_language",
                         "in": "query"
                     },
                     {

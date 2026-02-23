@@ -1910,7 +1910,7 @@ paths:
       consumes:
       - application/json
       description: Discover movies with advanced filtering and sorting. Use this for
-        browsing by genre, year range, etc.
+        browsing by genre, year range, runtime, original language, etc.
       parameters:
       - default: 0
         description: Number of items to skip
@@ -1933,6 +1933,18 @@ paths:
       - description: Filter by genre IDs (comma-separated)
         in: query
         name: genres
+        type: string
+      - description: Filter by minimum runtime in minutes
+        in: query
+        name: runtime_gte
+        type: integer
+      - description: Filter by maximum runtime in minutes
+        in: query
+        name: runtime_lte
+        type: integer
+      - description: Filter by original language (ISO 639-1, e.g. en, fr, ko)
+        in: query
+        name: original_language
         type: string
       - default: -popularity
         description: Sort field with direction prefix (+asc, -desc)

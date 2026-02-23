@@ -13,13 +13,16 @@ type SearchMoviesInput struct {
 }
 
 type DiscoverMoviesInput struct {
-	Offset   int
-	Limit    int
-	Language string
-	YearFrom int
-	YearTo   int
-	Genres   []int
-	Sort     string
+	Offset           int
+	Limit            int
+	Language         string
+	YearFrom         int
+	YearTo           int
+	Genres           []int
+	Sort             string
+	RuntimeGTE       int
+	RuntimeLTE       int
+	OriginalLanguage string
 }
 
 type MovieSearchResult struct {

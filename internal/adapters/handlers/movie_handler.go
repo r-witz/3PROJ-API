@@ -64,7 +64,7 @@ func (h *MovieHandler) Search(c *gin.Context) {
 }
 
 // @Summary      Discover movies with filters
-// @Description  Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, etc.
+// @Description  Discover movies with advanced filtering and sorting. Use this for browsing by genre, year range, runtime, original language, etc.
 // @Tags         movies
 // @Accept       json
 // @Produce      json
@@ -73,6 +73,9 @@ func (h *MovieHandler) Search(c *gin.Context) {
 // @Param        year_from query int false "Filter by starting year"
 // @Param        year_to query int false "Filter by ending year"
 // @Param        genres query string false "Filter by genre IDs (comma-separated)"
+// @Param        runtime_gte query int false "Filter by minimum runtime in minutes"
+// @Param        runtime_lte query int false "Filter by maximum runtime in minutes"
+// @Param        original_language query string false "Filter by original language (ISO 639-1, e.g. en, fr, ko)"
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+popularity, -popularity, +rating, -rating, +release_date, -release_date) default(-popularity)
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse "Discover results"
@@ -82,6 +85,9 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 	offset, limit := parsePagination(c)
 	yearFrom, _ := strconv.Atoi(c.Query("year_from"))
 	yearTo, _ := strconv.Atoi(c.Query("year_to"))
+	runtimeGTE, _ := strconv.Atoi(c.Query("runtime_gte"))
+	runtimeLTE, _ := strconv.Atoi(c.Query("runtime_lte"))
+	originalLanguage := c.Query("original_language")
 	sort := c.DefaultQuery("sort", "-popularity")
 	language := middleware.GetLocale(c)
 
@@ -95,13 +101,16 @@ func (h *MovieHandler) Discover(c *gin.Context) {
 	}
 
 	result, err := h.movieService.Discover(c.Request.Context(), ports.DiscoverMoviesInput{
-		Offset:   offset,
-		Limit:    limit,
-		Language: language,
-		YearFrom: yearFrom,
-		YearTo:   yearTo,
-		Genres:   genres,
-		Sort:     sort,
+		Offset:           offset,
+		Limit:            limit,
+		Language:         language,
+		YearFrom:         yearFrom,
+		YearTo:           yearTo,
+		Genres:           genres,
+		Sort:             sort,
+		RuntimeGTE:       runtimeGTE,
+		RuntimeLTE:       runtimeLTE,
+		OriginalLanguage: originalLanguage,
 	})
 	if err != nil {
 		response.HandleError(c, err)
