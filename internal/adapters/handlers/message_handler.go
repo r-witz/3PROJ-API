@@ -192,9 +192,23 @@ func (h *MessageHandler) GetConversation(c *gin.Context) {
 		return
 	}
 
+	messageIDs := make([]uuid.UUID, len(messages))
+	for i, m := range messages {
+		messageIDs[i] = m.ID
+	}
+
+	attachmentsMap, _ := h.messageService.GetAttachmentsByMessageIDs(c.Request.Context(), messageIDs)
+	reactionsMap, _ := h.messageService.GetReactionsByMessageIDs(c.Request.Context(), messageIDs)
+
 	resp := make([]MessageResponse, len(messages))
 	for i, m := range messages {
 		resp[i] = toMessageResponse(m)
+		if atts, ok := attachmentsMap[m.ID]; ok {
+			resp[i].Attachments = toAttachmentResponses(atts)
+		}
+		if reactions, ok := reactionsMap[m.ID]; ok {
+			resp[i].Reactions = toReactionGroupResponses(reactions)
+		}
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -516,6 +530,44 @@ func (h *MessageHandler) ReopenConversation(c *gin.Context) {
 	}
 
 	c.Status(204)
+}
+
+func toAttachmentResponses(attachments []*domain.MessageAttachment) []AttachmentResponse {
+	resp := make([]AttachmentResponse, len(attachments))
+	for i, a := range attachments {
+		resp[i] = AttachmentResponse{
+			ID:          a.ID.String(),
+			FileURL:     a.FileURL,
+			FileName:    a.FileName,
+			FileSize:    a.FileSize,
+			ContentType: a.ContentType,
+			Position:    a.Position,
+		}
+	}
+	return resp
+}
+
+func toReactionGroupResponses(reactions []*domain.MessageReaction) []ReactionGroupResponse {
+	groups := make(map[string]*ReactionGroupResponse)
+	order := make([]string, 0)
+	for _, r := range reactions {
+		if g, ok := groups[r.Emoji]; ok {
+			g.Count++
+			g.Users = append(g.Users, r.UserID.String())
+		} else {
+			groups[r.Emoji] = &ReactionGroupResponse{
+				Emoji: r.Emoji,
+				Count: 1,
+				Users: []string{r.UserID.String()},
+			}
+			order = append(order, r.Emoji)
+		}
+	}
+	resp := make([]ReactionGroupResponse, len(order))
+	for i, emoji := range order {
+		resp[i] = *groups[emoji]
+	}
+	return resp
 }
 
 func toMessageResponse(msg *domain.Message) MessageResponse {

@@ -357,3 +357,11 @@ func (s *messageService) ReopenConversation(ctx context.Context, userID, otherUs
 
 	return nil
 }
+
+func (s *messageService) GetAttachmentsByMessageIDs(ctx context.Context, messageIDs []uuid.UUID) (map[uuid.UUID][]*domain.MessageAttachment, error) {
+	return s.attachmentRepo.GetByMessageIDs(ctx, messageIDs)
+}
+
+func (s *messageService) GetReactionsByMessageIDs(ctx context.Context, messageIDs []uuid.UUID) (map[uuid.UUID][]*domain.MessageReaction, error) {
+	return s.reactionRepo.GetByMessageIDs(ctx, messageIDs)
+}

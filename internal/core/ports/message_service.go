@@ -33,4 +33,6 @@ type MessageService interface {
 	RemoveReaction(ctx context.Context, messageID, userID uuid.UUID, emoji string) error
 	CloseConversation(ctx context.Context, userID, otherUserID uuid.UUID) error
 	ReopenConversation(ctx context.Context, userID, otherUserID uuid.UUID) error
+	GetAttachmentsByMessageIDs(ctx context.Context, messageIDs []uuid.UUID) (map[uuid.UUID][]*domain.MessageAttachment, error)
+	GetReactionsByMessageIDs(ctx context.Context, messageIDs []uuid.UUID) (map[uuid.UUID][]*domain.MessageReaction, error)
 }
