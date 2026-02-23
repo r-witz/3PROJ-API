@@ -126,6 +126,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByUserID)
 		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Follow)
 		users.DELETE("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Unfollow)
+		users.DELETE("/:userId/followers", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.RemoveFollower)
 		users.GET("/:userId/followers", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowers)
 		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowing)
 

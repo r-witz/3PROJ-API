@@ -60,6 +60,18 @@ func (s *followService) Unfollow(ctx context.Context, followerID, followingID uu
 	return s.followRepo.Delete(ctx, followerID, followingID)
 }
 
+func (s *followService) RemoveFollower(ctx context.Context, userID, followerID uuid.UUID) error {
+	existing, err := s.followRepo.GetByFollowerIDAndFollowingID(ctx, followerID, userID)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return domain.ErrNotFollowing
+	}
+
+	return s.followRepo.Delete(ctx, followerID, userID)
+}
+
 func (s *followService) GetFollowers(ctx context.Context, userID uuid.UUID, search string, offset, limit int) (*ports.FollowListResult, error) {
 	follows, total, err := s.followRepo.GetFollowersPaginated(ctx, userID, search, offset, limit)
 	if err != nil {

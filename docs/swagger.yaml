@@ -2929,6 +2929,41 @@ paths:
       tags:
       - follows
   /users/{userId}/followers:
+    delete:
+      description: Remove a user from your followers list
+      parameters:
+      - description: User ID of the follower to remove
+        format: uuid
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Follower removed successfully
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User is not following you
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Remove a follower
+      tags:
+      - follows
     get:
       description: Get the paginated list of followers for a user. Optionally filter
         by username.

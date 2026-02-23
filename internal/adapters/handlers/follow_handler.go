@@ -92,6 +92,39 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 	c.Status(204)
 }
 
+// @Summary      Remove a follower
+// @Description  Remove a user from your followers list
+// @Tags         follows
+// @Produce      json
+// @Security     BearerAuth
+// @Param        userId path string true "User ID of the follower to remove" format(uuid)
+// @Success      204 "Follower removed successfully"
+// @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      404 {object} response.Response "User is not following you"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /users/{userId}/followers [delete]
+func (h *FollowHandler) RemoveFollower(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	followerID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if err := h.followService.RemoveFollower(c.Request.Context(), userID, followerID); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	c.Status(204)
+}
+
 // @Summary      Get followers
 // @Description  Get the paginated list of followers for a user. Optionally filter by username.
 // @Tags         follows
