@@ -93,11 +93,12 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 }
 
 // @Summary      Get followers
-// @Description  Get the paginated list of followers for a user
+// @Description  Get the paginated list of followers for a user. Optionally filter by username.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
+// @Param        q query string false "Search query to filter followers by username"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination (max 100)" default(20)
 // @Success      200 {object} response.PaginatedResponse{data=[]FollowUserResponse} "List of followers"
@@ -111,9 +112,10 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 		return
 	}
 
+	search := c.Query("q")
 	offset, limit := parsePagination(c)
 
-	result, err := h.followService.GetFollowers(c.Request.Context(), userID, offset, limit)
+	result, err := h.followService.GetFollowers(c.Request.Context(), userID, search, offset, limit)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -132,11 +134,12 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 }
 
 // @Summary      Get following
-// @Description  Get the paginated list of users that a user is following
+// @Description  Get the paginated list of users that a user is following. Optionally filter by username.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
+// @Param        q query string false "Search query to filter following by username"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination (max 100)" default(20)
 // @Success      200 {object} response.PaginatedResponse{data=[]FollowUserResponse} "List of following"
@@ -150,9 +153,10 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 		return
 	}
 
+	search := c.Query("q")
 	offset, limit := parsePagination(c)
 
-	result, err := h.followService.GetFollowing(c.Request.Context(), userID, offset, limit)
+	result, err := h.followService.GetFollowing(c.Request.Context(), userID, search, offset, limit)
 	if err != nil {
 		response.HandleError(c, err)
 		return

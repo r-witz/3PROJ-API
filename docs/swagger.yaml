@@ -2918,13 +2918,18 @@ paths:
       - follows
   /users/{userId}/followers:
     get:
-      description: Get the paginated list of followers for a user
+      description: Get the paginated list of followers for a user. Optionally filter
+        by username.
       parameters:
       - description: User ID
         format: uuid
         in: path
         name: userId
         required: true
+        type: string
+      - description: Search query to filter followers by username
+        in: query
+        name: q
         type: string
       - default: 0
         description: Offset for pagination
@@ -2965,13 +2970,18 @@ paths:
       - follows
   /users/{userId}/following:
     get:
-      description: Get the paginated list of users that a user is following
+      description: Get the paginated list of users that a user is following. Optionally
+        filter by username.
       parameters:
       - description: User ID
         format: uuid
         in: path
         name: userId
         required: true
+        type: string
+      - description: Search query to filter following by username
+        in: query
+        name: q
         type: string
       - default: 0
         description: Offset for pagination

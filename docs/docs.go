@@ -4090,7 +4090,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of followers for a user",
+                "description": "Get the paginated list of followers for a user. Optionally filter by username.",
                 "produces": [
                     "application/json"
                 ],
@@ -4106,6 +4106,12 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query to filter followers by username",
+                        "name": "q",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -4166,7 +4172,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of users that a user is following",
+                "description": "Get the paginated list of users that a user is following. Optionally filter by username.",
                 "produces": [
                     "application/json"
                 ],
@@ -4182,6 +4188,12 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search query to filter following by username",
+                        "name": "q",
+                        "in": "query"
                     },
                     {
                         "type": "integer",

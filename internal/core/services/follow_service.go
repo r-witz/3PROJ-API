@@ -60,8 +60,8 @@ func (s *followService) Unfollow(ctx context.Context, followerID, followingID uu
 	return s.followRepo.Delete(ctx, followerID, followingID)
 }
 
-func (s *followService) GetFollowers(ctx context.Context, userID uuid.UUID, offset, limit int) (*ports.FollowListResult, error) {
-	follows, total, err := s.followRepo.GetFollowersPaginated(ctx, userID, offset, limit)
+func (s *followService) GetFollowers(ctx context.Context, userID uuid.UUID, search string, offset, limit int) (*ports.FollowListResult, error) {
+	follows, total, err := s.followRepo.GetFollowersPaginated(ctx, userID, search, offset, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +99,8 @@ func (s *followService) GetFollowers(ctx context.Context, userID uuid.UUID, offs
 	}, nil
 }
 
-func (s *followService) GetFollowing(ctx context.Context, userID uuid.UUID, offset, limit int) (*ports.FollowListResult, error) {
-	follows, total, err := s.followRepo.GetFollowingPaginated(ctx, userID, offset, limit)
+func (s *followService) GetFollowing(ctx context.Context, userID uuid.UUID, search string, offset, limit int) (*ports.FollowListResult, error) {
+	follows, total, err := s.followRepo.GetFollowingPaginated(ctx, userID, search, offset, limit)
 	if err != nil {
 		return nil, err
 	}
