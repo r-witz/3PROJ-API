@@ -19,4 +19,6 @@ type MessageService interface {
 	GetConversation(ctx context.Context, userID, otherUserID uuid.UUID, offset, limit int) ([]*domain.Message, int, error)
 	GetConversations(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*ConversationResponse, int, error)
 	MarkAsRead(ctx context.Context, userID, otherUserID uuid.UUID) error
+	UpdateMessage(ctx context.Context, messageID, userID uuid.UUID, content string) (*domain.Message, error)
+	DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) error
 }

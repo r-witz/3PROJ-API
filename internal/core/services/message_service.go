@@ -105,3 +105,45 @@ func (s *messageService) GetConversations(ctx context.Context, userID uuid.UUID,
 func (s *messageService) MarkAsRead(ctx context.Context, userID, otherUserID uuid.UUID) error {
 	return s.messageRepo.MarkConversationAsRead(ctx, userID, otherUserID)
 }
+
+func (s *messageService) UpdateMessage(ctx context.Context, messageID, userID uuid.UUID, content string) (*domain.Message, error) {
+	message, err := s.messageRepo.GetByID(ctx, messageID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if message == nil {
+		return nil, domain.ErrMessageNotFound
+	}
+
+	if message.SenderID != userID {
+		return nil, domain.ErrForbidden
+	}
+
+	message.Content = content
+
+	if err := s.messageRepo.Update(ctx, message); err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return message, nil
+}
+
+func (s *messageService) DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) error {
+	message, err := s.messageRepo.GetByID(ctx, messageID)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if message == nil {
+		return domain.ErrMessageNotFound
+	}
+
+	if message.SenderID != userID {
+		return domain.ErrForbidden
+	}
+
+	if err := s.messageRepo.Delete(ctx, messageID); err != nil {
+		return domain.ErrInternal
+	}
+
+	return nil
+}

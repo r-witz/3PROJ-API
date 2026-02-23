@@ -24,6 +24,10 @@ type SendMessageRequest struct {
 	Content string `json:"content" binding:"required,min=1,max=2000" example:"Hey, have you seen this movie?"`
 }
 
+type UpdateMessageRequest struct {
+	Content string `json:"content" binding:"required,min=1,max=2000" example:"Updated message content"`
+}
+
 type MessageResponse struct {
 	ID         string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	SenderID   string  `json:"sender_id" example:"550e8400-e29b-41d4-a716-446655440000"`
@@ -211,6 +215,83 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 	}
 
 	if err := h.messageService.MarkAsRead(c.Request.Context(), userID, otherUserID); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	c.Status(204)
+}
+
+// @Summary      Update a message
+// @Description  Update your own message content
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        messageId path string true "Message ID" format(uuid)
+// @Param        request body UpdateMessageRequest true "Updated message content"
+// @Success      200 {object} response.Response{data=MessageResponse} "Updated message"
+// @Failure      400 {object} response.Response "Invalid request body"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "Forbidden - not the sender"
+// @Failure      404 {object} response.Response "Message not found"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /messages/{messageId} [patch]
+func (h *MessageHandler) UpdateMessage(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	messageID, err := uuid.Parse(c.Param("messageId"))
+	if err != nil {
+		response.BadRequest(c, "Invalid message ID", nil)
+		return
+	}
+
+	var req UpdateMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body", err.Error())
+		return
+	}
+
+	message, err := h.messageService.UpdateMessage(c.Request.Context(), messageID, userID, req.Content)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, toMessageResponse(message))
+}
+
+// @Summary      Delete a message
+// @Description  Delete your own message
+// @Tags         messages
+// @Produce      json
+// @Security     BearerAuth
+// @Param        messageId path string true "Message ID" format(uuid)
+// @Success      204 "Message deleted"
+// @Failure      400 {object} response.Response "Invalid message ID"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "Forbidden - not the sender"
+// @Failure      404 {object} response.Response "Message not found"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /messages/{messageId} [delete]
+func (h *MessageHandler) DeleteMessage(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	messageID, err := uuid.Parse(c.Param("messageId"))
+	if err != nil {
+		response.BadRequest(c, "Invalid message ID", nil)
+		return
+	}
+
+	if err := h.messageService.DeleteMessage(c.Request.Context(), messageID, userID); err != nil {
 		response.HandleError(c, err)
 		return
 	}

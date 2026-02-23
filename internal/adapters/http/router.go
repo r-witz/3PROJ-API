@@ -203,6 +203,8 @@ func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 		messages.GET("/:userId", r.messageHandler.GetConversation)
 		messages.POST("/:userId", r.messageHandler.SendMessage)
 		messages.PUT("/:userId/read", r.messageHandler.MarkAsRead)
+		messages.PATCH("/:messageId", r.messageHandler.UpdateMessage)
+		messages.DELETE("/:messageId", r.messageHandler.DeleteMessage)
 	}
 }
 
