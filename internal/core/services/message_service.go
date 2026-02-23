@@ -140,8 +140,9 @@ func (s *messageService) SendMessage(ctx context.Context, senderID, receiverID u
 		}
 	}
 
-	// Auto-reopen receiver's conversation if closed
+	// Auto-reopen conversation for both users if closed
 	_ = s.convStateRepo.ClearClosedAt(ctx, receiverID, senderID)
+	_ = s.convStateRepo.ClearClosedAt(ctx, senderID, receiverID)
 
 	return message, createdAttachments, nil
 }
