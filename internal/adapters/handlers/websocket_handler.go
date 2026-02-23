@@ -28,7 +28,7 @@ func NewWebSocketHandler(hub *ws.Hub, accessTokenSecret string) *WebSocketHandle
 }
 
 // @Summary      WebSocket connection
-// @Description  Establishes a WebSocket connection for real-time messaging notifications. The connection is read-only — messages are still sent via REST POST /messages/:id. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read.
+// @Description  Establishes a WebSocket connection for real-time messaging notifications. The connection is read-only — messages are still sent via REST POST /messages/:id. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked.
 // @Tags         websocket
 // @Produce      json
 // @Param        token query string true "JWT access token"

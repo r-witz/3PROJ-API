@@ -4,6 +4,7 @@ import (
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,10 +12,11 @@ import (
 
 type BlockHandler struct {
 	blockService ports.BlockService
+	hub          *ws.Hub
 }
 
-func NewBlockHandler(blockService ports.BlockService) *BlockHandler {
-	return &BlockHandler{blockService: blockService}
+func NewBlockHandler(blockService ports.BlockService, hub *ws.Hub) *BlockHandler {
+	return &BlockHandler{blockService: blockService, hub: hub}
 }
 
 type BlockedUserResponse struct {
@@ -54,6 +56,14 @@ func (h *BlockHandler) BlockUser(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	h.hub.SendToUser(blockedID, ws.Event{
+		Type: ws.EventMessagingBlocked,
+		Data: ws.MessagingBlockedPayload{
+			UserID: blockerID.String(),
+			Reason: "blocked",
+		},
+	})
 
 	c.Status(204)
 }

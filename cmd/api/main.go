@@ -159,12 +159,12 @@ func main() {
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
 	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService)
-	followHandler := handlers.NewFollowHandler(followService)
 	hub := ws.NewHub()
 	go hub.Run()
 
+	followHandler := handlers.NewFollowHandler(followService, hub)
 	messageHandler := handlers.NewMessageHandler(messageService, hub)
-	blockHandler := handlers.NewBlockHandler(blockService)
+	blockHandler := handlers.NewBlockHandler(blockService, hub)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 
 	router := http.NewRouter(

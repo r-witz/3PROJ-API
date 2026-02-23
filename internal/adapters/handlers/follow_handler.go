@@ -4,6 +4,7 @@ import (
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,10 +12,11 @@ import (
 
 type FollowHandler struct {
 	followService ports.FollowService
+	hub           *ws.Hub
 }
 
-func NewFollowHandler(followService ports.FollowService) *FollowHandler {
-	return &FollowHandler{followService: followService}
+func NewFollowHandler(followService ports.FollowService, hub *ws.Hub) *FollowHandler {
+	return &FollowHandler{followService: followService, hub: hub}
 }
 
 type FollowUserResponse struct {
@@ -89,6 +91,14 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 		return
 	}
 
+	h.hub.SendToUser(followingID, ws.Event{
+		Type: ws.EventMessagingBlocked,
+		Data: ws.MessagingBlockedPayload{
+			UserID: followerID.String(),
+			Reason: "unfollowed",
+		},
+	})
+
 	c.Status(204)
 }
 
@@ -121,6 +131,14 @@ func (h *FollowHandler) RemoveFollower(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	h.hub.SendToUser(followerID, ws.Event{
+		Type: ws.EventMessagingBlocked,
+		Data: ws.MessagingBlockedPayload{
+			UserID: userID.String(),
+			Reason: "follower_removed",
+		},
+	})
 
 	c.Status(204)
 }

@@ -1,12 +1,13 @@
 package websocket
 
 const (
-	EventMessageNew      = "message.new"
-	EventMessageUpdated  = "message.updated"
-	EventMessageDeleted  = "message.deleted"
-	EventReactionAdded   = "reaction.added"
-	EventReactionRemoved = "reaction.removed"
+	EventMessageNew       = "message.new"
+	EventMessageUpdated   = "message.updated"
+	EventMessageDeleted   = "message.deleted"
+	EventReactionAdded    = "reaction.added"
+	EventReactionRemoved  = "reaction.removed"
 	EventConversationRead = "conversation.read"
+	EventMessagingBlocked = "messaging.blocked"
 )
 
 type Event struct {
@@ -29,6 +30,11 @@ type ReactionPayload struct {
 }
 
 type ConversationReadPayload struct {
-	ReaderID  string `json:"reader_id"`
-	OtherID   string `json:"other_id"`
+	ReaderID string `json:"reader_id"`
+	OtherID  string `json:"other_id"`
+}
+
+type MessagingBlockedPayload struct {
+	UserID string `json:"user_id"`
+	Reason string `json:"reason"`
 }
