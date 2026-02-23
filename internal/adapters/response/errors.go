@@ -82,6 +82,27 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrNotMutualFollow:   {http.StatusForbidden, "NOT_MUTUAL_FOLLOW", "Users must follow each other to message"},
 	domain.ErrMessageNotFound:   {http.StatusNotFound, "MESSAGE_NOT_FOUND", "Message not found"},
 	domain.ErrCannotMessageSelf: {http.StatusBadRequest, "CANNOT_MESSAGE_SELF", "Cannot send a message to yourself"},
+
+	// Block errors
+	domain.ErrCannotBlockSelf: {http.StatusBadRequest, "CANNOT_BLOCK_SELF", "Cannot block yourself"},
+	domain.ErrAlreadyBlocked:  {http.StatusConflict, "ALREADY_BLOCKED", "User is already blocked"},
+	domain.ErrNotBlocked:      {http.StatusNotFound, "NOT_BLOCKED", "User is not blocked"},
+	domain.ErrUserBlocked:     {http.StatusForbidden, "USER_BLOCKED", "Action blocked due to user block"},
+
+	// Attachment errors
+	domain.ErrNoContent:             {http.StatusBadRequest, "NO_CONTENT", "Message must have content or attachments"},
+	domain.ErrTooManyAttachments:    {http.StatusBadRequest, "TOO_MANY_ATTACHMENTS", "Too many attachments"},
+	domain.ErrAttachmentTooLarge:    {http.StatusBadRequest, "ATTACHMENT_TOO_LARGE", "Attachment file is too large"},
+	domain.ErrInvalidAttachmentType: {http.StatusBadRequest, "INVALID_ATTACHMENT_TYPE", "Invalid attachment content type"},
+
+	// Reaction errors
+	domain.ErrReactionAlreadyExists: {http.StatusConflict, "REACTION_EXISTS", "Reaction already exists"},
+	domain.ErrReactionNotFound:      {http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found"},
+	domain.ErrNotParticipant:        {http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant of this conversation"},
+
+	// Conversation state errors
+	domain.ErrConversationAlreadyClosed: {http.StatusConflict, "CONVERSATION_ALREADY_CLOSED", "Conversation is already closed"},
+	domain.ErrConversationNotClosed:     {http.StatusConflict, "CONVERSATION_NOT_CLOSED", "Conversation is not closed"},
 }
 
 func HandleError(c *gin.Context, err error) {

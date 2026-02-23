@@ -31,6 +31,7 @@ type Router struct {
 	commentHandler    *handlers.CommentHandler
 	followHandler     *handlers.FollowHandler
 	messageHandler    *handlers.MessageHandler
+	blockHandler      *handlers.BlockHandler
 	userService       ports.UserService
 }
 
@@ -46,6 +47,7 @@ func NewRouter(
 	commentHandler *handlers.CommentHandler,
 	followHandler *handlers.FollowHandler,
 	messageHandler *handlers.MessageHandler,
+	blockHandler *handlers.BlockHandler,
 	userService ports.UserService,
 ) *Router {
 	return &Router{
@@ -61,6 +63,7 @@ func NewRouter(
 		commentHandler:    commentHandler,
 		followHandler:     followHandler,
 		messageHandler:    messageHandler,
+		blockHandler:      blockHandler,
 		userService:       userService,
 	}
 }
@@ -122,6 +125,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.DELETE("/me/avatar", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteAvatar)
 		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
+		users.GET("/me/blocked", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.GetBlockedUsers)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
 		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByUserID)
 		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Follow)
@@ -129,6 +133,8 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.DELETE("/:userId/followers", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.RemoveFollower)
 		users.GET("/:userId/followers", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowers)
 		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowing)
+		users.POST("/:userId/block", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.BlockUser)
+		users.DELETE("/:userId/block", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.UnblockUser)
 
 		collections := users.Group("/:userId/collections")
 		{
@@ -204,8 +210,12 @@ func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 		messages.GET("/:userId", r.messageHandler.GetConversation)
 		messages.POST("/:userId", r.messageHandler.SendMessage)
 		messages.PUT("/:userId/read", r.messageHandler.MarkAsRead)
+		messages.POST("/:userId/close", r.messageHandler.CloseConversation)
+		messages.DELETE("/:userId/close", r.messageHandler.ReopenConversation)
 		messages.PATCH("/:messageId", r.messageHandler.UpdateMessage)
 		messages.DELETE("/:messageId", r.messageHandler.DeleteMessage)
+		messages.POST("/:messageId/reactions", r.messageHandler.AddReaction)
+		messages.DELETE("/:messageId/reactions", r.messageHandler.RemoveReaction)
 	}
 }
 

@@ -3,6 +3,8 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
@@ -22,23 +24,23 @@ func NewMessageRepository(db *database.DB) *MessageRepository {
 
 func (r *MessageRepository) Create(ctx context.Context, message *domain.Message) error {
 	query := `
-		INSERT INTO messages (id, sender_id, receiver_id, content, read_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO messages (id, sender_id, receiver_id, content, read_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := r.db.Pool.Exec(ctx, query,
-		message.ID, message.SenderID, message.ReceiverID, message.Content, message.ReadAt, message.CreatedAt,
+		message.ID, message.SenderID, message.ReceiverID, message.Content, message.ReadAt, message.CreatedAt, message.UpdatedAt,
 	)
 	return err
 }
 
 func (r *MessageRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Message, error) {
 	query := `
-		SELECT id, sender_id, receiver_id, content, read_at, created_at
+		SELECT id, sender_id, receiver_id, content, read_at, created_at, updated_at
 		FROM messages WHERE id = $1
 	`
 	message := &domain.Message{}
 	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
-		&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt,
+		&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt, &message.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -48,7 +50,7 @@ func (r *MessageRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 
 func (r *MessageRepository) GetConversation(ctx context.Context, userID1, userID2 uuid.UUID) ([]*domain.Message, error) {
 	query := `
-		SELECT id, sender_id, receiver_id, content, read_at, created_at
+		SELECT id, sender_id, receiver_id, content, read_at, created_at, updated_at
 		FROM messages
 		WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
 		ORDER BY created_at
@@ -63,7 +65,7 @@ func (r *MessageRepository) GetConversation(ctx context.Context, userID1, userID
 	for rows.Next() {
 		message := &domain.Message{}
 		if err := rows.Scan(
-			&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt,
+			&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt, &message.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -83,7 +85,7 @@ func (r *MessageRepository) GetConversationPaginated(ctx context.Context, userID
 	}
 
 	query := `
-		SELECT id, sender_id, receiver_id, content, read_at, created_at
+		SELECT id, sender_id, receiver_id, content, read_at, created_at, updated_at
 		FROM messages
 		WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)
 		ORDER BY created_at DESC LIMIT $3 OFFSET $4
@@ -98,7 +100,7 @@ func (r *MessageRepository) GetConversationPaginated(ctx context.Context, userID
 	for rows.Next() {
 		message := &domain.Message{}
 		if err := rows.Scan(
-			&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt,
+			&message.ID, &message.SenderID, &message.ReceiverID, &message.Content, &message.ReadAt, &message.CreatedAt, &message.UpdatedAt,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -127,7 +129,7 @@ func (r *MessageRepository) GetConversations(ctx context.Context, userID uuid.UU
 		latest_messages AS (
 			SELECT DISTINCT ON (cp.other_user_id)
 				cp.other_user_id,
-				m.id, m.sender_id, m.receiver_id, m.content, m.read_at, m.created_at
+				m.id, m.sender_id, m.receiver_id, m.content, m.read_at, m.created_at, m.updated_at
 			FROM conversation_partners cp
 			JOIN messages m ON
 				(m.sender_id = $1 AND m.receiver_id = cp.other_user_id) OR
@@ -140,7 +142,7 @@ func (r *MessageRepository) GetConversations(ctx context.Context, userID uuid.UU
 			WHERE receiver_id = $1 AND read_at IS NULL
 			GROUP BY sender_id
 		)
-		SELECT lm.other_user_id, lm.id, lm.sender_id, lm.receiver_id, lm.content, lm.read_at, lm.created_at,
+		SELECT lm.other_user_id, lm.id, lm.sender_id, lm.receiver_id, lm.content, lm.read_at, lm.created_at, lm.updated_at,
 			COALESCE(uc.unread_count, 0) AS unread_count
 		FROM latest_messages lm
 		LEFT JOIN unread_counts uc ON uc.other_user_id = lm.other_user_id
@@ -159,7 +161,88 @@ func (r *MessageRepository) GetConversations(ctx context.Context, userID uuid.UU
 		conv := &ports.ConversationPreview{LastMessage: msg}
 		if err := rows.Scan(
 			&conv.OtherUserID,
-			&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.ReadAt, &msg.CreatedAt,
+			&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.ReadAt, &msg.CreatedAt, &msg.UpdatedAt,
+			&conv.UnreadCount,
+		); err != nil {
+			return nil, 0, err
+		}
+		conversations = append(conversations, conv)
+	}
+	return conversations, total, rows.Err()
+}
+
+func (r *MessageRepository) GetConversationsFiltered(ctx context.Context, userID uuid.UUID, excludeUserIDs []uuid.UUID, offset, limit int) ([]*ports.ConversationPreview, int, error) {
+	if len(excludeUserIDs) == 0 {
+		return r.GetConversations(ctx, userID, offset, limit)
+	}
+
+	excludePlaceholders := make([]string, len(excludeUserIDs))
+	args := []interface{}{userID}
+	for i, id := range excludeUserIDs {
+		args = append(args, id)
+		excludePlaceholders[i] = fmt.Sprintf("$%d", i+2)
+	}
+	excludeList := strings.Join(excludePlaceholders, ", ")
+	limitIdx := len(args) + 1
+	offsetIdx := len(args) + 2
+	args = append(args, limit, offset)
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(DISTINCT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END)
+		FROM messages
+		WHERE (sender_id = $1 OR receiver_id = $1)
+		AND CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END NOT IN (%s)
+	`, excludeList)
+
+	var total int
+	if err := r.db.Pool.QueryRow(ctx, countQuery, args[:len(excludeUserIDs)+1]...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := fmt.Sprintf(`
+		WITH conversation_partners AS (
+			SELECT DISTINCT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END AS other_user_id
+			FROM messages
+			WHERE (sender_id = $1 OR receiver_id = $1)
+			AND CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END NOT IN (%s)
+		),
+		latest_messages AS (
+			SELECT DISTINCT ON (cp.other_user_id)
+				cp.other_user_id,
+				m.id, m.sender_id, m.receiver_id, m.content, m.read_at, m.created_at, m.updated_at
+			FROM conversation_partners cp
+			JOIN messages m ON
+				(m.sender_id = $1 AND m.receiver_id = cp.other_user_id) OR
+				(m.sender_id = cp.other_user_id AND m.receiver_id = $1)
+			ORDER BY cp.other_user_id, m.created_at DESC
+		),
+		unread_counts AS (
+			SELECT sender_id AS other_user_id, COUNT(*) AS unread_count
+			FROM messages
+			WHERE receiver_id = $1 AND read_at IS NULL
+			GROUP BY sender_id
+		)
+		SELECT lm.other_user_id, lm.id, lm.sender_id, lm.receiver_id, lm.content, lm.read_at, lm.created_at, lm.updated_at,
+			COALESCE(uc.unread_count, 0) AS unread_count
+		FROM latest_messages lm
+		LEFT JOIN unread_counts uc ON uc.other_user_id = lm.other_user_id
+		ORDER BY lm.created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, excludeList, limitIdx, offsetIdx)
+
+	rows, err := r.db.Pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var conversations []*ports.ConversationPreview
+	for rows.Next() {
+		msg := &domain.Message{}
+		conv := &ports.ConversationPreview{LastMessage: msg}
+		if err := rows.Scan(
+			&conv.OtherUserID,
+			&msg.ID, &msg.SenderID, &msg.ReceiverID, &msg.Content, &msg.ReadAt, &msg.CreatedAt, &msg.UpdatedAt,
 			&conv.UnreadCount,
 		); err != nil {
 			return nil, 0, err
@@ -181,10 +264,10 @@ func (r *MessageRepository) MarkConversationAsRead(ctx context.Context, userID, 
 func (r *MessageRepository) Update(ctx context.Context, message *domain.Message) error {
 	query := `
 		UPDATE messages
-		SET content = $2, read_at = $3
+		SET content = $2, read_at = $3, updated_at = $4
 		WHERE id = $1
 	`
-	_, err := r.db.Pool.Exec(ctx, query, message.ID, message.Content, message.ReadAt)
+	_, err := r.db.Pool.Exec(ctx, query, message.ID, message.Content, message.ReadAt, message.UpdatedAt)
 	return err
 }
 

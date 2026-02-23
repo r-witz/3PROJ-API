@@ -85,6 +85,11 @@ func main() {
 	commentLikeRepo := repositories.NewCommentLikeRepository(db)
 	collectionRepo := repositories.NewCollectionRepository(db)
 	collectionItemRepo := repositories.NewCollectionItemRepository(db)
+	messageRepo := repositories.NewMessageRepository(db)
+	blockRepo := repositories.NewBlockRepository(db)
+	attachmentRepo := repositories.NewMessageAttachmentRepository(db)
+	reactionRepo := repositories.NewMessageReactionRepository(db)
+	convStateRepo := repositories.NewConversationStateRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -110,12 +115,12 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
 	userService := services.NewUserService(userRepo)
-	messageRepo := repositories.NewMessageRepository(db)
 
 	followService := services.NewFollowService(followRepo, userRepo)
+	blockService := services.NewBlockService(blockRepo, followRepo, userRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo)
-	messageService := services.NewMessageService(messageRepo, followRepo, userRepo)
+	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 
@@ -155,6 +160,7 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(commentService, userService)
 	followHandler := handlers.NewFollowHandler(followService)
 	messageHandler := handlers.NewMessageHandler(messageService)
+	blockHandler := handlers.NewBlockHandler(blockService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -171,6 +177,7 @@ func main() {
 		commentHandler,
 		followHandler,
 		messageHandler,
+		blockHandler,
 		userService,
 	)
 

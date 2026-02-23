@@ -83,3 +83,28 @@ var (
 	ErrMessageNotFound   = errors.New("message not found")
 	ErrCannotMessageSelf = errors.New("cannot send a message to yourself")
 )
+
+var (
+	ErrCannotBlockSelf = errors.New("cannot block yourself")
+	ErrAlreadyBlocked  = errors.New("user is already blocked")
+	ErrNotBlocked      = errors.New("user is not blocked")
+	ErrUserBlocked     = errors.New("action blocked due to user block")
+)
+
+var (
+	ErrNoContent             = errors.New("message must have content or attachments")
+	ErrTooManyAttachments    = errors.New("too many attachments")
+	ErrAttachmentTooLarge    = errors.New("attachment file is too large")
+	ErrInvalidAttachmentType = errors.New("invalid attachment content type")
+)
+
+var (
+	ErrReactionAlreadyExists = errors.New("reaction already exists")
+	ErrReactionNotFound      = errors.New("reaction not found")
+	ErrNotParticipant        = errors.New("user is not a participant of this conversation")
+)
+
+var (
+	ErrConversationAlreadyClosed = errors.New("conversation is already closed")
+	ErrConversationNotClosed     = errors.New("conversation is not closed")
+)
