@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -15,11 +16,12 @@ import (
 
 type ReviewHandler struct {
 	reviewService ports.ReviewService
+	movieService  ports.MovieService
 	userService   ports.UserService
 }
 
-func NewReviewHandler(reviewService ports.ReviewService, userService ports.UserService) *ReviewHandler {
-	return &ReviewHandler{reviewService: reviewService, userService: userService}
+func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService) *ReviewHandler {
+	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService}
 }
 
 type CreateReviewRequest struct {
@@ -40,18 +42,27 @@ type UserSummary struct {
 	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
 }
 
+type MovieSummaryResponse struct {
+	ID              int      `json:"id" example:"550"`
+	Poster          *string  `json:"poster,omitempty" example:"/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"`
+	Name            string   `json:"name" example:"Fight Club"`
+	Date            string   `json:"date" example:"1999-10-15"`
+	TMDBRating      *float64 `json:"tmdb_rating,omitempty" example:"4.3"`
+	DuskforgeRating *float64 `json:"duskforge_rating,omitempty" example:"4.5"`
+}
+
 type ReviewResponse struct {
-	ID               string      `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	User             UserSummary `json:"user"`
-	TMDBID           int         `json:"tmdb_id" example:"550"`
-	Rating           float64     `json:"rating" example:"4.5"`
-	Content          *string     `json:"content,omitempty" example:"Great movie!"`
-	ContainsSpoilers bool        `json:"contains_spoilers" example:"false"`
-	LikeCount        int         `json:"like_count" example:"12"`
-	CommentCount     int         `json:"comment_count" example:"5"`
-	LikedByUser      bool        `json:"liked_by_user" example:"false"`
-	CreatedAt        string      `json:"created_at" example:"2024-01-15T10:30:00Z"`
-	UpdatedAt        string      `json:"updated_at" example:"2024-01-15T10:30:00Z"`
+	ID               string               `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	User             UserSummary          `json:"user"`
+	Movie            MovieSummaryResponse `json:"movie"`
+	Rating           float64              `json:"rating" example:"4.5"`
+	Content          *string              `json:"content,omitempty" example:"Great movie!"`
+	ContainsSpoilers bool                 `json:"contains_spoilers" example:"false"`
+	LikeCount        int                  `json:"like_count" example:"12"`
+	CommentCount     int                  `json:"comment_count" example:"5"`
+	LikedByUser      bool                 `json:"liked_by_user" example:"false"`
+	CreatedAt        string               `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt        string               `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
 
 // @Summary      Create a review
@@ -100,8 +111,10 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 	}
 
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
+	language := middleware.GetLocale(c)
+	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
 
-	response.Created(c, toReviewResponse(review, 0, 0, false, user))
+	response.Created(c, toReviewResponse(review, 0, 0, false, user, movie))
 }
 
 // @Summary      Get reviews for a movie
@@ -138,9 +151,12 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 		return
 	}
 
+	language := middleware.GetLocale(c)
+	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
+
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
-		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User)
+		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User, movie)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -179,7 +195,10 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toReviewResponse(review.Review, review.LikeCount, review.CommentCount, review.LikedByUser, review.User))
+	language := middleware.GetLocale(c)
+	movie := h.fetchMovieSummary(c.Request.Context(), review.Review.TMDBID, language)
+
+	response.Success(c, toReviewResponse(review.Review, review.LikeCount, review.CommentCount, review.LikedByUser, review.User, movie))
 }
 
 // @Summary      Get reviews by user
@@ -227,9 +246,12 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
+	language := middleware.GetLocale(c)
+	movies := h.fetchMovieSummaries(c.Request.Context(), reviews, language)
+
 	resp := make([]ReviewResponse, len(reviews))
 	for i, r := range reviews {
-		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User)
+		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User, movies[r.Review.TMDBID])
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -285,7 +307,10 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toReviewResponse(result.Review, result.LikeCount, result.CommentCount, result.LikedByUser, result.User))
+	language := middleware.GetLocale(c)
+	movie := h.fetchMovieSummary(c.Request.Context(), result.Review.TMDBID, language)
+
+	response.Success(c, toReviewResponse(result.Review, result.LikeCount, result.CommentCount, result.LikedByUser, result.User, movie))
 }
 
 // @Summary      Delete a review
@@ -389,10 +414,41 @@ func (h *ReviewHandler) Unlike(c *gin.Context) {
 	c.Status(204)
 }
 
-func toReviewResponse(review *domain.Review, likeCount int, commentCount int, likedByUser bool, user *domain.User) ReviewResponse {
+func (h *ReviewHandler) fetchMovieSummary(ctx context.Context, tmdbID int, language string) *MovieSummaryResponse {
+	details, err := h.movieService.GetByID(ctx, tmdbID, language)
+	if err != nil {
+		return &MovieSummaryResponse{ID: tmdbID}
+	}
+	return &MovieSummaryResponse{
+		ID:              details.ID,
+		Poster:          details.PosterPath,
+		Name:            details.Title,
+		Date:            details.ReleaseDate,
+		TMDBRating:      details.Ratings.TMDB.Rating,
+		DuskforgeRating: details.Ratings.Duskforge.Rating,
+	}
+}
+
+func (h *ReviewHandler) fetchMovieSummaries(ctx context.Context, reviews []*ports.ReviewWithMeta, language string) map[int]*MovieSummaryResponse {
+	seen := make(map[int]struct{})
+	var tmdbIDs []int
+	for _, r := range reviews {
+		if _, ok := seen[r.Review.TMDBID]; !ok {
+			seen[r.Review.TMDBID] = struct{}{}
+			tmdbIDs = append(tmdbIDs, r.Review.TMDBID)
+		}
+	}
+
+	movies := make(map[int]*MovieSummaryResponse, len(tmdbIDs))
+	for _, id := range tmdbIDs {
+		movies[id] = h.fetchMovieSummary(ctx, id, language)
+	}
+	return movies
+}
+
+func toReviewResponse(review *domain.Review, likeCount int, commentCount int, likedByUser bool, user *domain.User, movie *MovieSummaryResponse) ReviewResponse {
 	resp := ReviewResponse{
 		ID:               review.ID.String(),
-		TMDBID:           review.TMDBID,
 		Rating:           review.Rating,
 		Content:          review.Content,
 		ContainsSpoilers: review.ContainsSpoilers,
@@ -401,6 +457,12 @@ func toReviewResponse(review *domain.Review, likeCount int, commentCount int, li
 		LikedByUser:      likedByUser,
 		CreatedAt:        review.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:        review.UpdatedAt.Format(time.RFC3339),
+	}
+
+	if movie != nil {
+		resp.Movie = *movie
+	} else {
+		resp.Movie = MovieSummaryResponse{ID: review.TMDBID}
 	}
 
 	if user != nil {

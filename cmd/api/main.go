@@ -151,7 +151,7 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService)
-	reviewHandler := handlers.NewReviewHandler(reviewService, userService)
+	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService)
 	followHandler := handlers.NewFollowHandler(followService)
 	messageHandler := handlers.NewMessageHandler(messageService)

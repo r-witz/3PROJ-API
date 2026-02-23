@@ -4711,6 +4711,35 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.MovieSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string",
+                    "example": "1999-10-15"
+                },
+                "duskforge_rating": {
+                    "type": "number",
+                    "example": 4.5
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 550
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Fight Club"
+                },
+                "poster": {
+                    "type": "string",
+                    "example": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+                },
+                "tmdb_rating": {
+                    "type": "number",
+                    "example": 4.3
+                }
+            }
+        },
         "handlers.OAuthRedirectResponse": {
             "type": "object",
             "properties": {
@@ -4858,13 +4887,12 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "movie": {
+                    "$ref": "#/definitions/handlers.MovieSummaryResponse"
+                },
                 "rating": {
                     "type": "number",
                     "example": 4.5
-                },
-                "tmdb_id": {
-                    "type": "integer",
-                    "example": 550
                 },
                 "updated_at": {
                     "type": "string",

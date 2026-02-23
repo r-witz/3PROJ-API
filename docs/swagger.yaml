@@ -209,6 +209,27 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
+  handlers.MovieSummaryResponse:
+    properties:
+      date:
+        example: "1999-10-15"
+        type: string
+      duskforge_rating:
+        example: 4.5
+        type: number
+      id:
+        example: 550
+        type: integer
+      name:
+        example: Fight Club
+        type: string
+      poster:
+        example: /pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg
+        type: string
+      tmdb_rating:
+        example: 4.3
+        type: number
+    type: object
   handlers.OAuthRedirectResponse:
     properties:
       authorization_url:
@@ -316,12 +337,11 @@ definitions:
       liked_by_user:
         example: false
         type: boolean
+      movie:
+        $ref: '#/definitions/handlers.MovieSummaryResponse'
       rating:
         example: 4.5
         type: number
-      tmdb_id:
-        example: 550
-        type: integer
       updated_at:
         example: "2024-01-15T10:30:00Z"
         type: string
