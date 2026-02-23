@@ -32,6 +32,7 @@ type Router struct {
 	followHandler     *handlers.FollowHandler
 	messageHandler    *handlers.MessageHandler
 	blockHandler      *handlers.BlockHandler
+	wsHandler         *handlers.WebSocketHandler
 	userService       ports.UserService
 }
 
@@ -48,6 +49,7 @@ func NewRouter(
 	followHandler *handlers.FollowHandler,
 	messageHandler *handlers.MessageHandler,
 	blockHandler *handlers.BlockHandler,
+	wsHandler *handlers.WebSocketHandler,
 	userService ports.UserService,
 ) *Router {
 	return &Router{
@@ -64,6 +66,7 @@ func NewRouter(
 		followHandler:     followHandler,
 		messageHandler:    messageHandler,
 		blockHandler:      blockHandler,
+		wsHandler:         wsHandler,
 		userService:       userService,
 	}
 }
@@ -85,6 +88,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupReviewRoutes(v1)
 		r.setupCommentRoutes(v1)
 		r.setupMessageRoutes(v1)
+		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
 	return r.engine

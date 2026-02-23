@@ -18,6 +18,7 @@ import (
 	"duskforge-api/pkg/oauth"
 	"duskforge-api/pkg/storage"
 	"duskforge-api/pkg/tmdb"
+	ws "duskforge-api/pkg/websocket"
 
 	_ "duskforge-api/docs" // Import generated docs
 
@@ -159,8 +160,12 @@ func main() {
 	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService)
 	followHandler := handlers.NewFollowHandler(followService)
-	messageHandler := handlers.NewMessageHandler(messageService)
+	hub := ws.NewHub()
+	go hub.Run()
+
+	messageHandler := handlers.NewMessageHandler(messageService, hub)
 	blockHandler := handlers.NewBlockHandler(blockService)
+	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -178,6 +183,7 @@ func main() {
 		followHandler,
 		messageHandler,
 		blockHandler,
+		wsHandler,
 		userService,
 	)
 

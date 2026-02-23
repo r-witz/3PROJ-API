@@ -28,7 +28,8 @@ type MessageService interface {
 	GetConversations(ctx context.Context, userID uuid.UUID, includeClosed bool, offset, limit int) ([]*ConversationResponse, int, error)
 	MarkAsRead(ctx context.Context, userID, otherUserID uuid.UUID) error
 	UpdateMessage(ctx context.Context, messageID, userID uuid.UUID, content string) (*domain.Message, error)
-	DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) error
+	DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) (*domain.Message, error)
+	GetMessageByID(ctx context.Context, messageID, userID uuid.UUID) (*domain.Message, error)
 	AddReaction(ctx context.Context, messageID, userID uuid.UUID, emoji string) (*domain.MessageReaction, error)
 	RemoveReaction(ctx context.Context, messageID, userID uuid.UUID, emoji string) error
 	CloseConversation(ctx context.Context, userID, otherUserID uuid.UUID) error

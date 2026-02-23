@@ -225,33 +225,49 @@ func (s *messageService) UpdateMessage(ctx context.Context, messageID, userID uu
 	return message, nil
 }
 
-func (s *messageService) DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) error {
+func (s *messageService) DeleteMessage(ctx context.Context, messageID, userID uuid.UUID) (*domain.Message, error) {
 	message, err := s.messageRepo.GetByID(ctx, messageID)
 	if err != nil {
-		return domain.ErrInternal
+		return nil, domain.ErrInternal
 	}
 	if message == nil {
-		return domain.ErrMessageNotFound
+		return nil, domain.ErrMessageNotFound
 	}
 
 	if message.SenderID != userID {
-		return domain.ErrForbidden
+		return nil, domain.ErrForbidden
 	}
 
 	// Delete attachments from storage
 	attachments, err := s.attachmentRepo.DeleteByMessageID(ctx, messageID)
 	if err != nil {
-		return domain.ErrInternal
+		return nil, domain.ErrInternal
 	}
 	for _, a := range attachments {
 		_ = s.storage.DeleteByURL(ctx, a.FileURL)
 	}
 
 	if err := s.messageRepo.Delete(ctx, messageID); err != nil {
-		return domain.ErrInternal
+		return nil, domain.ErrInternal
 	}
 
-	return nil
+	return message, nil
+}
+
+func (s *messageService) GetMessageByID(ctx context.Context, messageID, userID uuid.UUID) (*domain.Message, error) {
+	message, err := s.messageRepo.GetByID(ctx, messageID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if message == nil {
+		return nil, domain.ErrMessageNotFound
+	}
+
+	if message.SenderID != userID && message.ReceiverID != userID {
+		return nil, domain.ErrNotParticipant
+	}
+
+	return message, nil
 }
 
 func (s *messageService) AddReaction(ctx context.Context, messageID, userID uuid.UUID, emoji string) (*domain.MessageReaction, error) {

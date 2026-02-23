@@ -7,6 +7,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,10 +15,11 @@ import (
 
 type MessageHandler struct {
 	messageService ports.MessageService
+	hub            *ws.Hub
 }
 
-func NewMessageHandler(messageService ports.MessageService) *MessageHandler {
-	return &MessageHandler{messageService: messageService}
+func NewMessageHandler(messageService ports.MessageService, hub *ws.Hub) *MessageHandler {
+	return &MessageHandler{messageService: messageService, hub: hub}
 }
 
 type UpdateMessageRequest struct {
@@ -154,6 +156,10 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 			}
 		}
 	}
+
+	event := ws.Event{Type: ws.EventMessageNew, Data: resp}
+	h.hub.SendToUser(senderID, event)
+	h.hub.SendToUser(receiverID, event)
 
 	response.Created(c, resp)
 }
@@ -301,6 +307,12 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
+	event := ws.Event{Type: ws.EventConversationRead, Data: ws.ConversationReadPayload{
+		ReaderID: userID.String(),
+		OtherID:  otherUserID.String(),
+	}}
+	h.hub.SendToUser(otherUserID, event)
+
 	c.Status(204)
 }
 
@@ -344,7 +356,12 @@ func (h *MessageHandler) UpdateMessage(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toMessageResponse(message))
+	resp := toMessageResponse(message)
+	event := ws.Event{Type: ws.EventMessageUpdated, Data: resp}
+	h.hub.SendToUser(message.SenderID, event)
+	h.hub.SendToUser(message.ReceiverID, event)
+
+	response.Success(c, resp)
 }
 
 // @Summary      Delete a message
@@ -373,10 +390,19 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	if err := h.messageService.DeleteMessage(c.Request.Context(), messageID, userID); err != nil {
+	message, err := h.messageService.DeleteMessage(c.Request.Context(), messageID, userID)
+	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
+
+	event := ws.Event{Type: ws.EventMessageDeleted, Data: ws.MessageDeletedPayload{
+		MessageID:  message.ID.String(),
+		SenderID:   message.SenderID.String(),
+		ReceiverID: message.ReceiverID.String(),
+	}}
+	h.hub.SendToUser(message.SenderID, event)
+	h.hub.SendToUser(message.ReceiverID, event)
 
 	c.Status(204)
 }
@@ -422,6 +448,18 @@ func (h *MessageHandler) AddReaction(c *gin.Context) {
 		return
 	}
 
+	if msg, err := h.messageService.GetMessageByID(c.Request.Context(), messageID, userID); err == nil {
+		event := ws.Event{Type: ws.EventReactionAdded, Data: ws.ReactionPayload{
+			MessageID:  messageID.String(),
+			SenderID:   msg.SenderID.String(),
+			ReceiverID: msg.ReceiverID.String(),
+			UserID:     userID.String(),
+			Emoji:      req.Emoji,
+		}}
+		h.hub.SendToUser(msg.SenderID, event)
+		h.hub.SendToUser(msg.ReceiverID, event)
+	}
+
 	c.Status(201)
 }
 
@@ -461,6 +499,18 @@ func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 	if err := h.messageService.RemoveReaction(c.Request.Context(), messageID, userID, req.Emoji); err != nil {
 		response.HandleError(c, err)
 		return
+	}
+
+	if msg, err := h.messageService.GetMessageByID(c.Request.Context(), messageID, userID); err == nil {
+		event := ws.Event{Type: ws.EventReactionRemoved, Data: ws.ReactionPayload{
+			MessageID:  messageID.String(),
+			SenderID:   msg.SenderID.String(),
+			ReceiverID: msg.ReceiverID.String(),
+			UserID:     userID.String(),
+			Emoji:      req.Emoji,
+		}}
+		h.hub.SendToUser(msg.SenderID, event)
+		h.hub.SendToUser(msg.ReceiverID, event)
 	}
 
 	c.Status(204)
