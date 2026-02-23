@@ -207,15 +207,15 @@ func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 	messages.Use(middleware.Auth(r.config.AccessTokenSecret))
 	{
 		messages.GET("", r.messageHandler.GetConversations)
-		messages.GET("/:userId", r.messageHandler.GetConversation)
-		messages.POST("/:userId", r.messageHandler.SendMessage)
-		messages.PUT("/:userId/read", r.messageHandler.MarkAsRead)
-		messages.POST("/:userId/close", r.messageHandler.CloseConversation)
-		messages.DELETE("/:userId/close", r.messageHandler.ReopenConversation)
-		messages.PATCH("/:messageId", r.messageHandler.UpdateMessage)
-		messages.DELETE("/:messageId", r.messageHandler.DeleteMessage)
-		messages.POST("/:messageId/reactions", r.messageHandler.AddReaction)
-		messages.DELETE("/:messageId/reactions", r.messageHandler.RemoveReaction)
+		messages.GET("/:id", r.messageHandler.GetConversation)
+		messages.POST("/:id", r.messageHandler.SendMessage)
+		messages.PUT("/:id/read", r.messageHandler.MarkAsRead)
+		messages.POST("/:id/close", r.messageHandler.CloseConversation)
+		messages.DELETE("/:id/close", r.messageHandler.ReopenConversation)
+		messages.PATCH("/:id", r.messageHandler.UpdateMessage)
+		messages.DELETE("/:id", r.messageHandler.DeleteMessage)
+		messages.POST("/:id/reactions", r.messageHandler.AddReaction)
+		messages.DELETE("/:id/reactions", r.messageHandler.RemoveReaction)
 	}
 }
 

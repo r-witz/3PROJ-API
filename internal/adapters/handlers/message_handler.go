@@ -94,7 +94,7 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	receiverID, err := uuid.Parse(c.Param("userId"))
+	receiverID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
@@ -178,7 +178,7 @@ func (h *MessageHandler) GetConversation(c *gin.Context) {
 		return
 	}
 
-	otherUserID, err := uuid.Parse(c.Param("userId"))
+	otherUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
@@ -276,7 +276,7 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	otherUserID, err := uuid.Parse(c.Param("userId"))
+	otherUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
@@ -312,7 +312,7 @@ func (h *MessageHandler) UpdateMessage(c *gin.Context) {
 		return
 	}
 
-	messageID, err := uuid.Parse(c.Param("messageId"))
+	messageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid message ID", nil)
 		return
@@ -353,7 +353,7 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	messageID, err := uuid.Parse(c.Param("messageId"))
+	messageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid message ID", nil)
 		return
@@ -390,7 +390,7 @@ func (h *MessageHandler) AddReaction(c *gin.Context) {
 		return
 	}
 
-	messageID, err := uuid.Parse(c.Param("messageId"))
+	messageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid message ID", nil)
 		return
@@ -432,7 +432,7 @@ func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 		return
 	}
 
-	messageID, err := uuid.Parse(c.Param("messageId"))
+	messageID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid message ID", nil)
 		return
@@ -471,7 +471,7 @@ func (h *MessageHandler) CloseConversation(c *gin.Context) {
 		return
 	}
 
-	otherUserID, err := uuid.Parse(c.Param("userId"))
+	otherUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
@@ -504,7 +504,7 @@ func (h *MessageHandler) ReopenConversation(c *gin.Context) {
 		return
 	}
 
-	otherUserID, err := uuid.Parse(c.Param("userId"))
+	otherUserID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
