@@ -47,6 +47,7 @@ type CollectionResponse struct {
 	Visibility  string  `json:"visibility" example:"private"`
 	Description *string `json:"description,omitempty" example:"A collection of my favorite movies"`
 	HasMovie    *bool   `json:"has_movie,omitempty" example:"true"`
+	ItemCount   int     `json:"item_count" example:"5"`
 	CreatedAt   string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt   string  `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
@@ -103,7 +104,7 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, toCollectionResponse(collection))
+	response.Created(c, toCollectionResponse(ports.CollectionWithPresence{Collection: collection}))
 }
 
 // @Summary      Get collection by slug
@@ -141,13 +142,13 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 		requestingUserID = &uid
 	}
 
-	collection, err := h.collectionService.GetBySlug(c.Request.Context(), userID, slug, requestingUserID)
+	cwp, err := h.collectionService.GetBySlug(c.Request.Context(), userID, slug, requestingUserID)
 	if err != nil {
 		response.HandleError(c, err)
 		return
 	}
 
-	response.Success(c, toCollectionResponse(collection))
+	response.Success(c, toCollectionResponse(*cwp))
 }
 
 // @Summary      Get user's collections
@@ -196,7 +197,7 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 
 		resp := make([]CollectionResponse, len(collectionsWithPresence))
 		for i, cwp := range collectionsWithPresence {
-			resp[i] = toCollectionResponse(cwp.Collection)
+			resp[i] = toCollectionResponse(cwp)
 			hasMovie := cwp.HasMovie
 			resp[i].HasMovie = &hasMovie
 		}
@@ -212,8 +213,8 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 	}
 
 	resp := make([]CollectionResponse, len(collections))
-	for i, col := range collections {
-		resp[i] = toCollectionResponse(col)
+	for i, cwp := range collections {
+		resp[i] = toCollectionResponse(cwp)
 	}
 
 	response.Success(c, resp)
@@ -274,7 +275,7 @@ func (h *CollectionHandler) Update(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toCollectionResponse(collection))
+	response.Success(c, toCollectionResponse(ports.CollectionWithPresence{Collection: collection}))
 }
 
 // @Summary      Delete a collection
@@ -476,17 +477,18 @@ func (h *CollectionHandler) RemoveItem(c *gin.Context) {
 	c.Status(204)
 }
 
-func toCollectionResponse(collection *domain.Collection) CollectionResponse {
+func toCollectionResponse(cwp ports.CollectionWithPresence) CollectionResponse {
 	return CollectionResponse{
-		ID:          collection.ID.String(),
-		UserID:      collection.UserID.String(),
-		Name:        collection.Name,
-		Slug:        collection.Slug,
-		Type:        string(collection.Type),
-		Visibility:  string(collection.Visibility),
-		Description: collection.Description,
-		CreatedAt:   collection.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   collection.UpdatedAt.Format(time.RFC3339),
+		ID:          cwp.Collection.ID.String(),
+		UserID:      cwp.Collection.UserID.String(),
+		Name:        cwp.Collection.Name,
+		Slug:        cwp.Collection.Slug,
+		Type:        string(cwp.Collection.Type),
+		Visibility:  string(cwp.Collection.Visibility),
+		Description: cwp.Collection.Description,
+		ItemCount:   cwp.ItemCount,
+		CreatedAt:   cwp.Collection.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   cwp.Collection.UpdatedAt.Format(time.RFC3339),
 	}
 }
 

@@ -116,7 +116,7 @@ func (s *collectionService) Create(ctx context.Context, userID uuid.UUID, input 
 	return collection, nil
 }
 
-func (s *collectionService) GetBySlug(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) (*domain.Collection, error) {
+func (s *collectionService) GetBySlug(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID) (*ports.CollectionWithPresence, error) {
 	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -129,10 +129,18 @@ func (s *collectionService) GetBySlug(ctx context.Context, userID uuid.UUID, slu
 		return nil, domain.ErrCollectionNotFound
 	}
 
-	return collection, nil
+	count, err := s.collectionItemRepo.CountByCollectionID(ctx, collection.ID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	return &ports.CollectionWithPresence{
+		Collection: collection,
+		ItemCount:  count,
+	}, nil
 }
 
-func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]*domain.Collection, error) {
+func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]ports.CollectionWithPresence, error) {
 	collections, err := s.collectionRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -140,17 +148,35 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
-	if isOwner {
-		return collections, nil
-	}
-
 	var visible []*domain.Collection
-	for _, c := range collections {
-		if c.Visibility == domain.CollectionVisibilityPublic {
-			visible = append(visible, c)
+	if isOwner {
+		visible = collections
+	} else {
+		for _, c := range collections {
+			if c.Visibility == domain.CollectionVisibilityPublic {
+				visible = append(visible, c)
+			}
 		}
 	}
-	return visible, nil
+
+	ids := make([]uuid.UUID, len(visible))
+	for i, c := range visible {
+		ids[i] = c.ID
+	}
+
+	counts, err := s.collectionItemRepo.CountByCollectionIDs(ctx, ids)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	result := make([]ports.CollectionWithPresence, len(visible))
+	for i, c := range visible {
+		result[i] = ports.CollectionWithPresence{
+			Collection: c,
+			ItemCount:  counts[c.ID],
+		}
+	}
+	return result, nil
 }
 
 func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]ports.CollectionWithPresence, error) {
@@ -171,15 +197,31 @@ func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uui
 
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
-	var result []ports.CollectionWithPresence
+	var visible []*domain.Collection
 	for _, c := range allCollections {
 		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
 			continue
 		}
-		result = append(result, ports.CollectionWithPresence{
+		visible = append(visible, c)
+	}
+
+	ids := make([]uuid.UUID, len(visible))
+	for i, c := range visible {
+		ids[i] = c.ID
+	}
+
+	counts, err := s.collectionItemRepo.CountByCollectionIDs(ctx, ids)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	result := make([]ports.CollectionWithPresence, len(visible))
+	for i, c := range visible {
+		result[i] = ports.CollectionWithPresence{
 			Collection: c,
 			HasMovie:   matchingIDs[c.ID],
-		})
+			ItemCount:  counts[c.ID],
+		}
 	}
 	return result, nil
 }

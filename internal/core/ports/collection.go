@@ -11,6 +11,7 @@ import (
 type CollectionWithPresence struct {
 	Collection *domain.Collection
 	HasMovie   bool
+	ItemCount  int
 }
 
 type CollectionRepository interface {

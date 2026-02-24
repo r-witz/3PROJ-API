@@ -13,6 +13,7 @@ type CollectionItemRepository interface {
 	GetByCollectionID(ctx context.Context, collectionID uuid.UUID) ([]*domain.CollectionItem, error)
 	GetByCollectionIDPaginated(ctx context.Context, collectionID uuid.UUID, offset, limit int) ([]*domain.CollectionItem, error)
 	CountByCollectionID(ctx context.Context, collectionID uuid.UUID) (int, error)
+	CountByCollectionIDs(ctx context.Context, collectionIDs []uuid.UUID) (map[uuid.UUID]int, error)
 	GetByCollectionIDAndTMDBID(ctx context.Context, collectionID uuid.UUID, tmdbID int) (*domain.CollectionItem, error)
 	Delete(ctx context.Context, collectionID uuid.UUID, tmdbID int) error
 }

@@ -84,6 +84,30 @@ func (r *CollectionItemRepository) CountByCollectionID(ctx context.Context, coll
 	return count, err
 }
 
+func (r *CollectionItemRepository) CountByCollectionIDs(ctx context.Context, collectionIDs []uuid.UUID) (map[uuid.UUID]int, error) {
+	counts := make(map[uuid.UUID]int, len(collectionIDs))
+	if len(collectionIDs) == 0 {
+		return counts, nil
+	}
+
+	query := `SELECT collection_id, COUNT(*) FROM collection_items WHERE collection_id = ANY($1) GROUP BY collection_id`
+	rows, err := r.db.Pool.Query(ctx, query, collectionIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id uuid.UUID
+		var count int
+		if err := rows.Scan(&id, &count); err != nil {
+			return nil, err
+		}
+		counts[id] = count
+	}
+	return counts, rows.Err()
+}
+
 func (r *CollectionItemRepository) GetByCollectionIDAndTMDBID(ctx context.Context, collectionID uuid.UUID, tmdbID int) (*domain.CollectionItem, error) {
 	query := `
 		SELECT collection_id, tmdb_id, added_at, runtime, metadata
