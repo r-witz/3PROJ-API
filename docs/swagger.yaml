@@ -2277,6 +2277,40 @@ paths:
       summary: Get all movie genres
       tags:
       - movies
+  /movies/now-playing:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of movies currently in theaters
+      parameters:
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Number of items to return (max 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Now playing movies
+          schema:
+            $ref: '#/definitions/response.PaginatedResponse'
+        "502":
+          description: External service error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get now playing movies
+      tags:
+      - movies
   /movies/popular:
     get:
       consumes:

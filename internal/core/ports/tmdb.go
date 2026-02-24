@@ -10,6 +10,8 @@ type TMDBClient interface {
 	SearchMovies(ctx context.Context, params tmdb.SearchMoviesParams) (*tmdb.SearchMoviesResponse, error)
 	DiscoverMovies(ctx context.Context, params tmdb.DiscoverMoviesParams) (*tmdb.DiscoverMoviesResponse, error)
 	GetPopularMovies(ctx context.Context, page int, language, region string) (*tmdb.PopularMoviesResponse, error)
+	GetTrendingMovies(ctx context.Context, page int, language string) (*tmdb.TrendingMoviesResponse, error)
+	GetNowPlayingMovies(ctx context.Context, page int, language, region string) (*tmdb.NowPlayingMoviesResponse, error)
 	GetMovieDetails(ctx context.Context, movieID int, language string) (*tmdb.MovieDetails, error)
 	GetMovieCredits(ctx context.Context, movieID int, language string) (*tmdb.Credits, error)
 	GetMovieWithCredits(ctx context.Context, movieID int, language string) (*tmdb.MovieDetails, *tmdb.Credits, error)

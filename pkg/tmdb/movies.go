@@ -265,6 +265,53 @@ func (c *Client) GetPopularMovies(ctx context.Context, page int, language, regio
 	return &resp, nil
 }
 
+func (c *Client) GetTrendingMovies(ctx context.Context, page int, language string) (*TrendingMoviesResponse, error) {
+	params := url.Values{}
+	if page > 0 {
+		params.Set("page", strconv.Itoa(page))
+	}
+	if language != "" {
+		params.Set("language", language)
+	}
+
+	body, err := c.doRequest(ctx, "GET", "/trending/movie/week", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp TrendingMoviesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, &RequestError{Operation: "/trending/movie/week", Err: err}
+	}
+
+	return &resp, nil
+}
+
+func (c *Client) GetNowPlayingMovies(ctx context.Context, page int, language, region string) (*NowPlayingMoviesResponse, error) {
+	params := url.Values{}
+	if page > 0 {
+		params.Set("page", strconv.Itoa(page))
+	}
+	if language != "" {
+		params.Set("language", language)
+	}
+	if region != "" {
+		params.Set("region", region)
+	}
+
+	body, err := c.doRequest(ctx, "GET", "/movie/now_playing", params)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp NowPlayingMoviesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return nil, &RequestError{Operation: "/movie/now_playing", Err: err}
+	}
+
+	return &resp, nil
+}
+
 func (c *Client) GetMovieWithCredits(ctx context.Context, movieID int, language string) (*MovieDetails, *Credits, error) {
 	type detailsResult struct {
 		movie *MovieDetails

@@ -204,6 +204,34 @@ func (h *MovieHandler) GetPopular(c *gin.Context) {
 	})
 }
 
+// @Summary      Get now playing movies
+// @Description  Get a list of movies currently in theaters
+// @Tags         movies
+// @Accept       json
+// @Produce      json
+// @Param        offset query int false "Number of items to skip" default(0)
+// @Param        limit query int false "Number of items to return (max 20)" default(20)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
+// @Success      200 {object} response.PaginatedResponse "Now playing movies"
+// @Failure      502 {object} response.Response "External service error"
+// @Router       /movies/now-playing [get]
+func (h *MovieHandler) GetNowPlaying(c *gin.Context) {
+	offset, limit := parsePagination(c)
+	language := middleware.GetLocale(c)
+
+	result, err := h.movieService.GetNowPlaying(c.Request.Context(), offset, limit, language)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.SuccessPaginated(c, result.Results, &response.Pagination{
+		Offset: result.Offset,
+		Limit:  result.Limit,
+		Total:  result.Total,
+	})
+}
+
 // @Summary      Get movie trailer
 // @Description  Get a YouTube embed URL for the movie's trailer
 // @Tags         movies

@@ -114,6 +114,7 @@ type MovieService interface {
 	Discover(ctx context.Context, input DiscoverMoviesInput) (*SearchMoviesResult, error)
 	GetByID(ctx context.Context, movieID int, language string) (*MovieDetailsResult, error)
 	GetPopular(ctx context.Context, offset, limit int, language string) (*SearchMoviesResult, error)
+	GetNowPlaying(ctx context.Context, offset, limit int, language string) (*SearchMoviesResult, error)
 	GetTrailer(ctx context.Context, movieID int, language string) (*MovieTrailerResult, error)
 	GetCast(ctx context.Context, movieID int, language string) (*MovieCastResult, error)
 	GetReleaseDates(ctx context.Context, movieID int) (*MovieReleaseDatesResult, error)

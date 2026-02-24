@@ -235,6 +235,34 @@ func (c *CachedClient) GetPopularMovies(ctx context.Context, page int, language,
 	return result, nil
 }
 
+func (c *CachedClient) GetTrendingMovies(ctx context.Context, page int, language string) (*TrendingMoviesResponse, error) {
+	key := fmt.Sprintf("tmdb:trending:%d:%s", page, language)
+	var cached TrendingMoviesResponse
+	if cacheGet(ctx, c, key, &cached) {
+		return &cached, nil
+	}
+	result, err := c.client.GetTrendingMovies(ctx, page, language)
+	if err != nil {
+		return nil, err
+	}
+	cacheSet(ctx, c, key, result, 30*time.Minute)
+	return result, nil
+}
+
+func (c *CachedClient) GetNowPlayingMovies(ctx context.Context, page int, language, region string) (*NowPlayingMoviesResponse, error) {
+	key := fmt.Sprintf("tmdb:now_playing:%d:%s:%s", page, language, region)
+	var cached NowPlayingMoviesResponse
+	if cacheGet(ctx, c, key, &cached) {
+		return &cached, nil
+	}
+	result, err := c.client.GetNowPlayingMovies(ctx, page, language, region)
+	if err != nil {
+		return nil, err
+	}
+	cacheSet(ctx, c, key, result, 30*time.Minute)
+	return result, nil
+}
+
 func (c *CachedClient) SearchPerson(ctx context.Context, params SearchPersonParams) (*SearchPersonResponse, error) {
 	key := fmt.Sprintf("tmdb:search_person:%s:%d:%s", params.Query, params.Page, params.Language)
 	var cached SearchPersonResponse
