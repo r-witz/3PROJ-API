@@ -15,10 +15,11 @@ import (
 
 type CollectionHandler struct {
 	collectionService ports.CollectionService
+	blockService      ports.BlockService
 }
 
-func NewCollectionHandler(collectionService ports.CollectionService) *CollectionHandler {
-	return &CollectionHandler{collectionService: collectionService}
+func NewCollectionHandler(collectionService ports.CollectionService, blockService ports.BlockService) *CollectionHandler {
+	return &CollectionHandler{collectionService: collectionService, blockService: blockService}
 }
 
 type CreateCollectionRequest struct {
@@ -106,7 +107,7 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get collection by slug
-// @Description  Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner.
+// @Description  Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner. Returns 403 if there is a block between the authenticated user and the collection owner.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -115,6 +116,7 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 // @Param        slug path string true "Collection slug"
 // @Success      200 {object} response.Response{data=CollectionResponse} "Collection details"
 // @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections/{slug} [get]
@@ -123,6 +125,13 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
+	}
+
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
 	}
 
 	slug := c.Param("slug")
@@ -142,7 +151,7 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 }
 
 // @Summary      Get user's collections
-// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection.
+// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -151,6 +160,7 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 // @Param        tmdb_id query int false "TMDB movie ID - when provided, adds has_movie flag to each collection"
 // @Success      200 {object} response.Response{data=[]CollectionResponse} "List of collections"
 // @Failure      400 {object} response.Response "Invalid user ID or TMDB ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections [get]
 func (h *CollectionHandler) GetByUserID(c *gin.Context) {
@@ -158,6 +168,13 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
+	}
+
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
 	}
 
 	var requestingUserID *uuid.UUID
@@ -356,7 +373,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 }
 
 // @Summary      Get collection items
-// @Description  Get all items in a collection with pagination and TMDB movie details. Respects visibility rules.
+// @Description  Get all items in a collection with pagination and TMDB movie details. Respects visibility rules. Returns 403 if there is a block between the authenticated user and the collection owner.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -368,6 +385,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Param        limit query int false "Limit for pagination" default(20)
 // @Success      200 {object} response.PaginatedResponse "List of items"
 // @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections/{slug}/items [get]
@@ -376,6 +394,13 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
+	}
+
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
 	}
 
 	slug := c.Param("slug")

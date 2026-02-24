@@ -117,3 +117,15 @@ func (s *blockService) GetBlockedUsers(ctx context.Context, blockerID uuid.UUID,
 func (s *blockService) IsBlocked(ctx context.Context, userID1, userID2 uuid.UUID) (bool, error) {
 	return s.blockRepo.IsBlocked(ctx, userID1, userID2)
 }
+
+func (s *blockService) IsBlockedBy(ctx context.Context, blockerID, blockedID uuid.UUID) (bool, error) {
+	return s.blockRepo.IsBlockedBy(ctx, blockerID, blockedID)
+}
+
+func (s *blockService) GetBlockerIDs(ctx context.Context, blockedID uuid.UUID) ([]uuid.UUID, error) {
+	return s.blockRepo.GetBlockerIDs(ctx, blockedID)
+}
+
+func (s *blockService) GetBlockedIDs(ctx context.Context, blockerID uuid.UUID) ([]uuid.UUID, error) {
+	return s.blockRepo.GetBlockedIDs(ctx, blockerID)
+}

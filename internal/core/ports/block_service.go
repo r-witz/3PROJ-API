@@ -25,4 +25,7 @@ type BlockService interface {
 	UnblockUser(ctx context.Context, blockerID, blockedID uuid.UUID) error
 	GetBlockedUsers(ctx context.Context, blockerID uuid.UUID, offset, limit int) (*BlockListResult, error)
 	IsBlocked(ctx context.Context, userID1, userID2 uuid.UUID) (bool, error)
+	IsBlockedBy(ctx context.Context, blockerID, blockedID uuid.UUID) (bool, error)
+	GetBlockerIDs(ctx context.Context, blockedID uuid.UUID) ([]uuid.UUID, error)
+	GetBlockedIDs(ctx context.Context, blockerID uuid.UUID) ([]uuid.UUID, error)
 }

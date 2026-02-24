@@ -18,10 +18,11 @@ type ReviewHandler struct {
 	reviewService ports.ReviewService
 	movieService  ports.MovieService
 	userService   ports.UserService
+	blockService  ports.BlockService
 }
 
-func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService) *ReviewHandler {
-	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService}
+func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService, blockService ports.BlockService) *ReviewHandler {
+	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService, blockService: blockService}
 }
 
 type CreateReviewRequest struct {
@@ -118,7 +119,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get reviews for a movie
-// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded.
+// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded and reviews by blocked users are filtered out.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -151,12 +152,17 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 		return
 	}
 
+	hiddenSet := h.getHiddenUserIDs(c)
+
 	language := middleware.GetLocale(c)
 	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
 
-	resp := make([]ReviewResponse, len(reviews))
-	for i, r := range reviews {
-		resp[i] = toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User, movie)
+	resp := make([]ReviewResponse, 0, len(reviews))
+	for _, r := range reviews {
+		if _, hidden := hiddenSet[r.Review.UserID]; hidden {
+			continue
+		}
+		resp = append(resp, toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User, movie))
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -167,13 +173,14 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 }
 
 // @Summary      Get a review by ID
-// @Description  Get a single review by its ID
+// @Description  Get a single review by its ID. Returns 403 if there is a block between the authenticated user and the review author.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
 // @Param        reviewId path string true "Review ID" format(uuid)
 // @Success      200 {object} response.Response{data=ReviewResponse} "Review details"
 // @Failure      400 {object} response.Response "Invalid review ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /reviews/{reviewId} [get]
@@ -195,6 +202,13 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	if requestingUserID != nil && review.Review.UserID != *requestingUserID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), review.Review.UserID, *requestingUserID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
+	}
+
 	language := middleware.GetLocale(c)
 	movie := h.fetchMovieSummary(c.Request.Context(), review.Review.TMDBID, language)
 
@@ -202,7 +216,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      Get reviews by user
-// @Description  List all reviews by a specific user with pagination and sorting.
+// @Description  List all reviews by a specific user with pagination and sorting. Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -213,6 +227,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-created_at)
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/reviews [get]
 func (h *ReviewHandler) GetByUserID(c *gin.Context) {
@@ -220,6 +235,13 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
 		return
+	}
+
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
 	}
 
 	var tmdbID *int
@@ -348,7 +370,7 @@ func (h *ReviewHandler) Delete(c *gin.Context) {
 }
 
 // @Summary      Like a review
-// @Description  Like a review
+// @Description  Like a review. Returns 403 if there is a block between the authenticated user and the review author.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -356,6 +378,7 @@ func (h *ReviewHandler) Delete(c *gin.Context) {
 // @Success      204 "Review liked"
 // @Failure      400 {object} response.Response "Invalid review ID"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      409 {object} response.Response "Already liked"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -382,7 +405,7 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 }
 
 // @Summary      Unlike a review
-// @Description  Remove a like from a review
+// @Description  Remove a like from a review. Returns 403 if there is a block between the authenticated user and the review author.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -390,6 +413,7 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 // @Success      204 "Review unliked"
 // @Failure      400 {object} response.Response "Invalid review ID"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found or not liked"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /reviews/{reviewId}/like [delete]
@@ -412,6 +436,26 @@ func (h *ReviewHandler) Unlike(c *gin.Context) {
 	}
 
 	c.Status(204)
+}
+
+func (h *ReviewHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
+	hiddenSet := make(map[uuid.UUID]struct{})
+	currentUserID, ok := middleware.GetUserID(c)
+	if !ok {
+		return hiddenSet
+	}
+	ctx := c.Request.Context()
+	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockerIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockedIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	return hiddenSet
 }
 
 func (h *ReviewHandler) fetchMovieSummary(ctx context.Context, tmdbID int, language string) *MovieSummaryResponse {

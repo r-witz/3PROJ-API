@@ -17,6 +17,7 @@ type reviewService struct {
 	commentRepo    ports.CommentRepository
 	collectionSvc  ports.CollectionService
 	userRepo       ports.UserRepository
+	blockRepo      ports.BlockRepository
 }
 
 func NewReviewService(
@@ -25,6 +26,7 @@ func NewReviewService(
 	commentRepo ports.CommentRepository,
 	collectionSvc ports.CollectionService,
 	userRepo ports.UserRepository,
+	blockRepo ports.BlockRepository,
 ) ports.ReviewService {
 	return &reviewService{
 		reviewRepo:     reviewRepo,
@@ -32,6 +34,7 @@ func NewReviewService(
 		commentRepo:    commentRepo,
 		collectionSvc:  collectionSvc,
 		userRepo:       userRepo,
+		blockRepo:      blockRepo,
 	}
 }
 
@@ -219,6 +222,16 @@ func (s *reviewService) Like(ctx context.Context, reviewID uuid.UUID, userID uui
 		return domain.ErrReviewNotFound
 	}
 
+	if review.UserID != userID {
+		blocked, err := s.blockRepo.IsBlocked(ctx, userID, review.UserID)
+		if err != nil {
+			return domain.ErrInternal
+		}
+		if blocked {
+			return domain.ErrUserBlocked
+		}
+	}
+
 	existing, err := s.reviewLikeRepo.GetByUserIDAndReviewID(ctx, userID, reviewID)
 	if err != nil {
 		return domain.ErrInternal
@@ -247,6 +260,16 @@ func (s *reviewService) Unlike(ctx context.Context, reviewID uuid.UUID, userID u
 	}
 	if review == nil {
 		return domain.ErrReviewNotFound
+	}
+
+	if review.UserID != userID {
+		blocked, err := s.blockRepo.IsBlocked(ctx, userID, review.UserID)
+		if err != nil {
+			return domain.ErrInternal
+		}
+		if blocked {
+			return domain.ErrUserBlocked
+		}
 	}
 
 	existing, err := s.reviewLikeRepo.GetByUserIDAndReviewID(ctx, userID, reviewID)

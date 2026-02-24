@@ -15,10 +15,11 @@ import (
 type CommentHandler struct {
 	commentService ports.CommentService
 	userService    ports.UserService
+	blockService   ports.BlockService
 }
 
-func NewCommentHandler(commentService ports.CommentService, userService ports.UserService) *CommentHandler {
-	return &CommentHandler{commentService: commentService, userService: userService}
+func NewCommentHandler(commentService ports.CommentService, userService ports.UserService, blockService ports.BlockService) *CommentHandler {
+	return &CommentHandler{commentService: commentService, userService: userService, blockService: blockService}
 }
 
 type CreateCommentRequest struct {
@@ -44,7 +45,7 @@ type CommentResponse struct {
 }
 
 // @Summary      Create a comment
-// @Description  Add a comment to a review
+// @Description  Add a comment to a review. Returns 403 if there is a block between the authenticated user and the review author.
 // @Tags         comments
 // @Accept       json
 // @Produce      json
@@ -54,6 +55,7 @@ type CommentResponse struct {
 // @Success      201 {object} response.Response{data=CommentResponse} "Comment created"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /reviews/{reviewId}/comments [post]
@@ -93,7 +95,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get comments for a review
-// @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest.
+// @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out.
 // @Tags         comments
 // @Produce      json
 // @Security     BearerAuth
@@ -124,9 +126,14 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 		return
 	}
 
-	resp := make([]CommentResponse, len(comments))
-	for i, cm := range comments {
-		resp[i] = toCommentResponse(cm.Comment, cm.LikeCount, cm.LikedByUser, cm.User)
+	hiddenSet := h.getHiddenUserIDs(c)
+
+	resp := make([]CommentResponse, 0, len(comments))
+	for _, cm := range comments {
+		if _, hidden := hiddenSet[cm.Comment.UserID]; hidden {
+			continue
+		}
+		resp = append(resp, toCommentResponse(cm.Comment, cm.LikeCount, cm.LikedByUser, cm.User))
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
@@ -219,7 +226,7 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 }
 
 // @Summary      Like a comment
-// @Description  Like a comment
+// @Description  Like a comment. Returns 403 if there is a block between the authenticated user and the comment author.
 // @Tags         comments
 // @Produce      json
 // @Security     BearerAuth
@@ -227,6 +234,7 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 // @Success      204 "Comment liked"
 // @Failure      400 {object} response.Response "Invalid comment ID"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Comment not found"
 // @Failure      409 {object} response.Response "Already liked"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -253,7 +261,7 @@ func (h *CommentHandler) Like(c *gin.Context) {
 }
 
 // @Summary      Unlike a comment
-// @Description  Remove a like from a comment
+// @Description  Remove a like from a comment. Returns 403 if there is a block between the authenticated user and the comment author.
 // @Tags         comments
 // @Produce      json
 // @Security     BearerAuth
@@ -261,6 +269,7 @@ func (h *CommentHandler) Like(c *gin.Context) {
 // @Success      204 "Comment unliked"
 // @Failure      400 {object} response.Response "Invalid comment ID"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Comment not found or not liked"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /comments/{commentId}/like [delete]
@@ -283,6 +292,26 @@ func (h *CommentHandler) Unlike(c *gin.Context) {
 	}
 
 	c.Status(204)
+}
+
+func (h *CommentHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
+	hiddenSet := make(map[uuid.UUID]struct{})
+	currentUserID, ok := middleware.GetUserID(c)
+	if !ok {
+		return hiddenSet
+	}
+	ctx := c.Request.Context()
+	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockerIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockedIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	return hiddenSet
 }
 
 func toCommentResponse(comment *domain.Comment, likeCount int, likedByUser bool, user *domain.User) CommentResponse {

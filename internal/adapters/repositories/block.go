@@ -90,3 +90,48 @@ func (r *BlockRepository) IsBlocked(ctx context.Context, userID1, userID2 uuid.U
 	err := r.db.Pool.QueryRow(ctx, query, userID1, userID2).Scan(&exists)
 	return exists, err
 }
+
+func (r *BlockRepository) IsBlockedBy(ctx context.Context, blockerID, blockedID uuid.UUID) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2)`
+	var exists bool
+	err := r.db.Pool.QueryRow(ctx, query, blockerID, blockedID).Scan(&exists)
+	return exists, err
+}
+
+func (r *BlockRepository) GetBlockerIDs(ctx context.Context, blockedID uuid.UUID) ([]uuid.UUID, error) {
+	query := `SELECT blocker_id FROM user_blocks WHERE blocked_id = $1`
+	rows, err := r.db.Pool.Query(ctx, query, blockedID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func (r *BlockRepository) GetBlockedIDs(ctx context.Context, blockerID uuid.UUID) ([]uuid.UUID, error) {
+	query := `SELECT blocked_id FROM user_blocks WHERE blocker_id = $1`
+	rows, err := r.db.Pool.Query(ctx, query, blockerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}

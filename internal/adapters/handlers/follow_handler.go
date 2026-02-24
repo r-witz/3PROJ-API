@@ -3,6 +3,7 @@ package handlers
 import (
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
+	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	ws "duskforge-api/pkg/websocket"
 
@@ -12,11 +13,12 @@ import (
 
 type FollowHandler struct {
 	followService ports.FollowService
+	blockService  ports.BlockService
 	hub           *ws.Hub
 }
 
-func NewFollowHandler(followService ports.FollowService, hub *ws.Hub) *FollowHandler {
-	return &FollowHandler{followService: followService, hub: hub}
+func NewFollowHandler(followService ports.FollowService, blockService ports.BlockService, hub *ws.Hub) *FollowHandler {
+	return &FollowHandler{followService: followService, blockService: blockService, hub: hub}
 }
 
 type FollowUserResponse struct {
@@ -28,7 +30,7 @@ type FollowUserResponse struct {
 }
 
 // @Summary      Follow a user
-// @Description  Follow another user by their ID
+// @Description  Follow another user by their ID. Returns 403 if there is a block between the two users.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
@@ -36,6 +38,7 @@ type FollowUserResponse struct {
 // @Success      204 "Followed successfully"
 // @Failure      400 {object} response.Response "Invalid user ID or cannot follow self"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      409 {object} response.Response "Already following"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -50,6 +53,11 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 	followingID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if blocked, err := h.blockService.IsBlocked(c.Request.Context(), followerID, followingID); err == nil && blocked {
+		response.HandleError(c, domain.ErrUserBlocked)
 		return
 	}
 
@@ -160,7 +168,7 @@ func (h *FollowHandler) RemoveFollower(c *gin.Context) {
 }
 
 // @Summary      Get followers
-// @Description  Get the paginated list of followers for a user. Optionally filter by username.
+// @Description  Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
@@ -188,9 +196,14 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 		return
 	}
 
-	users := make([]FollowUserResponse, len(result.Users))
-	for i, u := range result.Users {
-		users[i] = toFollowUserResponse(u)
+	hiddenSet := h.getHiddenUserIDs(c)
+
+	users := make([]FollowUserResponse, 0, len(result.Users))
+	for _, u := range result.Users {
+		if _, hidden := hiddenSet[u.User.ID]; hidden {
+			continue
+		}
+		users = append(users, toFollowUserResponse(u))
 	}
 
 	response.SuccessPaginated(c, users, &response.Pagination{
@@ -201,7 +214,7 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 }
 
 // @Summary      Get following
-// @Description  Get the paginated list of users that a user is following. Optionally filter by username.
+// @Description  Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
@@ -229,9 +242,14 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 		return
 	}
 
-	users := make([]FollowUserResponse, len(result.Users))
-	for i, u := range result.Users {
-		users[i] = toFollowUserResponse(u)
+	hiddenSet := h.getHiddenUserIDs(c)
+
+	users := make([]FollowUserResponse, 0, len(result.Users))
+	for _, u := range result.Users {
+		if _, hidden := hiddenSet[u.User.ID]; hidden {
+			continue
+		}
+		users = append(users, toFollowUserResponse(u))
 	}
 
 	response.SuccessPaginated(c, users, &response.Pagination{
@@ -239,6 +257,26 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 		Limit:  result.Limit,
 		Total:  result.Total,
 	})
+}
+
+func (h *FollowHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
+	hiddenSet := make(map[uuid.UUID]struct{})
+	currentUserID, ok := middleware.GetUserID(c)
+	if !ok {
+		return hiddenSet
+	}
+	ctx := c.Request.Context()
+	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockerIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockedIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	return hiddenSet
 }
 
 func toFollowUserResponse(summary *ports.FollowUserSummary) FollowUserResponse {

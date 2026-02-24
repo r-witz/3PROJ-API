@@ -15,6 +15,7 @@ type commentService struct {
 	commentLikeRepo ports.CommentLikeRepository
 	reviewRepo      ports.ReviewRepository
 	userRepo        ports.UserRepository
+	blockRepo       ports.BlockRepository
 }
 
 func NewCommentService(
@@ -22,12 +23,14 @@ func NewCommentService(
 	commentLikeRepo ports.CommentLikeRepository,
 	reviewRepo ports.ReviewRepository,
 	userRepo ports.UserRepository,
+	blockRepo ports.BlockRepository,
 ) ports.CommentService {
 	return &commentService{
 		commentRepo:     commentRepo,
 		commentLikeRepo: commentLikeRepo,
 		reviewRepo:      reviewRepo,
 		userRepo:        userRepo,
+		blockRepo:       blockRepo,
 	}
 }
 
@@ -38,6 +41,16 @@ func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID 
 	}
 	if review == nil {
 		return nil, domain.ErrReviewNotFound
+	}
+
+	if review.UserID != userID {
+		blocked, err := s.blockRepo.IsBlocked(ctx, userID, review.UserID)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+		if blocked {
+			return nil, domain.ErrUserBlocked
+		}
 	}
 
 	if input.Content == "" {
@@ -206,6 +219,16 @@ func (s *commentService) Like(ctx context.Context, commentID uuid.UUID, userID u
 		return domain.ErrCommentNotFound
 	}
 
+	if comment.UserID != userID {
+		blocked, err := s.blockRepo.IsBlocked(ctx, userID, comment.UserID)
+		if err != nil {
+			return domain.ErrInternal
+		}
+		if blocked {
+			return domain.ErrUserBlocked
+		}
+	}
+
 	existing, err := s.commentLikeRepo.GetByUserIDAndCommentID(ctx, userID, commentID)
 	if err != nil {
 		return domain.ErrInternal
@@ -234,6 +257,16 @@ func (s *commentService) Unlike(ctx context.Context, commentID uuid.UUID, userID
 	}
 	if comment == nil {
 		return domain.ErrCommentNotFound
+	}
+
+	if comment.UserID != userID {
+		blocked, err := s.blockRepo.IsBlocked(ctx, userID, comment.UserID)
+		if err != nil {
+			return domain.ErrInternal
+		}
+		if blocked {
+			return domain.ErrUserBlocked
+		}
 	}
 
 	existing, err := s.commentLikeRepo.GetByUserIDAndCommentID(ctx, userID, commentID)

@@ -14,4 +14,7 @@ type BlockRepository interface {
 	GetByBlockerAndBlocked(ctx context.Context, blockerID, blockedID uuid.UUID) (*domain.UserBlock, error)
 	GetBlockedByUser(ctx context.Context, blockerID uuid.UUID, offset, limit int) ([]*domain.UserBlock, int, error)
 	IsBlocked(ctx context.Context, userID1, userID2 uuid.UUID) (bool, error)
+	IsBlockedBy(ctx context.Context, blockerID, blockedID uuid.UUID) (bool, error)
+	GetBlockerIDs(ctx context.Context, blockedID uuid.UUID) ([]uuid.UUID, error)
+	GetBlockedIDs(ctx context.Context, blockerID uuid.UUID) ([]uuid.UUID, error)
 }

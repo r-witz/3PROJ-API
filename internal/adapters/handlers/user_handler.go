@@ -19,11 +19,12 @@ import (
 type UserHandler struct {
 	userService   ports.UserService
 	followService ports.FollowService
+	blockService  ports.BlockService
 	storage       *storage.MinioStorage
 }
 
-func NewUserHandler(userService ports.UserService, followService ports.FollowService, storage *storage.MinioStorage) *UserHandler {
-	return &UserHandler{userService: userService, followService: followService, storage: storage}
+func NewUserHandler(userService ports.UserService, followService ports.FollowService, blockService ports.BlockService, storage *storage.MinioStorage) *UserHandler {
+	return &UserHandler{userService: userService, followService: followService, blockService: blockService, storage: storage}
 }
 
 type UserPreferences struct {
@@ -421,7 +422,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 }
 
 // @Summary      Get user by ID
-// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info.
+// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         users
 // @Accept       json
 // @Produce      json
@@ -429,6 +430,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 // @Param        userId path string true "User ID" format(uuid)
 // @Success      200 {object} response.Response{data=PublicUserResponse} "User public profile"
 // @Failure      400 {object} response.Response "Invalid user ID"
+// @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId} [get]
@@ -441,6 +443,13 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
+
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != id {
+		if blocked, err := h.blockService.IsBlocked(ctx, currentUserID, id); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
+	}
 
 	user, err := h.userService.GetByID(ctx, id)
 	if err != nil {
@@ -467,6 +476,26 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	}
 
 	response.Success(c, toPublicUserResponse(user, stats, isFollowing, isFollowedBy))
+}
+
+func (h *UserHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
+	hiddenSet := make(map[uuid.UUID]struct{})
+	currentUserID, ok := middleware.GetUserID(c)
+	if !ok {
+		return hiddenSet
+	}
+	ctx := c.Request.Context()
+	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockerIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
+		for _, id := range blockedIDs {
+			hiddenSet[id] = struct{}{}
+		}
+	}
+	return hiddenSet
 }
 
 func toUserResponse(user *domain.User, stats UserStats) UserResponse {
@@ -517,10 +546,11 @@ func toSearchUserResponse(user *domain.User) SearchUserResponse {
 }
 
 // @Summary      Search users
-// @Description  Search for users by username with sorting and pagination
+// @Description  Search for users by username with sorting and pagination. If authenticated, users involved in a block relationship with the current user are excluded from results.
 // @Tags         users
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
 // @Param        query query string true "Search query (username)"
 // @Param        offset query int false "Number of items to skip" default(0)
 // @Param        limit query int false "Number of items to return (max 100)" default(20)
@@ -560,9 +590,14 @@ func (h *UserHandler) Search(c *gin.Context) {
 		return
 	}
 
-	users := make([]SearchUserResponse, len(result.Users))
-	for i, user := range result.Users {
-		users[i] = toSearchUserResponse(user)
+	hiddenSet := h.getHiddenUserIDs(c)
+
+	users := make([]SearchUserResponse, 0, len(result.Users))
+	for _, user := range result.Users {
+		if _, hidden := hiddenSet[user.ID]; hidden {
+			continue
+		}
+		users = append(users, toSearchUserResponse(user))
 	}
 
 	response.SuccessPaginated(c, users, &response.Pagination{
