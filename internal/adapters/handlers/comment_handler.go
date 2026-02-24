@@ -129,8 +129,10 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 	hiddenSet := h.getHiddenUserIDs(c)
 
 	resp := make([]CommentResponse, 0, len(comments))
+	hiddenCount := 0
 	for _, cm := range comments {
 		if _, hidden := hiddenSet[cm.Comment.UserID]; hidden {
+			hiddenCount++
 			continue
 		}
 		resp = append(resp, toCommentResponse(cm.Comment, cm.LikeCount, cm.LikedByUser, cm.User))
@@ -139,7 +141,7 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 	response.SuccessPaginated(c, resp, &response.Pagination{
 		Offset: offset,
 		Limit:  limit,
-		Total:  total,
+		Total:  total - hiddenCount,
 	})
 }
 

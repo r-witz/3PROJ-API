@@ -158,8 +158,10 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
 
 	resp := make([]ReviewResponse, 0, len(reviews))
+	hiddenCount := 0
 	for _, r := range reviews {
 		if _, hidden := hiddenSet[r.Review.UserID]; hidden {
+			hiddenCount++
 			continue
 		}
 		resp = append(resp, toReviewResponse(r.Review, r.LikeCount, r.CommentCount, r.LikedByUser, r.User, movie))
@@ -168,7 +170,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 	response.SuccessPaginated(c, resp, &response.Pagination{
 		Offset: offset,
 		Limit:  limit,
-		Total:  total,
+		Total:  total - hiddenCount,
 	})
 }
 

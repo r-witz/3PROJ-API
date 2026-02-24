@@ -156,15 +156,35 @@ func (s *messageService) GetConversations(ctx context.Context, userID uuid.UUID,
 	var total int
 	var err error
 
-	if includeClosed {
-		previews, total, err = s.messageRepo.GetConversations(ctx, userID, offset, limit)
-	} else {
+	// Always exclude blocked users from conversation list
+	excludeIDs := make(map[uuid.UUID]struct{})
+	if blockerIDs, berr := s.blockRepo.GetBlockerIDs(ctx, userID); berr == nil {
+		for _, id := range blockerIDs {
+			excludeIDs[id] = struct{}{}
+		}
+	}
+	if blockedIDs, berr := s.blockRepo.GetBlockedIDs(ctx, userID); berr == nil {
+		for _, id := range blockedIDs {
+			excludeIDs[id] = struct{}{}
+		}
+	}
+
+	if !includeClosed {
 		closedPartnerIDs, cerr := s.convStateRepo.GetClosedConversationPartnerIDs(ctx, userID)
 		if cerr != nil {
 			return nil, 0, cerr
 		}
-		previews, total, err = s.messageRepo.GetConversationsFiltered(ctx, userID, closedPartnerIDs, offset, limit)
+		for _, id := range closedPartnerIDs {
+			excludeIDs[id] = struct{}{}
+		}
 	}
+
+	excludeSlice := make([]uuid.UUID, 0, len(excludeIDs))
+	for id := range excludeIDs {
+		excludeSlice = append(excludeSlice, id)
+	}
+
+	previews, total, err = s.messageRepo.GetConversationsFiltered(ctx, userID, excludeSlice, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -118,7 +118,7 @@ func main() {
 	userService := services.NewUserService(userRepo)
 
 	followService := services.NewFollowService(followRepo, userRepo)
-	blockService := services.NewBlockService(blockRepo, followRepo, userRepo)
+	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo)
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)

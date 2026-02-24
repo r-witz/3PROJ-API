@@ -11,16 +11,18 @@ import (
 )
 
 type blockService struct {
-	blockRepo  ports.BlockRepository
-	followRepo ports.FollowRepository
-	userRepo   ports.UserRepository
+	blockRepo     ports.BlockRepository
+	followRepo    ports.FollowRepository
+	userRepo      ports.UserRepository
+	convStateRepo ports.ConversationStateRepository
 }
 
-func NewBlockService(blockRepo ports.BlockRepository, followRepo ports.FollowRepository, userRepo ports.UserRepository) ports.BlockService {
+func NewBlockService(blockRepo ports.BlockRepository, followRepo ports.FollowRepository, userRepo ports.UserRepository, convStateRepo ports.ConversationStateRepository) ports.BlockService {
 	return &blockService{
-		blockRepo:  blockRepo,
-		followRepo: followRepo,
-		userRepo:   userRepo,
+		blockRepo:     blockRepo,
+		followRepo:    followRepo,
+		userRepo:      userRepo,
+		convStateRepo: convStateRepo,
 	}
 }
 
@@ -57,6 +59,23 @@ func (s *blockService) BlockUser(ctx context.Context, blockerID, blockedID uuid.
 	// Remove follows in both directions
 	_ = s.followRepo.Delete(ctx, blockerID, blockedID)
 	_ = s.followRepo.Delete(ctx, blockedID, blockerID)
+
+	// Close conversations for both users
+	now := time.Now()
+	_ = s.convStateRepo.Upsert(ctx, &domain.ConversationState{
+		UserID:      blockerID,
+		OtherUserID: blockedID,
+		ClosedAt:    &now,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	})
+	_ = s.convStateRepo.Upsert(ctx, &domain.ConversationState{
+		UserID:      blockedID,
+		OtherUserID: blockerID,
+		ClosedAt:    &now,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	})
 
 	return nil
 }

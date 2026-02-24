@@ -199,8 +199,10 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 	hiddenSet := h.getHiddenUserIDs(c)
 
 	users := make([]FollowUserResponse, 0, len(result.Users))
+	hiddenCount := 0
 	for _, u := range result.Users {
 		if _, hidden := hiddenSet[u.User.ID]; hidden {
+			hiddenCount++
 			continue
 		}
 		users = append(users, toFollowUserResponse(u))
@@ -209,7 +211,7 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 	response.SuccessPaginated(c, users, &response.Pagination{
 		Offset: result.Offset,
 		Limit:  result.Limit,
-		Total:  result.Total,
+		Total:  result.Total - hiddenCount,
 	})
 }
 
@@ -245,8 +247,10 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 	hiddenSet := h.getHiddenUserIDs(c)
 
 	users := make([]FollowUserResponse, 0, len(result.Users))
+	hiddenCount := 0
 	for _, u := range result.Users {
 		if _, hidden := hiddenSet[u.User.ID]; hidden {
+			hiddenCount++
 			continue
 		}
 		users = append(users, toFollowUserResponse(u))
@@ -255,7 +259,7 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 	response.SuccessPaginated(c, users, &response.Pagination{
 		Offset: result.Offset,
 		Limit:  result.Limit,
-		Total:  result.Total,
+		Total:  result.Total - hiddenCount,
 	})
 }
 
