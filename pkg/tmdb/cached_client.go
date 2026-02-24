@@ -249,13 +249,13 @@ func (c *CachedClient) GetTrendingMovies(ctx context.Context, page int, language
 	return result, nil
 }
 
-func (c *CachedClient) GetNowPlayingMovies(ctx context.Context, page int, language, region string) (*NowPlayingMoviesResponse, error) {
-	key := fmt.Sprintf("tmdb:now_playing:%d:%s:%s", page, language, region)
-	var cached NowPlayingMoviesResponse
+func (c *CachedClient) GetUpcomingMovies(ctx context.Context, page int, language, region string) (*UpcomingMoviesResponse, error) {
+	key := fmt.Sprintf("tmdb:upcoming:%d:%s:%s", page, language, region)
+	var cached UpcomingMoviesResponse
 	if cacheGet(ctx, c, key, &cached) {
 		return &cached, nil
 	}
-	result, err := c.client.GetNowPlayingMovies(ctx, page, language, region)
+	result, err := c.client.GetUpcomingMovies(ctx, page, language, region)
 	if err != nil {
 		return nil, err
 	}

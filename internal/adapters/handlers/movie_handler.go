@@ -204,22 +204,22 @@ func (h *MovieHandler) GetPopular(c *gin.Context) {
 	})
 }
 
-// @Summary      Get now playing movies
-// @Description  Get a list of movies currently in theaters
+// @Summary      Get upcoming movies
+// @Description  Get a list of upcoming movies releasing in the next 3 months
 // @Tags         movies
 // @Accept       json
 // @Produce      json
 // @Param        offset query int false "Number of items to skip" default(0)
 // @Param        limit query int false "Number of items to return (max 20)" default(20)
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
-// @Success      200 {object} response.PaginatedResponse "Now playing movies"
+// @Success      200 {object} response.PaginatedResponse "Upcoming movies"
 // @Failure      502 {object} response.Response "External service error"
-// @Router       /movies/now-playing [get]
-func (h *MovieHandler) GetNowPlaying(c *gin.Context) {
+// @Router       /movies/upcoming [get]
+func (h *MovieHandler) GetUpcoming(c *gin.Context) {
 	offset, limit := parsePagination(c)
 	language := middleware.GetLocale(c)
 
-	result, err := h.movieService.GetNowPlaying(c.Request.Context(), offset, limit, language)
+	result, err := h.movieService.GetUpcoming(c.Request.Context(), offset, limit, language)
 	if err != nil {
 		response.HandleError(c, err)
 		return

@@ -287,7 +287,7 @@ func (c *Client) GetTrendingMovies(ctx context.Context, page int, language strin
 	return &resp, nil
 }
 
-func (c *Client) GetNowPlayingMovies(ctx context.Context, page int, language, region string) (*NowPlayingMoviesResponse, error) {
+func (c *Client) GetUpcomingMovies(ctx context.Context, page int, language, region string) (*UpcomingMoviesResponse, error) {
 	params := url.Values{}
 	if page > 0 {
 		params.Set("page", strconv.Itoa(page))
@@ -299,14 +299,14 @@ func (c *Client) GetNowPlayingMovies(ctx context.Context, page int, language, re
 		params.Set("region", region)
 	}
 
-	body, err := c.doRequest(ctx, "GET", "/movie/now_playing", params)
+	body, err := c.doRequest(ctx, "GET", "/movie/upcoming", params)
 	if err != nil {
 		return nil, err
 	}
 
-	var resp NowPlayingMoviesResponse
+	var resp UpcomingMoviesResponse
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return nil, &RequestError{Operation: "/movie/now_playing", Err: err}
+		return nil, &RequestError{Operation: "/movie/upcoming", Err: err}
 	}
 
 	return &resp, nil

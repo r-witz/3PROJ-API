@@ -140,7 +140,7 @@ type SearchMoviesResponse = PaginatedResponse[MovieSummary]
 type DiscoverMoviesResponse = PaginatedResponse[MovieSummary]
 type PopularMoviesResponse = PaginatedResponse[MovieSummary]
 type TrendingMoviesResponse = PaginatedResponse[MovieSummary]
-type NowPlayingMoviesResponse = PaginatedResponse[MovieSummary]
+type UpcomingMoviesResponse = PaginatedResponse[MovieSummary]
 
 type PersonSummary struct {
 	ID                 int      `json:"id"`

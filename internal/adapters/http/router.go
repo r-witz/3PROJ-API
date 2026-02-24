@@ -162,7 +162,7 @@ func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 		movies.GET("/search", r.movieHandler.Search)
 		movies.GET("/discover", r.movieHandler.Discover)
 		movies.GET("/popular", r.movieHandler.GetPopular)
-		movies.GET("/now-playing", r.movieHandler.GetNowPlaying)
+		movies.GET("/upcoming", r.movieHandler.GetUpcoming)
 		movies.GET("/genres", r.movieHandler.GetGenres)
 		movies.GET("/:id", r.movieHandler.GetByID)
 		movies.GET("/:id/trailer", r.movieHandler.GetTrailer)

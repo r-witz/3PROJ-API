@@ -180,7 +180,7 @@ func (s *movieService) GetPopular(ctx context.Context, offset, limit int, langua
 	return s.transformMoviesWithOffset(ctx, result.Results, offset, limit, offsetInPage, result.TotalResults, language)
 }
 
-func (s *movieService) GetNowPlaying(ctx context.Context, offset, limit int, language string) (*ports.SearchMoviesResult, error) {
+func (s *movieService) GetUpcoming(ctx context.Context, offset, limit int, language string) (*ports.SearchMoviesResult, error) {
 	if limit <= 0 {
 		limit = tmdbPageSize
 	}
@@ -191,7 +191,7 @@ func (s *movieService) GetNowPlaying(ctx context.Context, offset, limit int, lan
 	page := (offset / tmdbPageSize) + 1
 	offsetInPage := offset % tmdbPageSize
 
-	result, err := s.tmdbClient.GetNowPlayingMovies(ctx, page, language, "")
+	result, err := s.tmdbClient.GetUpcomingMovies(ctx, page, language, "")
 	if err != nil {
 		return nil, domain.ErrTMDBError
 	}
