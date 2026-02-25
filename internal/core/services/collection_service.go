@@ -140,7 +140,7 @@ func (s *collectionService) GetBySlug(ctx context.Context, userID uuid.UUID, slu
 	}, nil
 }
 
-func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID) ([]ports.CollectionWithPresence, error) {
+func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, requestingUserID *uuid.UUID, collectionType *domain.CollectionType) ([]ports.CollectionWithPresence, error) {
 	collections, err := s.collectionRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -149,14 +149,14 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
 	var visible []*domain.Collection
-	if isOwner {
-		visible = collections
-	} else {
-		for _, c := range collections {
-			if c.Visibility == domain.CollectionVisibilityPublic {
-				visible = append(visible, c)
-			}
+	for _, c := range collections {
+		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
+			continue
 		}
+		if collectionType != nil && c.Type != *collectionType {
+			continue
+		}
+		visible = append(visible, c)
 	}
 
 	ids := make([]uuid.UUID, len(visible))
@@ -179,7 +179,7 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 	return result, nil
 }
 
-func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID) ([]ports.CollectionWithPresence, error) {
+func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int, requestingUserID *uuid.UUID, collectionType *domain.CollectionType) ([]ports.CollectionWithPresence, error) {
 	allCollections, err := s.collectionRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -200,6 +200,9 @@ func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uui
 	var visible []*domain.Collection
 	for _, c := range allCollections {
 		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
+			continue
+		}
+		if collectionType != nil && c.Type != *collectionType {
 			continue
 		}
 		visible = append(visible, c)

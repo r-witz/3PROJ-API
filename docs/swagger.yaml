@@ -2852,8 +2852,8 @@ paths:
       description: Get all collections for a user. Returns all collections if the
         requester is the owner, only public ones otherwise. When tmdb_id is provided,
         each collection includes a has_movie flag indicating whether the movie is
-        in that collection. Returns 403 if there is a block between the authenticated
-        user and the target user.
+        in that collection. Use the type parameter to filter by collection type. Returns
+        403 if there is a block between the authenticated user and the target user.
       parameters:
       - description: User ID
         format: uuid
@@ -2865,6 +2865,13 @@ paths:
         in: query
         name: tmdb_id
         type: integer
+      - description: Filter by collection type
+        enum:
+        - system
+        - custom
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:

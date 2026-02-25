@@ -152,13 +152,14 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 }
 
 // @Summary      Get user's collections
-// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        tmdb_id query int false "TMDB movie ID - when provided, adds has_movie flag to each collection"
+// @Param        type query string false "Filter by collection type" Enums(system, custom)
 // @Success      200 {object} response.Response{data=[]CollectionResponse} "List of collections"
 // @Failure      400 {object} response.Response "Invalid user ID or TMDB ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -183,13 +184,23 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 		requestingUserID = &uid
 	}
 
+	var collectionType *domain.CollectionType
+	if typeStr := c.Query("type"); typeStr != "" {
+		ct := domain.CollectionType(typeStr)
+		if ct != domain.CollectionTypeSystem && ct != domain.CollectionTypeCustom {
+			response.BadRequest(c, "Invalid collection type, must be 'system' or 'custom'", nil)
+			return
+		}
+		collectionType = &ct
+	}
+
 	if tmdbIDStr := c.Query("tmdb_id"); tmdbIDStr != "" {
 		tmdbID, err := strconv.Atoi(tmdbIDStr)
 		if err != nil {
 			response.BadRequest(c, "Invalid TMDB ID", nil)
 			return
 		}
-		collectionsWithPresence, err := h.collectionService.GetByUserIDAndTMDBID(c.Request.Context(), userID, tmdbID, requestingUserID)
+		collectionsWithPresence, err := h.collectionService.GetByUserIDAndTMDBID(c.Request.Context(), userID, tmdbID, requestingUserID, collectionType)
 		if err != nil {
 			response.HandleError(c, err)
 			return
@@ -206,7 +217,7 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
-	collections, err := h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID)
+	collections, err := h.collectionService.GetByUserID(c.Request.Context(), userID, requestingUserID, collectionType)
 	if err != nil {
 		response.HandleError(c, err)
 		return

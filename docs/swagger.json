@@ -3883,7 +3883,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 403 if there is a block between the authenticated user and the target user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3907,6 +3907,16 @@
                         "type": "integer",
                         "description": "TMDB movie ID - when provided, adds has_movie flag to each collection",
                         "name": "tmdb_id",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "system",
+                            "custom"
+                        ],
+                        "type": "string",
+                        "description": "Filter by collection type",
+                        "name": "type",
                         "in": "query"
                     }
                 ],
