@@ -173,6 +173,14 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 	}, nil
 }
 
+func (s *oauthService) ExtractRedirectURI(state string) (string, error) {
+	stateData, err := s.stateManager.Validate(state)
+	if err != nil {
+		return "", err
+	}
+	return stateData.RedirectURI, nil
+}
+
 func (s *oauthService) UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {

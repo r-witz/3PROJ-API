@@ -34,4 +34,5 @@ type OAuthService interface {
 	HandleCallback(ctx context.Context, input OAuthCallbackInput) (*OAuthAuthResult, error)
 	UnlinkAccount(ctx context.Context, userID uuid.UUID, provider oauth.OAuthProvider) error
 	GetLinkedProviders(ctx context.Context, userID uuid.UUID) (*LinkedProvidersResult, error)
+	ExtractRedirectURI(state string) (string, error)
 }

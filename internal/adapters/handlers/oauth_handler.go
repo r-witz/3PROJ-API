@@ -35,6 +35,24 @@ type OAuthCallbackRequest struct {
 	State string `form:"state" binding:"required"`
 }
 
+func (h *OAuthHandler) redirectWithError(c *gin.Context, oauthError string) bool {
+	state := c.Query("state")
+	if state == "" {
+		return false
+	}
+
+	frontendURI, err := h.oauthService.ExtractRedirectURI(state)
+	if err != nil || frontendURI == "" {
+		return false
+	}
+
+	fragment := url.Values{}
+	fragment.Set("error", oauthError)
+	redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
+	c.Redirect(http.StatusFound, redirectURL)
+	return true
+}
+
 type OAuthTokensResponse struct {
 	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
@@ -87,6 +105,13 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github/callback [get]
 func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
+	if oauthError := c.Query("error"); oauthError != "" {
+		if !h.redirectWithError(c, oauthError) {
+			response.BadRequest(c, "OAuth authorization was denied", oauthError)
+		}
+		return
+	}
+
 	var req OAuthCallbackRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.BadRequest(c, "Missing code or state parameter", err.Error())
@@ -171,6 +196,13 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google/callback [get]
 func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
+	if oauthError := c.Query("error"); oauthError != "" {
+		if !h.redirectWithError(c, oauthError) {
+			response.BadRequest(c, "OAuth authorization was denied", oauthError)
+		}
+		return
+	}
+
 	var req OAuthCallbackRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.BadRequest(c, "Missing code or state parameter", err.Error())
