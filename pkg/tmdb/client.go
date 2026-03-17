@@ -3,10 +3,13 @@ package tmdb
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 	"time"
 
 	"duskforge-api/pkg/logger"
@@ -15,11 +18,13 @@ import (
 )
 
 type Client struct {
-	apiKey      string
-	httpClient  *http.Client
-	rateLimiter *RateLimiter
-	imageURLs   *ImageURLBuilder
-	baseURL     string
+	apiKey        string
+	httpClient    *http.Client
+	rateLimiter   *RateLimiter
+	imageURLs     *ImageURLBuilder
+	baseURL       string
+	configReady   atomic.Bool
+	retryCancel   context.CancelFunc
 }
 
 type ClientOption func(*Client)
@@ -70,9 +75,11 @@ func (c *Client) InitializeConfiguration(ctx context.Context) error {
 		logger.Logger.Warn("failed to fetch TMDB configuration, using defaults",
 			zap.Error(err),
 		)
+		c.startConfigRetry()
 		return err
 	}
 
+	c.configReady.Store(true)
 	c.imageURLs = NewImageURLBuilder(config.Images.SecureBaseURL)
 	logger.Logger.Info("TMDB configuration loaded",
 		zap.String("image_base_url", config.Images.SecureBaseURL),
@@ -81,8 +88,54 @@ func (c *Client) InitializeConfiguration(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) startConfigRetry() {
+	ctx, cancel := context.WithCancel(context.Background())
+	c.retryCancel = cancel
+
+	go func() {
+		delay := 10 * time.Second
+		maxDelay := 5 * time.Minute
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(delay):
+				config, err := c.GetConfiguration(ctx)
+				if err != nil {
+					logger.Logger.Warn("TMDB config retry failed, will retry",
+						zap.Duration("next_retry", delay),
+						zap.Error(err),
+					)
+					delay = min(delay*2, maxDelay)
+					continue
+				}
+
+				c.configReady.Store(true)
+				c.imageURLs = NewImageURLBuilder(config.Images.SecureBaseURL)
+				logger.Logger.Info("TMDB configuration loaded after retry",
+					zap.String("image_base_url", config.Images.SecureBaseURL),
+				)
+				return
+			}
+		}
+	}()
+}
+
 func (c *Client) ImageURLs() *ImageURLBuilder {
 	return c.imageURLs
+}
+
+func isTransientError(err error) bool {
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		return true
+	}
+	var netErr *net.OpError
+	if errors.As(err, &netErr) {
+		return true
+	}
+	return false
 }
 
 func (c *Client) doRequest(ctx context.Context, method, endpoint string, params url.Values) ([]byte, error) {
@@ -97,33 +150,50 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 	params.Set("api_key", c.apiKey)
 	fullURL = fmt.Sprintf("%s?%s", fullURL, params.Encode())
 
-	req, err := http.NewRequestWithContext(ctx, method, fullURL, nil)
-	if err != nil {
-		return nil, &RequestError{Operation: endpoint, Err: err}
+	const maxRetries = 3
+	var lastErr error
+
+	for attempt := range maxRetries {
+		req, err := http.NewRequestWithContext(ctx, method, fullURL, nil)
+		if err != nil {
+			return nil, &RequestError{Operation: endpoint, Err: err}
+		}
+
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			if isTransientError(err) && attempt < maxRetries-1 {
+				logger.Logger.Warn("TMDB request failed, retrying",
+					zap.String("endpoint", endpoint),
+					zap.Int("attempt", attempt+1),
+					zap.Error(err),
+				)
+				time.Sleep(time.Duration(attempt+1) * time.Second)
+				continue
+			}
+			logger.Logger.Error("TMDB request failed",
+				zap.String("endpoint", endpoint),
+				zap.Error(err),
+			)
+			return nil, &RequestError{Operation: endpoint, Err: err}
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, &RequestError{Operation: endpoint, Err: err}
+		}
+
+		if resp.StatusCode >= 400 {
+			return nil, c.handleErrorResponse(resp.StatusCode, body, endpoint)
+		}
+
+		return body, nil
 	}
 
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		logger.Logger.Error("TMDB request failed",
-			zap.String("endpoint", endpoint),
-			zap.Error(err),
-		)
-		return nil, &RequestError{Operation: endpoint, Err: err}
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, &RequestError{Operation: endpoint, Err: err}
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, c.handleErrorResponse(resp.StatusCode, body, endpoint)
-	}
-
-	return body, nil
+	return nil, &RequestError{Operation: endpoint, Err: lastErr}
 }
 
 func (c *Client) handleErrorResponse(statusCode int, body []byte, endpoint string) error {
@@ -155,6 +225,9 @@ func (c *Client) handleErrorResponse(statusCode int, body []byte, endpoint strin
 }
 
 func (c *Client) Close() {
+	if c.retryCancel != nil {
+		c.retryCancel()
+	}
 	c.httpClient.CloseIdleConnections()
 	logger.Logger.Info("TMDB client closed")
 }
