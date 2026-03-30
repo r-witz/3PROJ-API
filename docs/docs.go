@@ -5007,6 +5007,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/{userId}/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 403 if there is a block between the authenticated user and the target user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User statistics",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.UserStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "User blocked",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/ws": {
             "get": {
                 "description": "Establishes a WebSocket connection for real-time messaging notifications. The connection is read-only — messages are still sent via REST POST /messages/:id. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked, messaging.unblocked.",
@@ -5181,6 +5252,19 @@ const docTemplate = `{
                 "visibility": {
                     "type": "string",
                     "example": "private"
+                }
+            }
+        },
+        "handlers.CollectionStatsResponse": {
+            "type": "object",
+            "properties": {
+                "total_collections": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "total_items": {
+                    "type": "integer",
+                    "example": 234
                 }
             }
         },
@@ -5643,6 +5727,33 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ReviewStatsResponse": {
+            "type": "object",
+            "properties": {
+                "average_rating": {
+                    "type": "number",
+                    "example": 3.7
+                },
+                "comments_received": {
+                    "type": "integer",
+                    "example": 89
+                },
+                "likes_received": {
+                    "type": "integer",
+                    "example": 156
+                },
+                "rating_distribution": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "total_reviews": {
+                    "type": "integer",
+                    "example": 42
+                }
+            }
+        },
         "handlers.SearchUserResponse": {
             "type": "object",
             "properties": {
@@ -5661,6 +5772,19 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "handlers.SocialStatsResponse": {
+            "type": "object",
+            "properties": {
+                "followers_count": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "following_count": {
+                    "type": "integer",
+                    "example": 75
                 }
             }
         },
@@ -5880,6 +6004,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.UserStatsResponse": {
+            "type": "object",
+            "properties": {
+                "collections": {
+                    "$ref": "#/definitions/handlers.CollectionStatsResponse"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/handlers.ReviewStatsResponse"
+                },
+                "social": {
+                    "$ref": "#/definitions/handlers.SocialStatsResponse"
+                },
+                "watched": {
+                    "$ref": "#/definitions/handlers.WatchedStatsResponse"
+                }
+            }
+        },
         "handlers.UserSummary": {
             "type": "object",
             "properties": {
@@ -5894,6 +6035,23 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "johndoe"
+                }
+            }
+        },
+        "handlers.WatchedStatsResponse": {
+            "type": "object",
+            "properties": {
+                "runtime_display": {
+                    "type": "string",
+                    "example": "15d 0h 0m"
+                },
+                "total_movies": {
+                    "type": "integer",
+                    "example": 180
+                },
+                "total_runtime": {
+                    "type": "integer",
+                    "example": 21600
                 }
             }
         },

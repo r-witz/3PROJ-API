@@ -91,6 +91,7 @@ func main() {
 	attachmentRepo := repositories.NewMessageAttachmentRepository(db)
 	reactionRepo := repositories.NewMessageReactionRepository(db)
 	convStateRepo := repositories.NewConversationStateRepository(db)
+	statsRepo := repositories.NewStatsRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -124,6 +125,7 @@ func main() {
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
+	statsService := services.NewStatsService(statsRepo, userRepo)
 
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
 	if cfg.GitHubClientID != "" && cfg.GitHubClientSecret != "" {
@@ -159,6 +161,7 @@ func main() {
 	collectionHandler := handlers.NewCollectionHandler(collectionService, blockService)
 	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService, blockService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService, blockService)
+	statsHandler := handlers.NewStatsHandler(statsService, blockService)
 	hub := ws.NewHub()
 	go hub.Run()
 
@@ -183,6 +186,7 @@ func main() {
 		followHandler,
 		messageHandler,
 		blockHandler,
+		statsHandler,
 		wsHandler,
 		userService,
 	)

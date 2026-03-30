@@ -32,6 +32,7 @@ type Router struct {
 	followHandler     *handlers.FollowHandler
 	messageHandler    *handlers.MessageHandler
 	blockHandler      *handlers.BlockHandler
+	statsHandler      *handlers.StatsHandler
 	wsHandler         *handlers.WebSocketHandler
 	userService       ports.UserService
 }
@@ -49,6 +50,7 @@ func NewRouter(
 	followHandler *handlers.FollowHandler,
 	messageHandler *handlers.MessageHandler,
 	blockHandler *handlers.BlockHandler,
+	statsHandler *handlers.StatsHandler,
 	wsHandler *handlers.WebSocketHandler,
 	userService ports.UserService,
 ) *Router {
@@ -66,6 +68,7 @@ func NewRouter(
 		followHandler:     followHandler,
 		messageHandler:    messageHandler,
 		blockHandler:      blockHandler,
+		statsHandler:      statsHandler,
 		wsHandler:         wsHandler,
 		userService:       userService,
 	}
@@ -131,6 +134,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret), r.userHandler.DeleteCurrentUser)
 		users.GET("/me/blocked", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.GetBlockedUsers)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret), r.userHandler.GetByID)
+		users.GET("/:userId/stats", middleware.OptionalAuth(r.config.AccessTokenSecret), r.statsHandler.GetUserStats)
 		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret), r.reviewHandler.GetByUserID)
 		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Follow)
 		users.DELETE("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret), r.followHandler.Unfollow)
