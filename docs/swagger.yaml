@@ -1,5 +1,27 @@
 basePath: /api/v1
 definitions:
+  handlers.ActivityResponse:
+    properties:
+      collection:
+        $ref: '#/definitions/handlers.CollectionSummary'
+      comment:
+        $ref: '#/definitions/handlers.CommentSummary'
+      created_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      movie:
+        $ref: '#/definitions/handlers.MovieSummaryResponse'
+      review:
+        $ref: '#/definitions/handlers.ReviewSummary'
+      type:
+        example: review_created
+        type: string
+      user:
+        $ref: '#/definitions/handlers.UserSummary'
+    type: object
   handlers.AddItemRequest:
     properties:
       tmdb_id:
@@ -112,6 +134,18 @@ definitions:
         example: 234
         type: integer
     type: object
+  handlers.CollectionSummary:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: My Favorites
+        type: string
+      slug:
+        example: my-favorites
+        type: string
+    type: object
   handlers.CommentResponse:
     properties:
       contains_spoilers:
@@ -140,6 +174,15 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/handlers.UserSummary'
+    type: object
+  handlers.CommentSummary:
+    properties:
+      content:
+        example: I agree!
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
     type: object
   handlers.ConversationListResponse:
     properties:
@@ -457,6 +500,21 @@ definitions:
         type: object
       total_reviews:
         example: 42
+        type: integer
+    type: object
+  handlers.ReviewSummary:
+    properties:
+      content:
+        example: Great movie!
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      rating:
+        example: 4.5
+        type: number
+      tmdb_id:
+        example: 550
         type: integer
     type: object
   handlers.SearchUserResponse:
@@ -1540,6 +1598,48 @@ paths:
       summary: Like a comment
       tags:
       - comments
+  /feed:
+    get:
+      description: Get the authenticated user's feed of activities from users they
+        follow
+      parameters:
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit for pagination
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of activities
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.ActivityResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get following feed
+      tags:
+      - activities
   /messages:
     get:
       description: Get list of all conversations for the authenticated user with last
@@ -2829,6 +2929,58 @@ paths:
       summary: Get user by ID
       tags:
       - users
+  /users/{userId}/activities:
+    get:
+      description: Get a user's activity feed. Returns 403 if there is a block between
+        the authenticated user and the target user.
+      parameters:
+      - description: User ID
+        format: uuid
+        in: path
+        name: userId
+        required: true
+        type: string
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - default: 20
+        description: Limit for pagination
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of activities
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/handlers.ActivityResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: User blocked
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user activities
+      tags:
+      - activities
   /users/{userId}/block:
     delete:
       description: Unblock a previously blocked user

@@ -92,6 +92,7 @@ func main() {
 	reactionRepo := repositories.NewMessageReactionRepository(db)
 	convStateRepo := repositories.NewConversationStateRepository(db)
 	statsRepo := repositories.NewStatsRepository(db)
+	activityRepo := repositories.NewActivityRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -106,7 +107,7 @@ func main() {
 	}
 	logger.Logger.Info("MinIO storage client initialized", zap.String("endpoint", cfg.MinioEndpoint))
 
-	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo)
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo, activityRepo)
 
 	tokenConfig := services.TokenConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -120,8 +121,9 @@ func main() {
 
 	followService := services.NewFollowService(followRepo, userRepo)
 	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
-	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo)
-	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo, activityRepo)
+	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo, activityRepo)
+	activityService := services.NewActivityService(activityRepo, userRepo, reviewRepo, collectionRepo, commentRepo)
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
@@ -162,6 +164,7 @@ func main() {
 	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService, blockService)
 	commentHandler := handlers.NewCommentHandler(commentService, userService, blockService)
 	statsHandler := handlers.NewStatsHandler(statsService, blockService)
+	activityHandler := handlers.NewActivityHandler(activityService, movieService, blockService)
 	hub := ws.NewHub()
 	go hub.Run()
 
@@ -187,6 +190,7 @@ func main() {
 		messageHandler,
 		blockHandler,
 		statsHandler,
+		activityHandler,
 		wsHandler,
 		userService,
 	)

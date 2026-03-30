@@ -49,6 +49,35 @@ func (r *ReviewRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.R
 	return review, err
 }
 
+func (r *ReviewRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Review, error) {
+	if len(ids) == 0 {
+		return []*domain.Review{}, nil
+	}
+
+	query := `
+		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
+		FROM reviews WHERE id = ANY($1)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reviews []*domain.Review
+	for rows.Next() {
+		review := &domain.Review{}
+		if err := rows.Scan(
+			&review.ID, &review.UserID, &review.TMDBID, &review.Rating, &review.Content,
+			&review.ContainsSpoilers, &review.FeaturedAt, &review.CreatedAt, &review.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, review)
+	}
+	return reviews, rows.Err()
+}
+
 func (r *ReviewRepository) GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, offset, limit int, sort ports.ReviewSort) ([]*domain.Review, error) {
 	orderClause := buildReviewOrderClause(sort)
 

@@ -1279,6 +1279,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/feed": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the authenticated user's feed of activities from users they follow",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Get following feed",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of activities",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.ActivityResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/messages": {
             "get": {
                 "security": [
@@ -3767,6 +3835,88 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/{userId}/activities": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a user's activity feed. Returns 403 if there is a block between the authenticated user and the target user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "activities"
+                ],
+                "summary": "Get user activities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit for pagination",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of activities",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.ActivityResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "User blocked",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{userId}/block": {
             "post": {
                 "security": [
@@ -5112,6 +5262,38 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.ActivityResponse": {
+            "type": "object",
+            "properties": {
+                "collection": {
+                    "$ref": "#/definitions/handlers.CollectionSummary"
+                },
+                "comment": {
+                    "$ref": "#/definitions/handlers.CommentSummary"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "movie": {
+                    "$ref": "#/definitions/handlers.MovieSummaryResponse"
+                },
+                "review": {
+                    "$ref": "#/definitions/handlers.ReviewSummary"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "review_created"
+                },
+                "user": {
+                    "$ref": "#/definitions/handlers.UserSummary"
+                }
+            }
+        },
         "handlers.AddItemRequest": {
             "type": "object",
             "required": [
@@ -5268,6 +5450,23 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.CollectionSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Favorites"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "my-favorites"
+                }
+            }
+        },
         "handlers.CommentResponse": {
             "type": "object",
             "properties": {
@@ -5305,6 +5504,19 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/handlers.UserSummary"
+                }
+            }
+        },
+        "handlers.CommentSummary": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "I agree!"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -5751,6 +5963,27 @@ const docTemplate = `{
                 "total_reviews": {
                     "type": "integer",
                     "example": 42
+                }
+            }
+        },
+        "handlers.ReviewSummary": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Great movie!"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "rating": {
+                    "type": "number",
+                    "example": 4.5
+                },
+                "tmdb_id": {
+                    "type": "integer",
+                    "example": 550
                 }
             }
         },

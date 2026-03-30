@@ -18,6 +18,7 @@ type reviewService struct {
 	collectionSvc  ports.CollectionService
 	userRepo       ports.UserRepository
 	blockRepo      ports.BlockRepository
+	activityRepo   ports.ActivityRepository
 }
 
 func NewReviewService(
@@ -27,6 +28,7 @@ func NewReviewService(
 	collectionSvc ports.CollectionService,
 	userRepo ports.UserRepository,
 	blockRepo ports.BlockRepository,
+	activityRepo ports.ActivityRepository,
 ) ports.ReviewService {
 	return &reviewService{
 		reviewRepo:     reviewRepo,
@@ -35,6 +37,7 @@ func NewReviewService(
 		collectionSvc:  collectionSvc,
 		userRepo:       userRepo,
 		blockRepo:      blockRepo,
+		activityRepo:   activityRepo,
 	}
 }
 
@@ -69,6 +72,14 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 	if err := s.reviewRepo.Create(ctx, review); err != nil {
 		return nil, domain.ErrInternal
 	}
+
+	_ = s.activityRepo.Create(ctx, &domain.Activity{
+		ID:       uuid.New(),
+		UserID:   userID,
+		Type:     domain.ActivityTypeReviewCreated,
+		ReviewID: &review.ID,
+		CreatedAt: now,
+	})
 
 	_, err = s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID)
 	if err != nil && !errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
@@ -210,6 +221,8 @@ func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UU
 		return domain.ErrInternal
 	}
 
+	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeReviewCreated, &id, nil, nil, nil)
+
 	return nil
 }
 
@@ -250,6 +263,14 @@ func (s *reviewService) Like(ctx context.Context, reviewID uuid.UUID, userID uui
 		return domain.ErrInternal
 	}
 
+	_ = s.activityRepo.Create(ctx, &domain.Activity{
+		ID:        uuid.New(),
+		UserID:    userID,
+		Type:      domain.ActivityTypeReviewLiked,
+		ReviewID:  &reviewID,
+		CreatedAt: time.Now(),
+	})
+
 	return nil
 }
 
@@ -283,6 +304,8 @@ func (s *reviewService) Unlike(ctx context.Context, reviewID uuid.UUID, userID u
 	if err := s.reviewLikeRepo.Delete(ctx, userID, reviewID); err != nil {
 		return domain.ErrInternal
 	}
+
+	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeReviewLiked, &reviewID, nil, nil, nil)
 
 	return nil
 }

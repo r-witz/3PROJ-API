@@ -29,6 +29,7 @@ type ReviewSort struct {
 type ReviewRepository interface {
 	Create(ctx context.Context, review *domain.Review) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Review, error)
+	GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Review, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, offset, limit int, sort ReviewSort) ([]*domain.Review, error)
 	GetByTMDBID(ctx context.Context, tmdbID int, excludeUserID *uuid.UUID, offset, limit int, sort ReviewSort) ([]*domain.Review, error)
 	GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int) (*domain.Review, error)

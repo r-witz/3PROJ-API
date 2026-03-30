@@ -47,6 +47,35 @@ func (r *CommentRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 	return comment, err
 }
 
+func (r *CommentRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Comment, error) {
+	if len(ids) == 0 {
+		return []*domain.Comment{}, nil
+	}
+
+	query := `
+		SELECT id, user_id, review_id, content, contains_spoilers, created_at, updated_at
+		FROM comments WHERE id = ANY($1)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var comments []*domain.Comment
+	for rows.Next() {
+		comment := &domain.Comment{}
+		if err := rows.Scan(
+			&comment.ID, &comment.UserID, &comment.ReviewID, &comment.Content,
+			&comment.ContainsSpoilers, &comment.CreatedAt, &comment.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		comments = append(comments, comment)
+	}
+	return comments, rows.Err()
+}
+
 func (r *CommentRepository) GetByReviewID(ctx context.Context, reviewID uuid.UUID, offset, limit int) ([]*domain.Comment, error) {
 	query := `
 		SELECT id, user_id, review_id, content, contains_spoilers, created_at, updated_at

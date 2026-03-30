@@ -33,6 +33,7 @@ type Router struct {
 	messageHandler    *handlers.MessageHandler
 	blockHandler      *handlers.BlockHandler
 	statsHandler      *handlers.StatsHandler
+	activityHandler   *handlers.ActivityHandler
 	wsHandler         *handlers.WebSocketHandler
 	userService       ports.UserService
 }
@@ -51,6 +52,7 @@ func NewRouter(
 	messageHandler *handlers.MessageHandler,
 	blockHandler *handlers.BlockHandler,
 	statsHandler *handlers.StatsHandler,
+	activityHandler *handlers.ActivityHandler,
 	wsHandler *handlers.WebSocketHandler,
 	userService ports.UserService,
 ) *Router {
@@ -69,6 +71,7 @@ func NewRouter(
 		messageHandler:    messageHandler,
 		blockHandler:      blockHandler,
 		statsHandler:      statsHandler,
+		activityHandler:   activityHandler,
 		wsHandler:         wsHandler,
 		userService:       userService,
 	}
@@ -91,6 +94,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupReviewRoutes(v1)
 		r.setupCommentRoutes(v1)
 		r.setupMessageRoutes(v1)
+		r.setupActivityRoutes(v1)
 		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
@@ -143,6 +147,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret), r.followHandler.GetFollowing)
 		users.POST("/:userId/block", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.BlockUser)
 		users.DELETE("/:userId/block", middleware.Auth(r.config.AccessTokenSecret), r.blockHandler.UnblockUser)
+		users.GET("/:userId/activities", middleware.OptionalAuth(r.config.AccessTokenSecret), r.activityHandler.GetByUserID)
 
 		collections := users.Group("/:userId/collections")
 		{
@@ -209,6 +214,10 @@ func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
 		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Like)
 		comments.DELETE("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret), r.commentHandler.Unlike)
 	}
+}
+
+func (r *Router) setupActivityRoutes(rg *gin.RouterGroup) {
+	rg.GET("/feed", middleware.Auth(r.config.AccessTokenSecret), r.activityHandler.GetFeed)
 }
 
 func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {

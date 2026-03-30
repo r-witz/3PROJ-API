@@ -47,6 +47,35 @@ func (r *CollectionRepository) GetByID(ctx context.Context, id uuid.UUID) (*doma
 	return collection, err
 }
 
+func (r *CollectionRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Collection, error) {
+	if len(ids) == 0 {
+		return []*domain.Collection{}, nil
+	}
+
+	query := `
+		SELECT id, user_id, name, slug, type, visibility, description, created_at, updated_at
+		FROM collections WHERE id = ANY($1)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var collections []*domain.Collection
+	for rows.Next() {
+		collection := &domain.Collection{}
+		if err := rows.Scan(
+			&collection.ID, &collection.UserID, &collection.Name, &collection.Slug, &collection.Type,
+			&collection.Visibility, &collection.Description, &collection.CreatedAt, &collection.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		collections = append(collections, collection)
+	}
+	return collections, rows.Err()
+}
+
 func (r *CollectionRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Collection, error) {
 	query := `
 		SELECT id, user_id, name, slug, type, visibility, description, created_at, updated_at
