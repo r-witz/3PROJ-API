@@ -1311,7 +1311,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Comma-separated activity types to filter (e.g. review_created,user_followed)",
+                        "description": "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created",
                         "name": "types",
                         "in": "query"
                     }
@@ -3881,7 +3881,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Comma-separated activity types to filter (e.g. review_created,user_followed)",
+                        "description": "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created",
                         "name": "types",
                         "in": "query"
                     }
