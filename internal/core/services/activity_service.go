@@ -33,13 +33,13 @@ func NewActivityService(
 	}
 }
 
-func (s *activityService) GetByUserID(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*ports.ActivityFeedItem, int, error) {
-	activities, err := s.activityRepo.GetByUserIDPaginated(ctx, userID, limit, offset)
+func (s *activityService) GetByUserID(ctx context.Context, userID uuid.UUID, offset, limit int, types []domain.ActivityType) ([]*ports.ActivityFeedItem, int, error) {
+	activities, err := s.activityRepo.GetByUserIDPaginated(ctx, userID, limit, offset, types)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
 
-	total, err := s.activityRepo.CountByUserID(ctx, userID)
+	total, err := s.activityRepo.CountByUserID(ctx, userID, types)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
@@ -52,13 +52,13 @@ func (s *activityService) GetByUserID(ctx context.Context, userID uuid.UUID, off
 	return items, total, nil
 }
 
-func (s *activityService) GetFeedForUser(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*ports.ActivityFeedItem, int, error) {
-	activities, err := s.activityRepo.GetFeedForUser(ctx, userID, limit, offset)
+func (s *activityService) GetFeedForUser(ctx context.Context, userID uuid.UUID, offset, limit int, types []domain.ActivityType) ([]*ports.ActivityFeedItem, int, error) {
+	activities, err := s.activityRepo.GetFeedForUser(ctx, userID, limit, offset, types)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
 
-	total, err := s.activityRepo.CountFeedForUser(ctx, userID)
+	total, err := s.activityRepo.CountFeedForUser(ctx, userID, types)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
 	}
@@ -99,6 +99,9 @@ func (s *activityService) enrichActivities(ctx context.Context, activities []*do
 		}
 		if a.CommentID != nil {
 			commentIDSet[*a.CommentID] = struct{}{}
+		}
+		if a.TargetUserID != nil {
+			userIDSet[*a.TargetUserID] = struct{}{}
 		}
 	}
 
@@ -162,6 +165,9 @@ func (s *activityService) enrichActivities(ctx context.Context, activities []*do
 		}
 		if a.CommentID != nil {
 			item.Comment = commentMap[*a.CommentID]
+		}
+		if a.TargetUserID != nil {
+			item.TargetUser = userMap[*a.TargetUserID]
 		}
 		result[i] = item
 	}

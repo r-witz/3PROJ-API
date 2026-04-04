@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"duskforge-api/internal/adapters/middleware"
@@ -49,7 +50,24 @@ type ActivityResponse struct {
 	Collection *CollectionSummary    `json:"collection,omitempty"`
 	Comment    *CommentSummary       `json:"comment,omitempty"`
 	Movie      *MovieSummaryResponse `json:"movie,omitempty"`
+	TargetUser *UserSummary          `json:"target_user,omitempty"`
 	CreatedAt  string                `json:"created_at" example:"2024-01-15T10:30:00Z"`
+}
+
+func parseActivityTypes(c *gin.Context) []domain.ActivityType {
+	raw := c.Query("types")
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	var types []domain.ActivityType
+	for _, p := range parts {
+		t := domain.ActivityType(strings.TrimSpace(p))
+		if domain.ValidActivityTypes[t] {
+			types = append(types, t)
+		}
+	}
+	return types
 }
 
 // @Summary      Get user activities
@@ -60,6 +78,7 @@ type ActivityResponse struct {
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
+// @Param        types query string false "Comma-separated activity types to filter (e.g. review_created,user_followed)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ActivityResponse} "List of activities"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -80,8 +99,9 @@ func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 	}
 
 	offset, limit := parsePagination(c)
+	types := parseActivityTypes(c)
 
-	items, total, err := h.activityService.GetByUserID(c.Request.Context(), userID, offset, limit)
+	items, total, err := h.activityService.GetByUserID(c.Request.Context(), userID, offset, limit, types)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -109,6 +129,7 @@ func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
+// @Param        types query string false "Comma-separated activity types to filter (e.g. review_created,user_followed)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ActivityResponse} "List of activities"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -121,8 +142,9 @@ func (h *ActivityHandler) GetFeed(c *gin.Context) {
 	}
 
 	offset, limit := parsePagination(c)
+	types := parseActivityTypes(c)
 
-	items, total, err := h.activityService.GetFeedForUser(c.Request.Context(), userID, offset, limit)
+	items, total, err := h.activityService.GetFeedForUser(c.Request.Context(), userID, offset, limit, types)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -222,6 +244,14 @@ func toActivityResponse(item *ports.ActivityFeedItem, movies map[int]*MovieSumma
 		resp.Comment = &CommentSummary{
 			ID:      item.Comment.ID.String(),
 			Content: item.Comment.Content,
+		}
+	}
+
+	if item.TargetUser != nil {
+		resp.TargetUser = &UserSummary{
+			ID:        item.TargetUser.ID.String(),
+			Username:  item.TargetUser.Username,
+			AvatarURL: item.TargetUser.AvatarURL,
 		}
 	}
 

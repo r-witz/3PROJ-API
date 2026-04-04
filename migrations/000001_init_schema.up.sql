@@ -7,7 +7,7 @@ CREATE TYPE collection_visibility AS ENUM ('public', 'private');
 CREATE TYPE notification_type AS ENUM ('like_review', 'like_comment', 'new_comment', 'new_follow', 'system');
 CREATE TYPE report_reason AS ENUM ('spam', 'harassment', 'spoiler', 'inappropriate', 'other');
 CREATE TYPE report_status_type AS ENUM ('pending', 'resolved', 'dismissed');
-CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added', 'review_liked', 'comment_liked');
+CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added', 'review_liked', 'comment_liked', 'user_followed', 'user_unfollowed', 'watchlist_item_added', 'comment_created');
 
 -- USERS TABLE
 CREATE TABLE users (
@@ -181,14 +181,19 @@ CREATE TABLE activities (
     collection_id UUID REFERENCES collections(id) ON DELETE CASCADE,
     comment_id UUID REFERENCES comments(id) ON DELETE CASCADE,
     tmdb_id INT,
+    target_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT activity_data_integrity CHECK (
-        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
-        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
-        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL)    OR
-        (type = 'review_liked'          AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL)        OR
-        (type = 'comment_liked'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL)
+        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
+        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
+        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL AND target_user_id IS NULL)     OR
+        (type = 'review_liked'          AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
+        (type = 'comment_liked'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
+        (type = 'user_followed'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NOT NULL) OR
+        (type = 'user_unfollowed'       AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NOT NULL) OR
+        (type = 'watchlist_item_added'  AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL AND target_user_id IS NULL)     OR
+        (type = 'comment_created'       AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL     AND target_user_id IS NULL)
     )
 );
 

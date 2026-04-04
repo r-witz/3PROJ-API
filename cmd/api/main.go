@@ -119,7 +119,7 @@ func main() {
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
 	userService := services.NewUserService(userRepo)
 
-	followService := services.NewFollowService(followRepo, userRepo)
+	followService := services.NewFollowService(followRepo, userRepo, activityRepo)
 	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
 	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo, activityRepo)
 	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo, activityRepo)

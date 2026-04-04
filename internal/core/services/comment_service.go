@@ -75,6 +75,14 @@ func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID 
 		return nil, domain.ErrInternal
 	}
 
+	_ = s.activityRepo.Create(ctx, &domain.Activity{
+		ID:        uuid.New(),
+		UserID:    userID,
+		Type:      domain.ActivityTypeCommentCreated,
+		CommentID: &comment.ID,
+		CreatedAt: now,
+	})
+
 	return comment, nil
 }
 
@@ -209,6 +217,8 @@ func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.U
 	if err := s.commentRepo.Delete(ctx, id); err != nil {
 		return domain.ErrInternal
 	}
+
+	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeCommentCreated, nil, nil, &id, nil)
 
 	return nil
 }

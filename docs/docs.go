@@ -1308,6 +1308,12 @@ const docTemplate = `{
                         "description": "Limit for pagination",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated activity types to filter (e.g. review_created,user_followed)",
+                        "name": "types",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3872,6 +3878,12 @@ const docTemplate = `{
                         "description": "Limit for pagination",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated activity types to filter (e.g. review_created,user_followed)",
+                        "name": "types",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5284,6 +5296,9 @@ const docTemplate = `{
                 },
                 "review": {
                     "$ref": "#/definitions/handlers.ReviewSummary"
+                },
+                "target_user": {
+                    "$ref": "#/definitions/handlers.UserSummary"
                 },
                 "type": {
                     "type": "string",

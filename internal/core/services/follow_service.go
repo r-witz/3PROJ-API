@@ -11,12 +11,13 @@ import (
 )
 
 type followService struct {
-	followRepo ports.FollowRepository
-	userRepo   ports.UserRepository
+	followRepo   ports.FollowRepository
+	userRepo     ports.UserRepository
+	activityRepo ports.ActivityRepository
 }
 
-func NewFollowService(followRepo ports.FollowRepository, userRepo ports.UserRepository) ports.FollowService {
-	return &followService{followRepo: followRepo, userRepo: userRepo}
+func NewFollowService(followRepo ports.FollowRepository, userRepo ports.UserRepository, activityRepo ports.ActivityRepository) ports.FollowService {
+	return &followService{followRepo: followRepo, userRepo: userRepo, activityRepo: activityRepo}
 }
 
 func (s *followService) Follow(ctx context.Context, followerID, followingID uuid.UUID) error {
@@ -40,12 +41,25 @@ func (s *followService) Follow(ctx context.Context, followerID, followingID uuid
 		return domain.ErrAlreadyFollowing
 	}
 
+	now := time.Now()
 	follow := &domain.Follow{
 		FollowerID:  followerID,
 		FollowingID: followingID,
-		CreatedAt:   time.Now(),
+		CreatedAt:   now,
 	}
-	return s.followRepo.Create(ctx, follow)
+	if err := s.followRepo.Create(ctx, follow); err != nil {
+		return err
+	}
+
+	_ = s.activityRepo.Create(ctx, &domain.Activity{
+		ID:           uuid.New(),
+		UserID:       followerID,
+		Type:         domain.ActivityTypeUserFollowed,
+		TargetUserID: &followingID,
+		CreatedAt:    now,
+	})
+
+	return nil
 }
 
 func (s *followService) Unfollow(ctx context.Context, followerID, followingID uuid.UUID) error {
@@ -57,7 +71,19 @@ func (s *followService) Unfollow(ctx context.Context, followerID, followingID uu
 		return domain.ErrNotFollowing
 	}
 
-	return s.followRepo.Delete(ctx, followerID, followingID)
+	if err := s.followRepo.Delete(ctx, followerID, followingID); err != nil {
+		return err
+	}
+
+	_ = s.activityRepo.Create(ctx, &domain.Activity{
+		ID:           uuid.New(),
+		UserID:       followerID,
+		Type:         domain.ActivityTypeUserUnfollowed,
+		TargetUserID: &followingID,
+		CreatedAt:    time.Now(),
+	})
+
+	return nil
 }
 
 func (s *followService) RemoveFollower(ctx context.Context, userID, followerID uuid.UUID) error {

@@ -16,6 +16,8 @@ definitions:
         $ref: '#/definitions/handlers.MovieSummaryResponse'
       review:
         $ref: '#/definitions/handlers.ReviewSummary'
+      target_user:
+        $ref: '#/definitions/handlers.UserSummary'
       type:
         example: review_created
         type: string
@@ -1613,6 +1615,10 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Comma-separated activity types to filter (e.g. review_created,user_followed)
+        in: query
+        name: types
+        type: string
       produces:
       - application/json
       responses:
@@ -2950,6 +2956,10 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: Comma-separated activity types to filter (e.g. review_created,user_followed)
+        in: query
+        name: types
+        type: string
       produces:
       - application/json
       responses:
