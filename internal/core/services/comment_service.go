@@ -16,7 +16,6 @@ type commentService struct {
 	reviewRepo      ports.ReviewRepository
 	userRepo        ports.UserRepository
 	blockRepo       ports.BlockRepository
-	activityRepo    ports.ActivityRepository
 }
 
 func NewCommentService(
@@ -25,7 +24,6 @@ func NewCommentService(
 	reviewRepo ports.ReviewRepository,
 	userRepo ports.UserRepository,
 	blockRepo ports.BlockRepository,
-	activityRepo ports.ActivityRepository,
 ) ports.CommentService {
 	return &commentService{
 		commentRepo:     commentRepo,
@@ -33,7 +31,6 @@ func NewCommentService(
 		reviewRepo:      reviewRepo,
 		userRepo:        userRepo,
 		blockRepo:       blockRepo,
-		activityRepo:    activityRepo,
 	}
 }
 
@@ -74,14 +71,6 @@ func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID 
 	if err := s.commentRepo.Create(ctx, comment); err != nil {
 		return nil, domain.ErrInternal
 	}
-
-	_ = s.activityRepo.Create(ctx, &domain.Activity{
-		ID:        uuid.New(),
-		UserID:    userID,
-		Type:      domain.ActivityTypeCommentCreated,
-		CommentID: &comment.ID,
-		CreatedAt: now,
-	})
 
 	return comment, nil
 }
@@ -218,8 +207,6 @@ func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.U
 		return domain.ErrInternal
 	}
 
-	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeCommentCreated, nil, nil, &id, nil)
-
 	return nil
 }
 
@@ -260,14 +247,6 @@ func (s *commentService) Like(ctx context.Context, commentID uuid.UUID, userID u
 		return domain.ErrInternal
 	}
 
-	_ = s.activityRepo.Create(ctx, &domain.Activity{
-		ID:        uuid.New(),
-		UserID:    userID,
-		Type:      domain.ActivityTypeCommentLiked,
-		CommentID: &commentID,
-		CreatedAt: time.Now(),
-	})
-
 	return nil
 }
 
@@ -302,8 +281,5 @@ func (s *commentService) Unlike(ctx context.Context, commentID uuid.UUID, userID
 		return domain.ErrInternal
 	}
 
-	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeCommentLiked, nil, nil, &commentID, nil)
-
 	return nil
 }
-

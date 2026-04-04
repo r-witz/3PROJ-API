@@ -21,7 +21,6 @@ type collectionService struct {
 	collectionItemRepo ports.CollectionItemRepository
 	tmdbClient         ports.TMDBClient
 	reviewRepo         ports.ReviewRepository
-	activityRepo       ports.ActivityRepository
 }
 
 func NewCollectionService(
@@ -29,14 +28,12 @@ func NewCollectionService(
 	collectionItemRepo ports.CollectionItemRepository,
 	tmdbClient ports.TMDBClient,
 	reviewRepo ports.ReviewRepository,
-	activityRepo ports.ActivityRepository,
 ) ports.CollectionService {
 	return &collectionService{
 		collectionRepo:     collectionRepo,
 		collectionItemRepo: collectionItemRepo,
 		tmdbClient:         tmdbClient,
 		reviewRepo:         reviewRepo,
-		activityRepo:       activityRepo,
 	}
 }
 
@@ -115,14 +112,6 @@ func (s *collectionService) Create(ctx context.Context, userID uuid.UUID, input 
 	if err := s.collectionRepo.Create(ctx, collection); err != nil {
 		return nil, domain.ErrInternal
 	}
-
-	_ = s.activityRepo.Create(ctx, &domain.Activity{
-		ID:           uuid.New(),
-		UserID:       userID,
-		Type:         domain.ActivityTypeCollectionCreated,
-		CollectionID: &collection.ID,
-		CreatedAt:    now,
-	})
 
 	return collection, nil
 }
@@ -306,8 +295,6 @@ func (s *collectionService) Delete(ctx context.Context, userID uuid.UUID, slug s
 		return domain.ErrInternal
 	}
 
-	_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeCollectionCreated, nil, &collection.ID, nil, nil)
-
 	return nil
 }
 
@@ -346,26 +333,6 @@ func (s *collectionService) AddItem(ctx context.Context, userID uuid.UUID, slug 
 		return nil, domain.ErrInternal
 	}
 
-	if collection.Type == domain.CollectionTypeSystem && collection.Slug == "to-watch" {
-		_ = s.activityRepo.Create(ctx, &domain.Activity{
-			ID:           uuid.New(),
-			UserID:       userID,
-			Type:         domain.ActivityTypeWatchlistItemAdded,
-			CollectionID: &collection.ID,
-			TMDBID:       &tmdbID,
-			CreatedAt:    item.AddedAt,
-		})
-	} else if collection.Type != domain.CollectionTypeSystem {
-		_ = s.activityRepo.Create(ctx, &domain.Activity{
-			ID:           uuid.New(),
-			UserID:       userID,
-			Type:         domain.ActivityTypeCollectionItemAdded,
-			CollectionID: &collection.ID,
-			TMDBID:       &tmdbID,
-			CreatedAt:    item.AddedAt,
-		})
-	}
-
 	return item, nil
 }
 
@@ -388,12 +355,6 @@ func (s *collectionService) RemoveItem(ctx context.Context, userID uuid.UUID, sl
 
 	if err := s.collectionItemRepo.Delete(ctx, collection.ID, tmdbID); err != nil {
 		return domain.ErrInternal
-	}
-
-	if collection.Type == domain.CollectionTypeSystem && collection.Slug == "to-watch" {
-		_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeWatchlistItemAdded, nil, &collection.ID, nil, &tmdbID)
-	} else if collection.Type != domain.CollectionTypeSystem {
-		_ = s.activityRepo.DeleteByTypeAndReference(ctx, userID, domain.ActivityTypeCollectionItemAdded, nil, &collection.ID, nil, &tmdbID)
 	}
 
 	return nil

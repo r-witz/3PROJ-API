@@ -18,4 +18,5 @@ type ActivityRepository interface {
 	CountFeedForUser(ctx context.Context, userID uuid.UUID, types []domain.ActivityType) (int, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	DeleteByTypeAndReference(ctx context.Context, userID uuid.UUID, actType domain.ActivityType, reviewID *uuid.UUID, collectionID *uuid.UUID, commentID *uuid.UUID, tmdbID *int) error
+	DeleteByFields(ctx context.Context, userID uuid.UUID, actType domain.ActivityType, reviewID *uuid.UUID, collectionID *uuid.UUID, commentID *uuid.UUID, tmdbID *int) error
 }

@@ -104,6 +104,13 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:       middleware.ActivityCreate,
+		Type:         domain.ActivityTypeCollectionCreated,
+		UserID:       userID,
+		CollectionID: &collection.ID,
+	})
+
 	response.Created(c, toCollectionResponse(ports.CollectionWithPresence{Collection: collection}))
 }
 
@@ -329,6 +336,12 @@ func (h *CollectionHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action: middleware.ActivityDelete,
+		Type:   domain.ActivityTypeCollectionCreated,
+		UserID: userID,
+	})
+
 	c.Status(204)
 }
 
@@ -379,6 +392,24 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 	if err != nil {
 		response.HandleError(c, err)
 		return
+	}
+
+	if slug == "to-watch" {
+		middleware.QueueActivity(c, middleware.ActivityEvent{
+			Action:       middleware.ActivityCreate,
+			Type:         domain.ActivityTypeWatchlistItemAdded,
+			UserID:       userID,
+			CollectionID: &item.CollectionID,
+			TMDBID:       &req.TMDBID,
+		})
+	} else if slug != "watched" {
+		middleware.QueueActivity(c, middleware.ActivityEvent{
+			Action:       middleware.ActivityCreate,
+			Type:         domain.ActivityTypeCollectionItemAdded,
+			UserID:       userID,
+			CollectionID: &item.CollectionID,
+			TMDBID:       &req.TMDBID,
+		})
 	}
 
 	response.Created(c, toSimpleCollectionItemResponse(item))
@@ -483,6 +514,22 @@ func (h *CollectionHandler) RemoveItem(c *gin.Context) {
 	if err := h.collectionService.RemoveItem(c.Request.Context(), userID, slug, tmdbID); err != nil {
 		response.HandleError(c, err)
 		return
+	}
+
+	if slug == "to-watch" {
+		middleware.QueueActivity(c, middleware.ActivityEvent{
+			Action: middleware.ActivityDelete,
+			Type:   domain.ActivityTypeWatchlistItemAdded,
+			UserID: userID,
+			TMDBID: &tmdbID,
+		})
+	} else if slug != "watched" {
+		middleware.QueueActivity(c, middleware.ActivityEvent{
+			Action: middleware.ActivityDelete,
+			Type:   domain.ActivityTypeCollectionItemAdded,
+			UserID: userID,
+			TMDBID: &tmdbID,
+		})
 	}
 
 	c.Status(204)

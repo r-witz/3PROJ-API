@@ -66,6 +66,13 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:       middleware.ActivityCreate,
+		Type:         domain.ActivityTypeUserFollowed,
+		UserID:       followerID,
+		TargetUserID: &followingID,
+	})
+
 	if mutual, _ := h.followService.IsFollowing(c.Request.Context(), followingID, followerID); mutual {
 		event := ws.Event{
 			Type: ws.EventMessagingUnblocked,
@@ -114,6 +121,13 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:       middleware.ActivityCreate,
+		Type:         domain.ActivityTypeUserUnfollowed,
+		UserID:       followerID,
+		TargetUserID: &followingID,
+	})
 
 	h.hub.SendToUser(followingID, ws.Event{
 		Type: ws.EventMessagingBlocked,

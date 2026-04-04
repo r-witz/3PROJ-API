@@ -36,6 +36,7 @@ type Router struct {
 	activityHandler   *handlers.ActivityHandler
 	wsHandler         *handlers.WebSocketHandler
 	userService       ports.UserService
+	activityRepo      ports.ActivityRepository
 }
 
 func NewRouter(
@@ -55,6 +56,7 @@ func NewRouter(
 	activityHandler *handlers.ActivityHandler,
 	wsHandler *handlers.WebSocketHandler,
 	userService ports.UserService,
+	activityRepo ports.ActivityRepository,
 ) *Router {
 	return &Router{
 		engine:            gin.Default(),
@@ -74,11 +76,13 @@ func NewRouter(
 		activityHandler:   activityHandler,
 		wsHandler:         wsHandler,
 		userService:       userService,
+		activityRepo:      activityRepo,
 	}
 }
 
 func (r *Router) Setup() *gin.Engine {
 	r.engine.Use(middleware.CORS(r.config.CORSAllowedOrigins))
+	r.engine.Use(middleware.ActivityLogger(r.activityRepo))
 
 	r.engine.GET("/health", r.healthCheck)
 	r.engine.GET("/", r.root)

@@ -89,6 +89,13 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:    middleware.ActivityCreate,
+		Type:      domain.ActivityTypeCommentCreated,
+		UserID:    userID,
+		CommentID: &comment.ID,
+	})
+
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
 
 	response.Created(c, toCommentResponse(comment, 0, false, user))
@@ -224,6 +231,13 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:    middleware.ActivityDelete,
+		Type:      domain.ActivityTypeCommentCreated,
+		UserID:    userID,
+		CommentID: &commentID,
+	})
+
 	c.Status(204)
 }
 
@@ -259,6 +273,13 @@ func (h *CommentHandler) Like(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:    middleware.ActivityCreate,
+		Type:      domain.ActivityTypeCommentLiked,
+		UserID:    userID,
+		CommentID: &commentID,
+	})
+
 	c.Status(204)
 }
 
@@ -292,6 +313,13 @@ func (h *CommentHandler) Unlike(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:    middleware.ActivityDelete,
+		Type:      domain.ActivityTypeCommentLiked,
+		UserID:    userID,
+		CommentID: &commentID,
+	})
 
 	c.Status(204)
 }

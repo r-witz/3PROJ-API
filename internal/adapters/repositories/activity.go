@@ -184,3 +184,33 @@ func (r *ActivityRepository) DeleteByTypeAndReference(ctx context.Context, userI
 	_, err := r.db.Pool.Exec(ctx, query, userID, actType, reviewID, collectionID, commentID, tmdbID)
 	return err
 }
+
+func (r *ActivityRepository) DeleteByFields(ctx context.Context, userID uuid.UUID, actType domain.ActivityType, reviewID *uuid.UUID, collectionID *uuid.UUID, commentID *uuid.UUID, tmdbID *int) error {
+	query := `DELETE FROM activities WHERE user_id = $1 AND type = $2`
+	args := []interface{}{userID, actType}
+	paramIdx := 3
+
+	if reviewID != nil {
+		query += fmt.Sprintf(" AND review_id = $%d", paramIdx)
+		args = append(args, *reviewID)
+		paramIdx++
+	}
+	if collectionID != nil {
+		query += fmt.Sprintf(" AND collection_id = $%d", paramIdx)
+		args = append(args, *collectionID)
+		paramIdx++
+	}
+	if commentID != nil {
+		query += fmt.Sprintf(" AND comment_id = $%d", paramIdx)
+		args = append(args, *commentID)
+		paramIdx++
+	}
+	if tmdbID != nil {
+		query += fmt.Sprintf(" AND tmdb_id = $%d", paramIdx)
+		args = append(args, *tmdbID)
+		paramIdx++
+	}
+
+	_, err := r.db.Pool.Exec(ctx, query, args...)
+	return err
+}

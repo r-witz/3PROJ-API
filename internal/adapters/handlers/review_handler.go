@@ -111,6 +111,19 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:   middleware.ActivityCreate,
+		Type:     domain.ActivityTypeReviewCreated,
+		UserID:   userID,
+		ReviewID: &review.ID,
+	})
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action: middleware.ActivityDelete,
+		Type:   domain.ActivityTypeWatchlistItemAdded,
+		UserID: userID,
+		TMDBID: &tmdbID,
+	})
+
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
 	language := middleware.GetLocale(c)
 	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
@@ -368,6 +381,13 @@ func (h *ReviewHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:   middleware.ActivityDelete,
+		Type:     domain.ActivityTypeReviewCreated,
+		UserID:   userID,
+		ReviewID: &reviewID,
+	})
+
 	c.Status(204)
 }
 
@@ -403,6 +423,13 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:   middleware.ActivityCreate,
+		Type:     domain.ActivityTypeReviewLiked,
+		UserID:   userID,
+		ReviewID: &reviewID,
+	})
+
 	c.Status(204)
 }
 
@@ -436,6 +463,13 @@ func (h *ReviewHandler) Unlike(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:   middleware.ActivityDelete,
+		Type:     domain.ActivityTypeReviewLiked,
+		UserID:   userID,
+		ReviewID: &reviewID,
+	})
 
 	c.Status(204)
 }

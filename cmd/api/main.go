@@ -107,7 +107,7 @@ func main() {
 	}
 	logger.Logger.Info("MinIO storage client initialized", zap.String("endpoint", cfg.MinioEndpoint))
 
-	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo, activityRepo)
+	collectionService := services.NewCollectionService(collectionRepo, collectionItemRepo, cachedTMDB, reviewRepo)
 
 	tokenConfig := services.TokenConfig{
 		AccessTokenSecret:  cfg.AccessTokenSecret,
@@ -119,10 +119,10 @@ func main() {
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
 	userService := services.NewUserService(userRepo)
 
-	followService := services.NewFollowService(followRepo, userRepo, activityRepo)
+	followService := services.NewFollowService(followRepo, userRepo)
 	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
-	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo, activityRepo)
-	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo, activityRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo)
+	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo)
 	activityService := services.NewActivityService(activityRepo, userRepo, reviewRepo, collectionRepo, commentRepo)
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
@@ -193,6 +193,7 @@ func main() {
 		activityHandler,
 		wsHandler,
 		userService,
+		activityRepo,
 	)
 
 	router.Setup()
