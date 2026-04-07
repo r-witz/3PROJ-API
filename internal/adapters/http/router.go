@@ -262,7 +262,6 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 		adminOrSuper := admin.Group("")
 		adminOrSuper.Use(middleware.RequireRole(string(domain.UserRoleAdmin), string(domain.UserRoleSuperAdmin)))
 		{
-			adminOrSuper.GET("/users", r.adminHandler.ListUsers)
 			adminOrSuper.POST("/users/:userId/ban", r.adminHandler.BanUser)
 			adminOrSuper.DELETE("/users/:userId/ban", r.adminHandler.UnbanUser)
 			adminOrSuper.DELETE("/reviews/:reviewId", r.adminHandler.DeleteReview)

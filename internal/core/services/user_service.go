@@ -198,6 +198,12 @@ func (s *userService) SearchUsers(ctx context.Context, input ports.SearchUsersIn
 		SortOrder: input.SortOrder,
 	}
 
+	isAdmin := input.CallerRole == string(domain.UserRoleAdmin) || input.CallerRole == string(domain.UserRoleSuperAdmin)
+	if !isAdmin {
+		searchParams.ExcludeRoles = []domain.UserRole{domain.UserRoleAdmin, domain.UserRoleSuperAdmin}
+		searchParams.HideBanned = true
+	}
+
 	users, total, err := s.userRepo.SearchByUsername(ctx, searchParams)
 	if err != nil {
 		return nil, domain.ErrInternal

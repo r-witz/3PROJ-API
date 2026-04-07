@@ -129,10 +129,6 @@ func (s *AdminService) SetUserRole(ctx context.Context, superAdminID uuid.UUID, 
 	return s.userRepo.Update(ctx, target)
 }
 
-func (s *AdminService) GetUsers(ctx context.Context, offset, limit int, bannedOnly bool) ([]*domain.User, int, error) {
-	return s.userRepo.ListAll(ctx, offset, limit, bannedOnly)
-}
-
 func (s *AdminService) SeedSuperAdmin(ctx context.Context, input ports.SeedSuperAdminInput) error {
 	exists, err := s.userRepo.ExistsByRole(ctx, domain.UserRoleSuperAdmin)
 	if err != nil {

@@ -23,11 +23,12 @@ type ChangePasswordInput struct {
 }
 
 type SearchUsersInput struct {
-	Query     string
-	Offset    int
-	Limit     int
-	SortField string
-	SortOrder string
+	Query      string
+	Offset     int
+	Limit      int
+	SortField  string
+	SortOrder  string
+	CallerRole string
 }
 
 type SearchUsersResult struct {

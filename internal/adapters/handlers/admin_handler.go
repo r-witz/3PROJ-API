@@ -54,16 +54,6 @@ type SetUserRoleRequest struct {
 	Role domain.UserRole `json:"role" binding:"required,oneof=user admin superadmin" example:"admin"`
 }
 
-type AdminUserResponse struct {
-	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Email     string  `json:"email" example:"user@example.com"`
-	Username  string  `json:"username" example:"johndoe"`
-	AvatarURL *string `json:"avatar_url,omitempty" example:"https://example.com/avatar.jpg"`
-	Role      string  `json:"role" example:"user"`
-	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
-	BannedAt  *string `json:"banned_at,omitempty" example:"2024-02-01T10:30:00Z"`
-}
-
 // --- Helpers ---
 
 func toReportResponse(r *domain.Report) ReportResponse {
@@ -94,22 +84,6 @@ func toReportResponse(r *domain.Report) ReportResponse {
 	if r.ResolverID != nil {
 		s := r.ResolverID.String()
 		resp.ResolverID = &s
-	}
-	return resp
-}
-
-func toAdminUserResponse(u *domain.User) AdminUserResponse {
-	resp := AdminUserResponse{
-		ID:        u.ID.String(),
-		Email:     u.Email,
-		Username:  u.Username,
-		AvatarURL: u.AvatarURL,
-		Role:      string(u.Role),
-		CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-	if u.BannedAt != nil {
-		s := u.BannedAt.Format("2006-01-02T15:04:05Z07:00")
-		resp.BannedAt = &s
 	}
 	return resp
 }
@@ -182,41 +156,6 @@ func (h *AdminHandler) SubmitReport(c *gin.Context) {
 }
 
 // --- Admin: User Management ---
-
-// @Summary      List users
-// @Description  List all users with pagination. Optionally filter to only banned users.
-// @Tags         admin
-// @Produce      json
-// @Security     BearerAuth
-// @Param        offset query int false "Offset for pagination" default(0)
-// @Param        limit query int false "Limit for pagination (max 100)" default(20)
-// @Param        banned query bool false "Filter to only banned users" default(false)
-// @Success      200 {object} response.PaginatedResponse{data=[]AdminUserResponse} "List of users"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient permissions"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/users [get]
-func (h *AdminHandler) ListUsers(c *gin.Context) {
-	offset, limit := parsePagination(c)
-	bannedOnly := c.Query("banned") == "true"
-
-	users, total, err := h.adminService.GetUsers(c.Request.Context(), offset, limit, bannedOnly)
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	result := make([]AdminUserResponse, len(users))
-	for i, u := range users {
-		result[i] = toAdminUserResponse(u)
-	}
-
-	response.SuccessPaginated(c, result, &response.Pagination{
-		Offset: offset,
-		Limit:  limit,
-		Total:  total,
-	})
-}
 
 // @Summary      Ban a user
 // @Description  Ban a user by their ID. Admins cannot ban other admins or super-admins.

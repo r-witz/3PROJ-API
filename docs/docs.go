@@ -657,87 +657,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/users": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "List all users with pagination. Optionally filter to only banned users.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "summary": "List users",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 20,
-                        "description": "Limit for pagination (max 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Filter to only banned users",
-                        "name": "banned",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of users",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.PaginatedResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/handlers.AdminUserResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Insufficient permissions",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/users/{userId}/ban": {
             "post": {
                 "security": [
@@ -4474,7 +4393,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Search for users by username with sorting and pagination. If authenticated, users involved in a block relationship with the current user are excluded from results.",
+                "description": "Search and browse users by username with sorting and pagination. Regular users only see non-admin, non-banned accounts. Admins and super-admins see all accounts with additional details. If query is omitted, returns all visible users.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4490,8 +4409,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Search query (username)",
                         "name": "query",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -4522,7 +4440,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Search results",
+                        "description": "Search results (admin view)",
                         "schema": {
                             "allOf": [
                                 {
@@ -4534,7 +4452,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/handlers.SearchUserResponse"
+                                                "$ref": "#/definitions/handlers.AdminSearchUserResponse"
                                             }
                                         }
                                     }
@@ -6168,7 +6086,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.AdminUserResponse": {
+        "handlers.AdminSearchUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -6178,6 +6096,10 @@ const docTemplate = `{
                 "banned_at": {
                     "type": "string",
                     "example": "2024-02-01T10:30:00Z"
+                },
+                "bio": {
+                    "type": "string",
+                    "example": "Movie enthusiast"
                 },
                 "created_at": {
                     "type": "string",

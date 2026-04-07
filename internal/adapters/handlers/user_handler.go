@@ -71,6 +71,17 @@ type SearchUserResponse struct {
 	Bio       *string `json:"bio" example:"Movie enthusiast"`
 }
 
+type AdminSearchUserResponse struct {
+	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Email     string  `json:"email" example:"user@example.com"`
+	Username  string  `json:"username" example:"johndoe"`
+	AvatarURL *string `json:"avatar_url" example:"https://example.com/avatar.jpg"`
+	Bio       *string `json:"bio" example:"Movie enthusiast"`
+	Role      string  `json:"role" example:"user"`
+	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	BannedAt  *string `json:"banned_at,omitempty" example:"2024-02-01T10:30:00Z"`
+}
+
 type UpdatePreferencesRequest struct {
 	Theme  *string `json:"theme" binding:"omitempty,oneof=light dark system" example:"dark"`
 	Locale *string `json:"locale" binding:"omitempty,oneof=en fr es" example:"fr"`
@@ -545,26 +556,40 @@ func toSearchUserResponse(user *domain.User) SearchUserResponse {
 	}
 }
 
+func toAdminSearchUserResponse(user *domain.User) AdminSearchUserResponse {
+	resp := AdminSearchUserResponse{
+		ID:        user.ID.String(),
+		Email:     user.Email,
+		Username:  user.Username,
+		AvatarURL: user.AvatarURL,
+		Bio:       user.Bio,
+		Role:      string(user.Role),
+		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+	}
+	if user.BannedAt != nil {
+		bannedAt := user.BannedAt.Format(time.RFC3339)
+		resp.BannedAt = &bannedAt
+	}
+	return resp
+}
+
 // @Summary      Search users
-// @Description  Search for users by username with sorting and pagination. If authenticated, users involved in a block relationship with the current user are excluded from results.
+// @Description  Search and browse users by username with sorting and pagination. Regular users only see non-admin, non-banned accounts. Admins and super-admins see all accounts with additional details. If query is omitted, returns all visible users.
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        query query string true "Search query (username)"
+// @Param        query query string false "Search query (username)"
 // @Param        offset query int false "Number of items to skip" default(0)
 // @Param        limit query int false "Number of items to return (max 100)" default(20)
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+username, -username, +created_at, -created_at)
 // @Success      200 {object} response.PaginatedResponse{data=[]SearchUserResponse} "Search results"
+// @Success      200 {object} response.PaginatedResponse{data=[]AdminSearchUserResponse} "Search results (admin view)"
 // @Failure      400 {object} response.Response "Invalid query parameters"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/search [get]
 func (h *UserHandler) Search(c *gin.Context) {
 	searchQuery := c.Query("query")
-	if searchQuery == "" {
-		response.BadRequest(c, "Query parameter is required", nil)
-		return
-	}
 
 	params, err := query.Parse(c, query.Config{
 		DefaultLimit: 20,
@@ -576,12 +601,15 @@ func (h *UserHandler) Search(c *gin.Context) {
 		return
 	}
 
+	callerRole, _ := middleware.GetRole(c)
+
 	input := ports.SearchUsersInput{
-		Query:     searchQuery,
-		Offset:    params.Offset,
-		Limit:     params.Limit,
-		SortField: params.SortField,
-		SortOrder: params.SortOrder,
+		Query:      searchQuery,
+		Offset:     params.Offset,
+		Limit:      params.Limit,
+		SortField:  params.SortField,
+		SortOrder:  params.SortOrder,
+		CallerRole: callerRole,
 	}
 
 	result, err := h.userService.SearchUsers(c.Request.Context(), input)
@@ -591,6 +619,26 @@ func (h *UserHandler) Search(c *gin.Context) {
 	}
 
 	hiddenSet := h.getHiddenUserIDs(c)
+
+	isAdmin := callerRole == string(domain.UserRoleAdmin) || callerRole == string(domain.UserRoleSuperAdmin)
+
+	if isAdmin {
+		users := make([]AdminSearchUserResponse, 0, len(result.Users))
+		hiddenCount := 0
+		for _, user := range result.Users {
+			if _, hidden := hiddenSet[user.ID]; hidden {
+				hiddenCount++
+				continue
+			}
+			users = append(users, toAdminSearchUserResponse(user))
+		}
+		response.SuccessPaginated(c, users, &response.Pagination{
+			Offset: result.Offset,
+			Limit:  result.Limit,
+			Total:  result.Total - hiddenCount,
+		})
+		return
+	}
 
 	users := make([]SearchUserResponse, 0, len(result.Users))
 	hiddenCount := 0

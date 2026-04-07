@@ -20,6 +20,5 @@ type AdminService interface {
 	DeleteReview(ctx context.Context, reviewID uuid.UUID) error
 	DeleteComment(ctx context.Context, commentID uuid.UUID) error
 	SetUserRole(ctx context.Context, superAdminID uuid.UUID, targetUserID uuid.UUID, newRole domain.UserRole) error
-	GetUsers(ctx context.Context, offset, limit int, bannedOnly bool) ([]*domain.User, int, error)
 	SeedSuperAdmin(ctx context.Context, input SeedSuperAdminInput) error
 }

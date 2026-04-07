@@ -91,13 +91,49 @@ var allowedSortColumns = map[string]string{
 }
 
 func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.UserSearchParams) ([]*domain.User, int, error) {
-	countQuery := `SELECT COUNT(*) FROM users WHERE username ILIKE $1`
+	args := []interface{}{}
+	argIndex := 1
+
+	// Build WHERE clause
+	conditions := []string{}
+
+	if params.Query != "" {
+		conditions = append(conditions, fmt.Sprintf("username ILIKE $%d", argIndex))
+		args = append(args, "%"+params.Query+"%")
+		argIndex++
+	}
+
+	if len(params.ExcludeRoles) > 0 {
+		conditions = append(conditions, fmt.Sprintf("role != ALL($%d::user_role[])", argIndex))
+		roles := make([]string, len(params.ExcludeRoles))
+		for i, r := range params.ExcludeRoles {
+			roles[i] = string(r)
+		}
+		args = append(args, roles)
+		argIndex++
+	}
+
+	if params.HideBanned {
+		conditions = append(conditions, "banned_at IS NULL")
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = " WHERE " + conditions[0]
+		for _, c := range conditions[1:] {
+			whereClause += " AND " + c
+		}
+	}
+
+	// Count query
 	var total int
-	err := r.db.Pool.QueryRow(ctx, countQuery, "%"+params.Query+"%").Scan(&total)
+	countQuery := "SELECT COUNT(*) FROM users" + whereClause
+	err := r.db.Pool.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
+	// Sort
 	orderBy := "username ASC"
 	if params.SortField != "" {
 		if col, ok := allowedSortColumns[params.SortField]; ok {
@@ -109,14 +145,19 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 		}
 	}
 
-	searchQuery := fmt.Sprintf(`
-		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
-		FROM users WHERE username ILIKE $1
-		ORDER BY %s
-		LIMIT $2 OFFSET $3
-	`, orderBy)
+	// Select query
+	limitArg := argIndex
+	offsetArg := argIndex + 1
+	args = append(args, params.Limit, params.Offset)
 
-	rows, err := r.db.Pool.Query(ctx, searchQuery, "%"+params.Query+"%", params.Limit, params.Offset)
+	selectQuery := fmt.Sprintf(`
+		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		FROM users%s
+		ORDER BY %s
+		LIMIT $%d OFFSET $%d
+	`, whereClause, orderBy, limitArg, offsetArg)
+
+	rows, err := r.db.Pool.Query(ctx, selectQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -197,42 +238,3 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-func (r *UserRepository) ListAll(ctx context.Context, offset, limit int, bannedOnly bool) ([]*domain.User, int, error) {
-	whereClause := ""
-	if bannedOnly {
-		whereClause = " WHERE banned_at IS NOT NULL"
-	}
-
-	var total int
-	countQuery := "SELECT COUNT(*) FROM users" + whereClause
-	if err := r.db.Pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
-		return nil, 0, err
-	}
-
-	selectQuery := fmt.Sprintf(`
-		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
-		FROM users%s
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`, whereClause)
-
-	rows, err := r.db.Pool.Query(ctx, selectQuery, limit, offset)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	var users []*domain.User
-	for rows.Next() {
-		user := &domain.User{}
-		if err := rows.Scan(
-			&user.ID, &user.Email, &user.Username,
-			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
-			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
-		); err != nil {
-			return nil, 0, err
-		}
-		users = append(users, user)
-	}
-	return users, total, rows.Err()
-}
