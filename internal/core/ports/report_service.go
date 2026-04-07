@@ -23,7 +23,7 @@ type ResolveReportInput struct {
 type ReportService interface {
 	Create(ctx context.Context, reporterID uuid.UUID, input CreateReportInput) (*domain.Report, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Report, error)
-	GetByStatus(ctx context.Context, status domain.ReportStatus) ([]*domain.Report, error)
+	List(ctx context.Context, filter ReportFilter) ([]*domain.Report, error)
 	Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ResolveReportInput) (*domain.Report, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 }

@@ -8,10 +8,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type ReportFilter struct {
+	Status       *domain.ReportStatus
+	TargetUserID *uuid.UUID
+}
+
 type ReportRepository interface {
 	Create(ctx context.Context, report *domain.Report) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Report, error)
-	GetByStatus(ctx context.Context, status domain.ReportStatus) ([]*domain.Report, error)
+	List(ctx context.Context, filter ReportFilter) ([]*domain.Report, error)
 	Update(ctx context.Context, report *domain.Report) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }

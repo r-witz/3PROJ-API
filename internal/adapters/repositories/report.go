@@ -3,8 +3,10 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"duskforge-api/internal/core/domain"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/database"
 
 	"github.com/google/uuid"
@@ -49,12 +51,37 @@ func (r *ReportRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.R
 	return report, err
 }
 
-func (r *ReportRepository) GetByStatus(ctx context.Context, status domain.ReportStatus) ([]*domain.Report, error) {
-	query := `
+func (r *ReportRepository) List(ctx context.Context, filter ports.ReportFilter) ([]*domain.Report, error) {
+	args := []interface{}{}
+	argIndex := 1
+	conditions := []string{}
+
+	if filter.Status != nil {
+		conditions = append(conditions, fmt.Sprintf("status = $%d", argIndex))
+		args = append(args, *filter.Status)
+		argIndex++
+	}
+
+	if filter.TargetUserID != nil {
+		conditions = append(conditions, fmt.Sprintf("target_user_id = $%d", argIndex))
+		args = append(args, *filter.TargetUserID)
+		argIndex++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = " WHERE " + conditions[0]
+		for _, c := range conditions[1:] {
+			whereClause += " AND " + c
+		}
+	}
+
+	q := fmt.Sprintf(`
 		SELECT id, reporter_id, reason, details, status, target_user_id, target_review_id, target_comment_id, created_at, resolved_at, resolver_id
-		FROM reports WHERE status = $1 ORDER BY created_at
-	`
-	rows, err := r.db.Pool.Query(ctx, query, status)
+		FROM reports%s ORDER BY created_at
+	`, whereClause)
+
+	rows, err := r.db.Pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}

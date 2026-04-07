@@ -288,20 +288,36 @@ func (h *AdminHandler) DeleteComment(c *gin.Context) {
 // --- Admin: Report Management ---
 
 // @Summary      List reports
-// @Description  List reports filtered by status
+// @Description  List reports with optional filters. Filter by status and/or target user ID.
 // @Tags         admin
 // @Produce      json
 // @Security     BearerAuth
-// @Param        status query string false "Filter by status" Enums(pending, resolved, dismissed) default(pending)
+// @Param        status query string false "Filter by status" Enums(pending, resolved, dismissed)
+// @Param        user_id query string false "Filter by target user ID" format(uuid)
 // @Success      200 {object} response.Response{data=[]ReportResponse} "List of reports"
+// @Failure      400 {object} response.Response "Invalid parameters"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Insufficient permissions"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /admin/reports [get]
 func (h *AdminHandler) ListReports(c *gin.Context) {
-	status := domain.ReportStatus(c.DefaultQuery("status", string(domain.ReportStatusPending)))
+	filter := ports.ReportFilter{}
 
-	reports, err := h.reportService.GetByStatus(c.Request.Context(), status)
+	if s := c.Query("status"); s != "" {
+		status := domain.ReportStatus(s)
+		filter.Status = &status
+	}
+
+	if u := c.Query("user_id"); u != "" {
+		id, err := uuid.Parse(u)
+		if err != nil {
+			response.BadRequest(c, "Invalid user_id", nil)
+			return
+		}
+		filter.TargetUserID = &id
+	}
+
+	reports, err := h.reportService.List(c.Request.Context(), filter)
 	if err != nil {
 		response.HandleError(c, err)
 		return

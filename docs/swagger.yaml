@@ -1118,16 +1118,21 @@ paths:
       - admin
   /admin/reports:
     get:
-      description: List reports filtered by status
+      description: List reports with optional filters. Filter by status and/or target
+        user ID.
       parameters:
-      - default: pending
-        description: Filter by status
+      - description: Filter by status
         enum:
         - pending
         - resolved
         - dismissed
         in: query
         name: status
+        type: string
+      - description: Filter by target user ID
+        format: uuid
+        in: query
+        name: user_id
         type: string
       produces:
       - application/json
@@ -1143,6 +1148,10 @@ paths:
                     $ref: '#/definitions/handlers.ReportResponse'
                   type: array
               type: object
+        "400":
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:

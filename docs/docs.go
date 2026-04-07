@@ -300,7 +300,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List reports filtered by status",
+                "description": "List reports with optional filters. Filter by status and/or target user ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -316,9 +316,15 @@ const docTemplate = `{
                             "dismissed"
                         ],
                         "type": "string",
-                        "default": "pending",
                         "description": "Filter by status",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Filter by target user ID",
+                        "name": "user_id",
                         "in": "query"
                     }
                 ],
@@ -342,6 +348,12 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {

@@ -106,8 +106,8 @@ func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Repo
 	return report, nil
 }
 
-func (s *ReportService) GetByStatus(ctx context.Context, status domain.ReportStatus) ([]*domain.Report, error) {
-	return s.reportRepo.GetByStatus(ctx, status)
+func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]*domain.Report, error) {
+	return s.reportRepo.List(ctx, filter)
 }
 
 func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ports.ResolveReportInput) (*domain.Report, error) {
