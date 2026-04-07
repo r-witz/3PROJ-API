@@ -99,7 +99,9 @@ func (r *ActivityRepository) GetFeedForUser(ctx context.Context, userID uuid.UUI
 		SELECT a.` + strings.ReplaceAll(activityColumns, ", ", ", a.") + `
 		FROM activities a
 		INNER JOIN follows f ON a.user_id = f.following_id
+		LEFT JOIN collections c ON a.collection_id = c.id
 		WHERE f.follower_id = $1 AND a.created_at >= f.created_at
+		  AND (a.collection_id IS NULL OR c.visibility = 'public')
 	`
 	args := []interface{}{userID}
 	typeFilter, typeArgs := buildTypeFilter(types, 2)
@@ -154,7 +156,9 @@ func (r *ActivityRepository) CountFeedForUser(ctx context.Context, userID uuid.U
 		SELECT COUNT(*)
 		FROM activities a
 		INNER JOIN follows f ON a.user_id = f.following_id
+		LEFT JOIN collections c ON a.collection_id = c.id
 		WHERE f.follower_id = $1 AND a.created_at >= f.created_at
+		  AND (a.collection_id IS NULL OR c.visibility = 'public')
 	`
 	args := []interface{}{userID}
 	typeFilter, typeArgs := buildTypeFilter(types, 2)
