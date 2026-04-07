@@ -108,3 +108,16 @@ var (
 	ErrConversationAlreadyClosed = errors.New("conversation is already closed")
 	ErrConversationNotClosed     = errors.New("conversation is not closed")
 )
+
+var (
+	ErrCannotBanAdmin        = errors.New("cannot ban an admin or super-admin")
+	ErrCannotBanSelf         = errors.New("cannot ban yourself")
+	ErrUserAlreadyBanned     = errors.New("user is already banned")
+	ErrUserNotBanned         = errors.New("user is not banned")
+	ErrCannotChangeOwnRole   = errors.New("cannot change your own role")
+	ErrInsufficientRole      = errors.New("insufficient permissions for this action")
+	ErrInvalidRole           = errors.New("invalid role")
+	ErrReportNotFound        = errors.New("report not found")
+	ErrReportAlreadyResolved = errors.New("report is already resolved or dismissed")
+	ErrInvalidReportTarget   = errors.New("report must target exactly one entity")
+)

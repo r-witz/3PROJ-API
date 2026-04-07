@@ -103,6 +103,18 @@ var errorMappings = map[error]ErrorMapping{
 	// Conversation state errors
 	domain.ErrConversationAlreadyClosed: {http.StatusConflict, "CONVERSATION_ALREADY_CLOSED", "Conversation is already closed"},
 	domain.ErrConversationNotClosed:     {http.StatusConflict, "CONVERSATION_NOT_CLOSED", "Conversation is not closed"},
+
+	// Admin/moderation errors
+	domain.ErrCannotBanAdmin:        {http.StatusForbidden, "CANNOT_BAN_ADMIN", "Cannot ban an admin or super-admin"},
+	domain.ErrCannotBanSelf:         {http.StatusBadRequest, "CANNOT_BAN_SELF", "Cannot ban yourself"},
+	domain.ErrUserAlreadyBanned:     {http.StatusConflict, "USER_ALREADY_BANNED", "User is already banned"},
+	domain.ErrUserNotBanned:         {http.StatusConflict, "USER_NOT_BANNED", "User is not banned"},
+	domain.ErrCannotChangeOwnRole:   {http.StatusBadRequest, "CANNOT_CHANGE_OWN_ROLE", "Cannot change your own role"},
+	domain.ErrInsufficientRole:      {http.StatusForbidden, "INSUFFICIENT_ROLE", "Insufficient permissions for this action"},
+	domain.ErrInvalidRole:           {http.StatusBadRequest, "INVALID_ROLE", "Invalid role"},
+	domain.ErrReportNotFound:        {http.StatusNotFound, "REPORT_NOT_FOUND", "Report not found"},
+	domain.ErrReportAlreadyResolved: {http.StatusConflict, "REPORT_ALREADY_RESOLVED", "Report is already resolved or dismissed"},
+	domain.ErrInvalidReportTarget:   {http.StatusBadRequest, "INVALID_REPORT_TARGET", "Report must target exactly one entity"},
 }
 
 func HandleError(c *gin.Context, err error) {

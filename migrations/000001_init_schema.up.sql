@@ -1,5 +1,5 @@
 -- ENUMS
-CREATE TYPE user_role AS ENUM ('user', 'admin');
+CREATE TYPE user_role AS ENUM ('user', 'admin', 'superadmin');
 CREATE TYPE user_theme AS ENUM ('light', 'dark', 'system');
 CREATE TYPE user_locale AS ENUM ('en', 'fr', 'es');
 CREATE TYPE collection_type AS ENUM ('system', 'custom');
@@ -145,9 +145,7 @@ CREATE TABLE reports (
     resolver_id UUID REFERENCES users(id) ON DELETE SET NULL,
 
     CONSTRAINT report_target_integrity CHECK (
-        (target_user_id IS NOT NULL AND target_review_id IS NULL AND target_comment_id IS NULL) OR
-        (target_user_id IS NULL AND target_review_id IS NOT NULL AND target_comment_id IS NULL) OR
-        (target_user_id IS NULL AND target_review_id IS NULL AND target_comment_id IS NOT NULL)
+        num_nonnulls(target_user_id, target_review_id, target_comment_id) = 1
     )
 );
 
@@ -164,11 +162,10 @@ CREATE TABLE notifications (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT notification_data_integrity CHECK (
-        (type = 'like_review'   AND actor_id IS NOT NULL AND review_id IS NOT NULL  AND comment_id IS NULL  AND message IS NULL) OR
-        (type = 'like_comment'  AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL   AND message IS NULL) OR
-        (type = 'new_comment'   AND actor_id IS NOT NULL AND comment_id IS NOT NULL AND review_id IS NULL   AND message IS NULL) OR
-        (type = 'new_follow'    AND actor_id IS NOT NULL AND review_id IS NULL      AND comment_id IS NULL  AND message IS NULL) OR
-        (type = 'system'        AND actor_id IS NULL     AND review_id IS NULL      AND comment_id IS NULL  AND message IS NOT NULL)
+        (actor_id IS NOT NULL) = (type IN ('like_review', 'like_comment', 'new_comment', 'new_follow'))
+        AND (review_id IS NOT NULL) = (type = 'like_review')
+        AND (comment_id IS NOT NULL) = (type IN ('like_comment', 'new_comment'))
+        AND (message IS NOT NULL) = (type = 'system')
     )
 );
 
@@ -185,15 +182,11 @@ CREATE TABLE activities (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT activity_data_integrity CHECK (
-        (type = 'review_created'        AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
-        (type = 'collection_created'    AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
-        (type = 'collection_item_added' AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL AND target_user_id IS NULL)     OR
-        (type = 'review_liked'          AND review_id IS NOT NULL AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
-        (type = 'comment_liked'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL     AND target_user_id IS NULL)     OR
-        (type = 'user_followed'         AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NOT NULL) OR
-        (type = 'user_unfollowed'       AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NULL      AND tmdb_id IS NULL     AND target_user_id IS NOT NULL) OR
-        (type = 'watchlist_item_added'  AND review_id IS NULL     AND collection_id IS NOT NULL AND comment_id IS NULL      AND tmdb_id IS NOT NULL AND target_user_id IS NULL)     OR
-        (type = 'comment_created'       AND review_id IS NULL     AND collection_id IS NULL     AND comment_id IS NOT NULL  AND tmdb_id IS NULL     AND target_user_id IS NULL)
+        (review_id IS NOT NULL) = (type IN ('review_created', 'review_liked'))
+        AND (collection_id IS NOT NULL) = (type IN ('collection_created', 'collection_item_added', 'watchlist_item_added'))
+        AND (comment_id IS NOT NULL) = (type IN ('comment_liked', 'comment_created'))
+        AND (tmdb_id IS NOT NULL) = (type IN ('collection_item_added', 'watchlist_item_added'))
+        AND (target_user_id IS NOT NULL) = (type IN ('user_followed', 'user_unfollowed'))
     )
 );
 

@@ -25,4 +25,6 @@ type UserRepository interface {
 	SearchByUsername(ctx context.Context, params UserSearchParams) ([]*domain.User, int, error)
 	Update(ctx context.Context, user *domain.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	ListAll(ctx context.Context, offset, limit int, bannedOnly bool) ([]*domain.User, int, error)
+	ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error)
 }

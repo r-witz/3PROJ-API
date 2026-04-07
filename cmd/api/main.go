@@ -11,6 +11,7 @@ import (
 	"duskforge-api/internal/adapters/http"
 	"duskforge-api/internal/adapters/repositories"
 	"duskforge-api/internal/config"
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/internal/core/services"
 	"duskforge-api/pkg/cache"
 	"duskforge-api/pkg/database"
@@ -93,6 +94,7 @@ func main() {
 	convStateRepo := repositories.NewConversationStateRepository(db)
 	statsRepo := repositories.NewStatsRepository(db)
 	activityRepo := repositories.NewActivityRepository(db)
+	reportRepo := repositories.NewReportRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -127,6 +129,17 @@ func main() {
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
+	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
+	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo)
+
+	if err := adminService.SeedSuperAdmin(context.Background(), ports.SeedSuperAdminInput{
+		Email:    cfg.SeedAdminEmail,
+		Username: cfg.SeedAdminUsername,
+		Password: cfg.SeedAdminPassword,
+	}); err != nil {
+		logger.Logger.Fatal("Failed to seed superadmin", zap.Error(err))
+	}
+
 	statsService := services.NewStatsService(statsRepo, userRepo)
 
 	providers := make(map[oauth.OAuthProvider]oauth.Provider)
@@ -171,6 +184,7 @@ func main() {
 	followHandler := handlers.NewFollowHandler(followService, blockService, hub)
 	messageHandler := handlers.NewMessageHandler(messageService, hub)
 	blockHandler := handlers.NewBlockHandler(blockService, hub)
+	adminHandler := handlers.NewAdminHandler(adminService, reportService)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 
 	router := http.NewRouter(
@@ -192,6 +206,7 @@ func main() {
 		statsHandler,
 		activityHandler,
 		wsHandler,
+		adminHandler,
 		userService,
 		activityRepo,
 	)

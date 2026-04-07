@@ -9,8 +9,9 @@ import (
 type UserRole string
 
 const (
-	UserRoleUser  UserRole = "user"
-	UserRoleAdmin UserRole = "admin"
+	UserRoleUser       UserRole = "user"
+	UserRoleAdmin      UserRole = "admin"
+	UserRoleSuperAdmin UserRole = "superadmin"
 )
 
 type UserTheme string

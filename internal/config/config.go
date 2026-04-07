@@ -33,6 +33,10 @@ type Config struct {
 	OAuthStateSecret   string `mapstructure:"OAUTH_STATE_SECRET"`
 
 	CORSAllowedOrigins string `mapstructure:"CORS_ALLOWED_ORIGINS"`
+
+	SeedAdminEmail    string `mapstructure:"SEED_ADMIN_EMAIL"`
+	SeedAdminUsername string `mapstructure:"SEED_ADMIN_USERNAME"`
+	SeedAdminPassword string `mapstructure:"SEED_ADMIN_PASSWORD"`
 }
 
 func LoadConfig() (Config, error) {
@@ -61,6 +65,9 @@ func LoadConfig() (Config, error) {
 	viper.SetDefault("REDIS_URL", "redis://localhost:6379/0")
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
+	viper.SetDefault("SEED_ADMIN_EMAIL", "admin@duskforge.studio")
+	viper.SetDefault("SEED_ADMIN_USERNAME", "superadmin")
+	viper.SetDefault("SEED_ADMIN_PASSWORD", "Admin123!")
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {

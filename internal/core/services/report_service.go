@@ -1,0 +1,147 @@
+package services
+
+import (
+	"context"
+	"time"
+
+	"duskforge-api/internal/core/domain"
+	"duskforge-api/internal/core/ports"
+
+	"github.com/google/uuid"
+)
+
+type ReportService struct {
+	reportRepo  ports.ReportRepository
+	userRepo    ports.UserRepository
+	reviewRepo  ports.ReviewRepository
+	commentRepo ports.CommentRepository
+}
+
+func NewReportService(
+	reportRepo ports.ReportRepository,
+	userRepo ports.UserRepository,
+	reviewRepo ports.ReviewRepository,
+	commentRepo ports.CommentRepository,
+) *ReportService {
+	return &ReportService{
+		reportRepo:  reportRepo,
+		userRepo:    userRepo,
+		reviewRepo:  reviewRepo,
+		commentRepo: commentRepo,
+	}
+}
+
+func (s *ReportService) Create(ctx context.Context, reporterID uuid.UUID, input ports.CreateReportInput) (*domain.Report, error) {
+	targets := 0
+	if input.TargetUserID != nil {
+		targets++
+	}
+	if input.TargetReviewID != nil {
+		targets++
+	}
+	if input.TargetCommentID != nil {
+		targets++
+	}
+	if targets != 1 {
+		return nil, domain.ErrInvalidReportTarget
+	}
+
+	if input.TargetUserID != nil {
+		user, err := s.userRepo.GetByID(ctx, *input.TargetUserID)
+		if err != nil {
+			return nil, err
+		}
+		if user == nil {
+			return nil, domain.ErrUserNotFound
+		}
+	}
+
+	if input.TargetReviewID != nil {
+		review, err := s.reviewRepo.GetByID(ctx, *input.TargetReviewID)
+		if err != nil {
+			return nil, err
+		}
+		if review == nil {
+			return nil, domain.ErrReviewNotFound
+		}
+	}
+
+	if input.TargetCommentID != nil {
+		comment, err := s.commentRepo.GetByID(ctx, *input.TargetCommentID)
+		if err != nil {
+			return nil, err
+		}
+		if comment == nil {
+			return nil, domain.ErrCommentNotFound
+		}
+	}
+
+	report := &domain.Report{
+		ID:              uuid.New(),
+		ReporterID:      reporterID,
+		Reason:          input.Reason,
+		Details:         input.Details,
+		Status:          domain.ReportStatusPending,
+		TargetUserID:    input.TargetUserID,
+		TargetReviewID:  input.TargetReviewID,
+		TargetCommentID: input.TargetCommentID,
+		CreatedAt:       time.Now(),
+	}
+
+	if err := s.reportRepo.Create(ctx, report); err != nil {
+		return nil, err
+	}
+
+	return report, nil
+}
+
+func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Report, error) {
+	report, err := s.reportRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if report == nil {
+		return nil, domain.ErrReportNotFound
+	}
+	return report, nil
+}
+
+func (s *ReportService) GetByStatus(ctx context.Context, status domain.ReportStatus) ([]*domain.Report, error) {
+	return s.reportRepo.GetByStatus(ctx, status)
+}
+
+func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ports.ResolveReportInput) (*domain.Report, error) {
+	report, err := s.reportRepo.GetByID(ctx, reportID)
+	if err != nil {
+		return nil, err
+	}
+	if report == nil {
+		return nil, domain.ErrReportNotFound
+	}
+
+	if report.Status != domain.ReportStatusPending {
+		return nil, domain.ErrReportAlreadyResolved
+	}
+
+	now := time.Now()
+	report.Status = input.Status
+	report.ResolvedAt = &now
+	report.ResolverID = &resolverID
+
+	if err := s.reportRepo.Update(ctx, report); err != nil {
+		return nil, err
+	}
+
+	return report, nil
+}
+
+func (s *ReportService) Delete(ctx context.Context, id uuid.UUID) error {
+	report, err := s.reportRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if report == nil {
+		return domain.ErrReportNotFound
+	}
+	return s.reportRepo.Delete(ctx, id)
+}

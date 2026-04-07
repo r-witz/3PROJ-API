@@ -93,3 +93,22 @@ func IsAuthenticated(c *gin.Context) bool {
 	_, exists := c.Get(ContextKeyUserID)
 	return exists
 }
+
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, ok := GetRole(c)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "role not found in context"})
+			return
+		}
+
+		for _, allowed := range allowedRoles {
+			if role == allowed {
+				c.Next()
+				return
+			}
+		}
+
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+	}
+}

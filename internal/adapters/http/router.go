@@ -6,6 +6,7 @@ import (
 
 	"duskforge-api/internal/adapters/handlers"
 	"duskforge-api/internal/adapters/middleware"
+	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,7 @@ type Router struct {
 	statsHandler      *handlers.StatsHandler
 	activityHandler   *handlers.ActivityHandler
 	wsHandler         *handlers.WebSocketHandler
+	adminHandler      *handlers.AdminHandler
 	userService       ports.UserService
 	activityRepo      ports.ActivityRepository
 }
@@ -55,6 +57,7 @@ func NewRouter(
 	statsHandler *handlers.StatsHandler,
 	activityHandler *handlers.ActivityHandler,
 	wsHandler *handlers.WebSocketHandler,
+	adminHandler *handlers.AdminHandler,
 	userService ports.UserService,
 	activityRepo ports.ActivityRepository,
 ) *Router {
@@ -75,6 +78,7 @@ func NewRouter(
 		statsHandler:      statsHandler,
 		activityHandler:   activityHandler,
 		wsHandler:         wsHandler,
+		adminHandler:      adminHandler,
 		userService:       userService,
 		activityRepo:      activityRepo,
 	}
@@ -99,6 +103,8 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupCommentRoutes(v1)
 		r.setupMessageRoutes(v1)
 		r.setupActivityRoutes(v1)
+		r.setupReportRoutes(v1)
+		r.setupAdminRoutes(v1)
 		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
@@ -238,6 +244,40 @@ func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 		messages.DELETE("/:id", r.messageHandler.DeleteMessage)
 		messages.POST("/:id/reactions", r.messageHandler.AddReaction)
 		messages.DELETE("/:id/reactions", r.messageHandler.RemoveReaction)
+	}
+}
+
+func (r *Router) setupReportRoutes(rg *gin.RouterGroup) {
+	reports := rg.Group("/reports")
+	reports.Use(middleware.Auth(r.config.AccessTokenSecret))
+	{
+		reports.POST("", r.adminHandler.SubmitReport)
+	}
+}
+
+func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
+	admin := rg.Group("/admin")
+	admin.Use(middleware.Auth(r.config.AccessTokenSecret))
+	{
+		adminOrSuper := admin.Group("")
+		adminOrSuper.Use(middleware.RequireRole(string(domain.UserRoleAdmin), string(domain.UserRoleSuperAdmin)))
+		{
+			adminOrSuper.GET("/users", r.adminHandler.ListUsers)
+			adminOrSuper.POST("/users/:userId/ban", r.adminHandler.BanUser)
+			adminOrSuper.DELETE("/users/:userId/ban", r.adminHandler.UnbanUser)
+			adminOrSuper.DELETE("/reviews/:reviewId", r.adminHandler.DeleteReview)
+			adminOrSuper.DELETE("/comments/:commentId", r.adminHandler.DeleteComment)
+			adminOrSuper.GET("/reports", r.adminHandler.ListReports)
+			adminOrSuper.GET("/reports/:reportId", r.adminHandler.GetReport)
+			adminOrSuper.PATCH("/reports/:reportId", r.adminHandler.ResolveReport)
+			adminOrSuper.DELETE("/reports/:reportId", r.adminHandler.DeleteReport)
+		}
+
+		superOnly := admin.Group("")
+		superOnly.Use(middleware.RequireRole(string(domain.UserRoleSuperAdmin)))
+		{
+			superOnly.PATCH("/users/:userId/role", r.adminHandler.SetUserRole)
+		}
 	}
 }
 

@@ -185,8 +185,54 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 	return users, rows.Err()
 }
 
+func (r *UserRepository) ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error) {
+	var exists bool
+	err := r.db.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE role = $1)`, role).Scan(&exists)
+	return exists, err
+}
+
 func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Pool.Exec(ctx, query, id)
 	return err
+}
+
+func (r *UserRepository) ListAll(ctx context.Context, offset, limit int, bannedOnly bool) ([]*domain.User, int, error) {
+	whereClause := ""
+	if bannedOnly {
+		whereClause = " WHERE banned_at IS NOT NULL"
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM users" + whereClause
+	if err := r.db.Pool.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	selectQuery := fmt.Sprintf(`
+		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		FROM users%s
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
+	`, whereClause)
+
+	rows, err := r.db.Pool.Query(ctx, selectQuery, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		user := &domain.User{}
+		if err := rows.Scan(
+			&user.ID, &user.Email, &user.Username,
+			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
+			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
+		); err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
+	}
+	return users, total, rows.Err()
 }
