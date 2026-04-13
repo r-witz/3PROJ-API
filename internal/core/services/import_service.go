@@ -348,6 +348,47 @@ func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid
 	return true
 }
 
+// bestMatch picks the most accurate result from a TMDB search by comparing
+// title and release year against the Letterboxd entry.
+func bestMatch(results []tmdb.MovieSummary, name string, year int) *tmdb.MovieSummary {
+	nameLower := strings.ToLower(strings.TrimSpace(name))
+
+	// Pass 1: exact title (or original title) + exact year
+	for i, r := range results {
+		ry := releaseYear(r.ReleaseDate)
+		if ry == year && (strings.ToLower(r.Title) == nameLower || strings.ToLower(r.OriginalTitle) == nameLower) {
+			return &results[i]
+		}
+	}
+
+	// Pass 2: exact year, any title (TMDB already filtered by query)
+	for i, r := range results {
+		if releaseYear(r.ReleaseDate) == year {
+			return &results[i]
+		}
+	}
+
+	// Pass 3: exact title match regardless of year
+	for i, r := range results {
+		if strings.ToLower(r.Title) == nameLower || strings.ToLower(r.OriginalTitle) == nameLower {
+			return &results[i]
+		}
+	}
+
+	// Fallback: first result
+	return &results[0]
+}
+
+func releaseYear(date string) int {
+	if len(date) >= 4 {
+		y, err := strconv.Atoi(date[:4])
+		if err == nil {
+			return y
+		}
+	}
+	return 0
+}
+
 // resolveFilms resolves film names to TMDB IDs and fetches runtimes concurrently.
 func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry, onProgress func(int)) (map[string]resolvedFilm, []ports.ImportFailure) {
 	resolved := make(map[string]resolvedFilm)
@@ -364,12 +405,8 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			resp, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
-				Query:    film.Name,
-				Year:     film.Year,
-				Language: "en-US",
-			})
-			if err != nil || resp == nil || len(resp.Results) == 0 {
+			match := s.searchFilm(ctx, film.Name, film.Year)
+			if match == nil {
 				mu.Lock()
 				failed = append(failed, ports.ImportFailure{
 					Name:   film.Name,
@@ -382,7 +419,7 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 				return
 			}
 
-			tmdbID := resp.Results[0].ID
+			tmdbID := match.ID
 
 			// Fetch runtime from movie details
 			var runtime int16
@@ -402,6 +439,42 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 
 	wg.Wait()
 	return resolved, failed
+}
+
+// searchFilm tries to find the best TMDB match for a film name + year.
+// It first searches with PrimaryReleaseYear for strict matching, then
+// falls back to a broader Year search if needed.
+func (s *importService) searchFilm(ctx context.Context, name string, year int) *tmdb.MovieSummary {
+	// Try strict search with primary_release_year
+	resp, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
+		Query:              name,
+		PrimaryReleaseYear: year,
+		Language:           "en-US",
+	})
+	if err == nil && resp != nil && len(resp.Results) > 0 {
+		return bestMatch(resp.Results, name, year)
+	}
+
+	// Fallback: broader year search
+	resp, err = s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
+		Query:    name,
+		Year:     year,
+		Language: "en-US",
+	})
+	if err == nil && resp != nil && len(resp.Results) > 0 {
+		return bestMatch(resp.Results, name, year)
+	}
+
+	// Last resort: search without year
+	resp, err = s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
+		Query:    name,
+		Language: "en-US",
+	})
+	if err == nil && resp != nil && len(resp.Results) > 0 {
+		return bestMatch(resp.Results, name, year)
+	}
+
+	return nil
 }
 
 // CSV parsing helpers
