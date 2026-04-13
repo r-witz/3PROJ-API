@@ -62,6 +62,7 @@ type PublicUserResponse struct {
 	IsFollowing  bool      `json:"is_following" example:"true"`
 	IsFollowedBy bool      `json:"is_followed_by" example:"false"`
 	CreatedAt    string    `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	BannedAt     *string   `json:"banned_at,omitempty" example:"2024-01-15T10:30:00Z"`
 }
 
 type SearchUserResponse struct {
@@ -535,7 +536,7 @@ func toUserResponse(user *domain.User, stats UserStats) UserResponse {
 }
 
 func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFollowedBy bool) PublicUserResponse {
-	return PublicUserResponse{
+	resp := PublicUserResponse{
 		ID:           user.ID.String(),
 		Username:    user.Username,
 		AvatarURL:   user.AvatarURL,
@@ -546,6 +547,11 @@ func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFol
 		IsFollowedBy: isFollowedBy,
 		CreatedAt:   user.CreatedAt.Format(time.RFC3339),
 	}
+	if user.BannedAt != nil {
+		bannedAt := user.BannedAt.Format(time.RFC3339)
+		resp.BannedAt = &bannedAt
+	}
+	return resp
 }
 
 func toSearchUserResponse(user *domain.User) SearchUserResponse {

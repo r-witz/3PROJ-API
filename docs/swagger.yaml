@@ -479,6 +479,9 @@ definitions:
       avatar_url:
         example: https://example.com/avatar.jpg
         type: string
+      banned_at:
+        example: "2024-01-15T10:30:00Z"
+        type: string
       bio:
         example: Movie enthusiast
         type: string

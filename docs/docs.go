@@ -6787,6 +6787,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "https://example.com/avatar.jpg"
                 },
+                "banned_at": {
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
+                },
                 "bio": {
                     "type": "string",
                     "example": "Movie enthusiast"
