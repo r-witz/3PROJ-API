@@ -172,6 +172,10 @@ func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) e
 		return domain.ErrUserNotFound
 	}
 
+	if user.Role == domain.UserRoleSuperAdmin {
+		return domain.ErrCannotDeleteSuperAdmin
+	}
+
 	if err := s.userRepo.Delete(ctx, userID); err != nil {
 		return domain.ErrInternal
 	}

@@ -4588,7 +4588,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Permanently delete the currently authenticated user's account
+      description: Permanently delete the currently authenticated user's account.
+        Super-admin accounts cannot be deleted.
       produces:
       - application/json
       responses:
@@ -4596,6 +4597,10 @@ paths:
           description: Account deleted successfully
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Super-admin account cannot be deleted
           schema:
             $ref: '#/definitions/response.Response'
         "404":

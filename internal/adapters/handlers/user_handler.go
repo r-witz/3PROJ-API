@@ -395,13 +395,14 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 }
 
 // @Summary      Delete current user
-// @Description  Permanently delete the currently authenticated user's account
+// @Description  Permanently delete the currently authenticated user's account. Super-admin accounts cannot be deleted.
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Success      204 "Account deleted successfully"
 // @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      403 {object} response.Response "Super-admin account cannot be deleted"
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/me [delete]

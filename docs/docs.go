@@ -4166,7 +4166,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Permanently delete the currently authenticated user's account",
+                "description": "Permanently delete the currently authenticated user's account. Super-admin accounts cannot be deleted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4183,6 +4183,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Super-admin account cannot be deleted",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

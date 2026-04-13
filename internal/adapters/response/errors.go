@@ -105,7 +105,8 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrConversationNotClosed:     {http.StatusConflict, "CONVERSATION_NOT_CLOSED", "Conversation is not closed"},
 
 	// Admin/moderation errors
-	domain.ErrCannotBanAdmin:        {http.StatusForbidden, "CANNOT_BAN_ADMIN", "Cannot ban an admin or super-admin"},
+	domain.ErrCannotDeleteSuperAdmin: {http.StatusForbidden, "CANNOT_DELETE_SUPERADMIN", "Super-admin account cannot be deleted"},
+	domain.ErrCannotBanAdmin:         {http.StatusForbidden, "CANNOT_BAN_ADMIN", "Cannot ban an admin or super-admin"},
 	domain.ErrCannotBanSelf:         {http.StatusBadRequest, "CANNOT_BAN_SELF", "Cannot ban yourself"},
 	domain.ErrUserAlreadyBanned:     {http.StatusConflict, "USER_ALREADY_BANNED", "User is already banned"},
 	domain.ErrUserNotBanned:         {http.StatusConflict, "USER_NOT_BANNED", "User is not banned"},
