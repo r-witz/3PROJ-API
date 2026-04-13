@@ -109,6 +109,29 @@ func (r *MessageRepository) GetConversationPaginated(ctx context.Context, userID
 	return messages, total, rows.Err()
 }
 
+func (r *MessageRepository) GetConversationPartnerIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	query := `
+		SELECT DISTINCT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END AS partner_id
+		FROM messages
+		WHERE sender_id = $1 OR receiver_id = $1
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 func (r *MessageRepository) GetConversations(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*ports.ConversationPreview, int, error) {
 	countQuery := `
 		SELECT COUNT(DISTINCT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END)

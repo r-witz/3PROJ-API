@@ -5,6 +5,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -13,12 +14,16 @@ import (
 type AdminHandler struct {
 	adminService  ports.AdminService
 	reportService ports.ReportService
+	messageRepo   ports.MessageRepository
+	hub           *ws.Hub
 }
 
-func NewAdminHandler(adminService ports.AdminService, reportService ports.ReportService) *AdminHandler {
+func NewAdminHandler(adminService ports.AdminService, reportService ports.ReportService, messageRepo ports.MessageRepository, hub *ws.Hub) *AdminHandler {
 	return &AdminHandler{
 		adminService:  adminService,
 		reportService: reportService,
+		messageRepo:   messageRepo,
+		hub:           hub,
 	}
 }
 
@@ -158,7 +163,7 @@ func (h *AdminHandler) SubmitReport(c *gin.Context) {
 // --- Admin: User Management ---
 
 // @Summary      Ban a user
-// @Description  Ban a user by their ID. Admins cannot ban other admins or super-admins.
+// @Description  Ban a user by their ID. Admins cannot ban other admins or super-admins. A "user.banned" WebSocket event is sent to all users who have a conversation with the banned user.
 // @Tags         admin
 // @Produce      json
 // @Security     BearerAuth
@@ -187,6 +192,18 @@ func (h *AdminHandler) BanUser(c *gin.Context) {
 	if err := h.adminService.BanUser(c.Request.Context(), adminID, targetID); err != nil {
 		response.HandleError(c, err)
 		return
+	}
+
+	if partnerIDs, err := h.messageRepo.GetConversationPartnerIDs(c.Request.Context(), targetID); err == nil {
+		event := ws.Event{
+			Type: ws.EventUserBanned,
+			Data: ws.UserBannedPayload{
+				UserID: targetID.String(),
+			},
+		}
+		for _, partnerID := range partnerIDs {
+			h.hub.SendToUser(partnerID, event)
+		}
 	}
 
 	c.Status(204)

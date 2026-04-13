@@ -107,16 +107,20 @@ func (r *StatsRepository) GetUserStats(ctx context.Context, userID uuid.UUID) (*
 		return nil, err
 	}
 
-	// Social stats
+	// Social stats (exclude banned users)
 	err = r.db.Pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM follows WHERE following_id = $1
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND u.banned_at IS NULL
 	`, userID).Scan(&stats.FollowersCount)
 	if err != nil {
 		return nil, err
 	}
 
 	err = r.db.Pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM follows WHERE follower_id = $1
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = $1 AND u.banned_at IS NULL
 	`, userID).Scan(&stats.FollowingCount)
 	if err != nil {
 		return nil, err

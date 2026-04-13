@@ -55,7 +55,7 @@ type UserStatsResponse struct {
 }
 
 // @Summary      Get user statistics
-// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth

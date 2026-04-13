@@ -676,7 +676,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Ban a user by their ID. Admins cannot ban other admins or super-admins.",
+                "description": "Ban a user by their ID. Admins cannot ban other admins or super-admins. A \"user.banned\" WebSocket event is sent to all users who have a conversation with the banned user.",
                 "produces": [
                     "application/json"
                 ],
@@ -4122,7 +4122,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the profile of the currently authenticated user",
+                "description": "Get the profile of the currently authenticated user. Follower and following counts always exclude banned users.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4628,7 +4628,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5715,7 +5715,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.",
+                "description": "Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are always excluded from the list and counts.",
                 "produces": [
                     "application/json"
                 ],
@@ -5851,7 +5851,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.",
+                "description": "Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are always excluded from the list and counts.",
                 "produces": [
                     "application/json"
                 ],
@@ -6042,7 +6042,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "produces": [
                     "application/json"
                 ],

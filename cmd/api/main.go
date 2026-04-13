@@ -194,7 +194,7 @@ func main() {
 	blockHandler := handlers.NewBlockHandler(blockService, hub)
 	importService := services.NewImportService(collectionRepo, collectionItemRepo, reviewRepo, cachedTMDB, hub)
 
-	adminHandler := handlers.NewAdminHandler(adminService, reportService)
+	adminHandler := handlers.NewAdminHandler(adminService, reportService, messageRepo, hub)
 	importHandler := handlers.NewImportHandler(importService)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 

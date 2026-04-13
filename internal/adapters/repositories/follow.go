@@ -79,7 +79,7 @@ func (r *FollowRepository) GetFollowersPaginated(ctx context.Context, userID uui
 		countQuery := `
 			SELECT COUNT(*) FROM follows f
 			JOIN users u ON u.id = f.follower_id
-			WHERE f.following_id = $1 AND u.username ILIKE $2
+			WHERE f.following_id = $1 AND u.username ILIKE $2 AND u.banned_at IS NULL
 		`
 		var total int
 		if err := r.db.Pool.QueryRow(ctx, countQuery, userID, searchPattern).Scan(&total); err != nil {
@@ -90,7 +90,7 @@ func (r *FollowRepository) GetFollowersPaginated(ctx context.Context, userID uui
 			SELECT f.follower_id, f.following_id, f.created_at
 			FROM follows f
 			JOIN users u ON u.id = f.follower_id
-			WHERE f.following_id = $1 AND u.username ILIKE $2
+			WHERE f.following_id = $1 AND u.username ILIKE $2 AND u.banned_at IS NULL
 			ORDER BY f.created_at DESC LIMIT $3 OFFSET $4
 		`
 		rows, err := r.db.Pool.Query(ctx, query, userID, searchPattern, limit, offset)
@@ -110,15 +110,22 @@ func (r *FollowRepository) GetFollowersPaginated(ctx context.Context, userID uui
 		return follows, total, rows.Err()
 	}
 
-	countQuery := `SELECT COUNT(*) FROM follows WHERE following_id = $1`
+	countQuery := `
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND u.banned_at IS NULL
+	`
 	var total int
 	if err := r.db.Pool.QueryRow(ctx, countQuery, userID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	query := `
-		SELECT follower_id, following_id, created_at
-		FROM follows WHERE following_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+		SELECT f.follower_id, f.following_id, f.created_at
+		FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND u.banned_at IS NULL
+		ORDER BY f.created_at DESC LIMIT $2 OFFSET $3
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
@@ -144,7 +151,7 @@ func (r *FollowRepository) GetFollowingPaginated(ctx context.Context, userID uui
 		countQuery := `
 			SELECT COUNT(*) FROM follows f
 			JOIN users u ON u.id = f.following_id
-			WHERE f.follower_id = $1 AND u.username ILIKE $2
+			WHERE f.follower_id = $1 AND u.username ILIKE $2 AND u.banned_at IS NULL
 		`
 		var total int
 		if err := r.db.Pool.QueryRow(ctx, countQuery, userID, searchPattern).Scan(&total); err != nil {
@@ -155,7 +162,7 @@ func (r *FollowRepository) GetFollowingPaginated(ctx context.Context, userID uui
 			SELECT f.follower_id, f.following_id, f.created_at
 			FROM follows f
 			JOIN users u ON u.id = f.following_id
-			WHERE f.follower_id = $1 AND u.username ILIKE $2
+			WHERE f.follower_id = $1 AND u.username ILIKE $2 AND u.banned_at IS NULL
 			ORDER BY f.created_at DESC LIMIT $3 OFFSET $4
 		`
 		rows, err := r.db.Pool.Query(ctx, query, userID, searchPattern, limit, offset)
@@ -175,15 +182,22 @@ func (r *FollowRepository) GetFollowingPaginated(ctx context.Context, userID uui
 		return follows, total, rows.Err()
 	}
 
-	countQuery := `SELECT COUNT(*) FROM follows WHERE follower_id = $1`
+	countQuery := `
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = $1 AND u.banned_at IS NULL
+	`
 	var total int
 	if err := r.db.Pool.QueryRow(ctx, countQuery, userID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	query := `
-		SELECT follower_id, following_id, created_at
-		FROM follows WHERE follower_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+		SELECT f.follower_id, f.following_id, f.created_at
+		FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = $1 AND u.banned_at IS NULL
+		ORDER BY f.created_at DESC LIMIT $2 OFFSET $3
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
@@ -224,14 +238,22 @@ func (r *FollowRepository) Delete(ctx context.Context, followerID, followingID u
 }
 
 func (r *FollowRepository) CountFollowers(ctx context.Context, userID uuid.UUID) (int, error) {
-	query := `SELECT COUNT(*) FROM follows WHERE following_id = $1`
+	query := `
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.follower_id
+		WHERE f.following_id = $1 AND u.banned_at IS NULL
+	`
 	var count int
 	err := r.db.Pool.QueryRow(ctx, query, userID).Scan(&count)
 	return count, err
 }
 
 func (r *FollowRepository) CountFollowing(ctx context.Context, userID uuid.UUID) (int, error) {
-	query := `SELECT COUNT(*) FROM follows WHERE follower_id = $1`
+	query := `
+		SELECT COUNT(*) FROM follows f
+		JOIN users u ON u.id = f.following_id
+		WHERE f.follower_id = $1 AND u.banned_at IS NULL
+	`
 	var count int
 	err := r.db.Pool.QueryRow(ctx, query, userID).Scan(&count)
 	return count, err

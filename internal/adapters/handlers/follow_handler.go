@@ -183,7 +183,7 @@ func (h *FollowHandler) RemoveFollower(c *gin.Context) {
 }
 
 // @Summary      Get followers
-// @Description  Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.
+// @Description  Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are always excluded from the list and counts.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth
@@ -231,7 +231,7 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 }
 
 // @Summary      Get following
-// @Description  Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.
+// @Description  Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are always excluded from the list and counts.
 // @Tags         follows
 // @Produce      json
 // @Security     BearerAuth

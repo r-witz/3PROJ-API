@@ -103,7 +103,7 @@ type ChangePasswordRequest struct {
 }
 
 // @Summary      Get current user
-// @Description  Get the profile of the currently authenticated user
+// @Description  Get the profile of the currently authenticated user. Follower and following counts always exclude banned users.
 // @Tags         users
 // @Accept       json
 // @Produce      json
@@ -436,7 +436,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 }
 
 // @Summary      Get user by ID
-// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         users
 // @Accept       json
 // @Produce      json
