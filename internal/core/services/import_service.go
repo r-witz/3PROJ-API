@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
-	"errors"
+	"encoding/json"
 	"io"
 	"strconv"
 	"strings"
@@ -20,20 +20,23 @@ import (
 )
 
 type importService struct {
-	collectionSvc ports.CollectionService
-	reviewRepo    ports.ReviewRepository
-	tmdbClient    ports.TMDBClient
+	collectionRepo     ports.CollectionRepository
+	collectionItemRepo ports.CollectionItemRepository
+	reviewRepo         ports.ReviewRepository
+	tmdbClient         ports.TMDBClient
 }
 
 func NewImportService(
-	collectionSvc ports.CollectionService,
+	collectionRepo ports.CollectionRepository,
+	collectionItemRepo ports.CollectionItemRepository,
 	reviewRepo ports.ReviewRepository,
 	tmdbClient ports.TMDBClient,
 ) ports.ImportService {
 	return &importService{
-		collectionSvc: collectionSvc,
-		reviewRepo:    reviewRepo,
-		tmdbClient:    tmdbClient,
+		collectionRepo:     collectionRepo,
+		collectionItemRepo: collectionItemRepo,
+		reviewRepo:         reviewRepo,
+		tmdbClient:         tmdbClient,
 	}
 }
 
@@ -107,21 +110,28 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		Failed: failed,
 	}
 
-	// Import watched films
+	// Look up the "watched" and "to-watch" collection IDs once
+	watchedCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, "watched")
+	if err != nil || watchedCol == nil {
+		return nil, domain.ErrInternal
+	}
+	toWatchCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, "to-watch")
+	if err != nil || toWatchCol == nil {
+		return nil, domain.ErrInternal
+	}
+
+	// Import watched films — add directly to collection, skip TMDB detail fetch
 	for _, w := range watched {
 		key := filmKey(w.Name, w.Year)
 		tmdbID, ok := resolved[key]
 		if !ok {
 			continue
 		}
-		_, err := s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID)
-		if err != nil {
-			if errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
-				result.Watched.Skipped++
-			}
-			continue
+		if s.addCollectionItem(ctx, watchedCol.ID, tmdbID) {
+			result.Watched.Imported++
+		} else {
+			result.Watched.Skipped++
 		}
-		result.Watched.Imported++
 	}
 
 	// Import watchlist
@@ -131,14 +141,11 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		if !ok {
 			continue
 		}
-		_, err := s.collectionSvc.AddItem(ctx, userID, "to-watch", tmdbID)
-		if err != nil {
-			if errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
-				result.Watchlist.Skipped++
-			}
-			continue
+		if s.addCollectionItem(ctx, toWatchCol.ID, tmdbID) {
+			result.Watchlist.Imported++
+		} else {
+			result.Watchlist.Skipped++
 		}
-		result.Watchlist.Imported++
 	}
 
 	// Merge ratings and reviews by film key
@@ -212,10 +219,7 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		}
 
 		// Ensure reviewed films are in the watched collection
-		_, err = s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID)
-		if err != nil && !errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
-			// non-critical, ignore
-		}
+		s.addCollectionItem(ctx, watchedCol.ID, tmdbID)
 	}
 
 	if result.Failed == nil {
@@ -223,6 +227,28 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 	}
 
 	return result, nil
+}
+
+// addCollectionItem adds a film to a collection directly, skipping TMDB detail fetch.
+// Returns true if the item was added, false if it already existed or on error.
+func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid.UUID, tmdbID int) bool {
+	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collectionID, tmdbID)
+	if err != nil || existing != nil {
+		return false
+	}
+
+	item := &domain.CollectionItem{
+		CollectionID: collectionID,
+		TMDBID:       tmdbID,
+		AddedAt:      time.Now(),
+		Runtime:      0,
+		Metadata:     json.RawMessage("{}"),
+	}
+
+	if err := s.collectionItemRepo.Create(ctx, item); err != nil {
+		return false
+	}
+	return true
 }
 
 func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry) (map[string]int, []ports.ImportFailure) {
@@ -268,23 +294,18 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 // CSV parsing helpers
 
 func findFileInZip(archive *zip.Reader, filename string) *zip.File {
+	// Prefer exact root-level match first
 	for _, f := range archive.File {
-		name := f.Name
-		// Handle files that may be in subdirectories
-		if idx := strings.LastIndex(name, "/"); idx >= 0 {
-			name = name[idx+1:]
-		}
-		if strings.EqualFold(name, filename) {
+		if strings.EqualFold(f.Name, filename) {
 			return f
 		}
 	}
-	return nil
-}
-
-func findFileInZipByPath(archive *zip.Reader, path string) *zip.File {
+	// Fallback: match by filename in any subdirectory
 	for _, f := range archive.File {
-		if f.Name == path {
-			return f
+		if idx := strings.LastIndex(f.Name, "/"); idx >= 0 {
+			if strings.EqualFold(f.Name[idx+1:], filename) {
+				return f
+			}
 		}
 	}
 	return nil
