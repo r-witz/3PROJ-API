@@ -76,6 +76,7 @@ func main() {
 	defer redisClient.Close()
 
 	cachedTMDB := tmdb.NewCachedClient(tmdbClient, redisClient)
+	banCache := repositories.NewBanCache(redisClient)
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
@@ -130,7 +131,14 @@ func main() {
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
-	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo)
+	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo, banCache)
+
+	bannedIDs, err := userRepo.GetBannedUserIDs(context.Background())
+	if err != nil {
+		logger.Logger.Warn("Failed to load banned users", zap.Error(err))
+	} else if err := banCache.SyncBannedUsers(context.Background(), bannedIDs); err != nil {
+		logger.Logger.Warn("Failed to sync banned users to cache", zap.Error(err))
+	}
 
 	if err := adminService.SeedSuperAdmin(context.Background(), ports.SeedSuperAdminInput{
 		Email:    cfg.SeedAdminEmail,
@@ -213,6 +221,7 @@ func main() {
 		importHandler,
 		userService,
 		activityRepo,
+		banCache,
 	)
 
 	router.Setup()

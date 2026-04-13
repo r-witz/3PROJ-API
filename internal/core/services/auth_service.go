@@ -141,6 +141,11 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (*ports.
 		return nil, domain.ErrInternal
 	}
 
+	if user.BannedAt != nil {
+		_ = s.sessionRepo.Delete(ctx, session.ID)
+		return nil, domain.ErrUserBanned
+	}
+
 	accessToken, err := auth.GenerateAccessToken(
 		user.ID, string(user.Role), s.config.AccessTokenSecret, s.config.AccessTokenExpiry,
 	)

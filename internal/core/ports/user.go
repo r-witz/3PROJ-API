@@ -28,4 +28,5 @@ type UserRepository interface {
 	Update(ctx context.Context, user *domain.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error)
+	GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error)
 }

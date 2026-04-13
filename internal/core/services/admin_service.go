@@ -17,6 +17,7 @@ type AdminService struct {
 	reviewRepo  ports.ReviewRepository
 	commentRepo ports.CommentRepository
 	sessionRepo ports.SessionRepository
+	banCache    ports.BanCache
 }
 
 func NewAdminService(
@@ -24,12 +25,14 @@ func NewAdminService(
 	reviewRepo ports.ReviewRepository,
 	commentRepo ports.CommentRepository,
 	sessionRepo ports.SessionRepository,
+	banCache ports.BanCache,
 ) *AdminService {
 	return &AdminService{
 		userRepo:    userRepo,
 		reviewRepo:  reviewRepo,
 		commentRepo: commentRepo,
 		sessionRepo: sessionRepo,
+		banCache:    banCache,
 	}
 }
 
@@ -62,6 +65,8 @@ func (s *AdminService) BanUser(ctx context.Context, adminID uuid.UUID, targetUse
 		return err
 	}
 
+	_ = s.banCache.SetBanned(ctx, targetUserID)
+
 	return s.sessionRepo.DeleteByUserID(ctx, targetUserID)
 }
 
@@ -81,7 +86,12 @@ func (s *AdminService) UnbanUser(ctx context.Context, adminID uuid.UUID, targetU
 	target.BannedAt = nil
 	target.UpdatedAt = time.Now()
 
-	return s.userRepo.Update(ctx, target)
+	if err := s.userRepo.Update(ctx, target); err != nil {
+		return err
+	}
+
+	_ = s.banCache.RemoveBanned(ctx, targetUserID)
+	return nil
 }
 
 func (s *AdminService) DeleteReview(ctx context.Context, reviewID uuid.UUID) error {

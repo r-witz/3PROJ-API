@@ -238,3 +238,21 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *UserRepository) GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error) {
+	rows, err := r.db.Pool.Query(ctx, `SELECT id FROM users WHERE banned_at IS NOT NULL`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+

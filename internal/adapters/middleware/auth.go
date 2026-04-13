@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/auth"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +16,7 @@ const (
 	ContextKeyRole   = "role"
 )
 
-func Auth(secret string) gin.HandlerFunc {
+func Auth(secret string, banCache ports.BanCache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractBearerToken(c)
 		if token == "" {
@@ -29,13 +30,24 @@ func Auth(secret string) gin.HandlerFunc {
 			return
 		}
 
+		if banned, err := banCache.IsBanned(c.Request.Context(), claims.UserID); err == nil && banned {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"error": gin.H{
+					"code":    "USER_BANNED",
+					"message": "Account has been banned",
+				},
+			})
+			return
+		}
+
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyRole, claims.Role)
 		c.Next()
 	}
 }
 
-func OptionalAuth(secret string) gin.HandlerFunc {
+func OptionalAuth(secret string, banCache ports.BanCache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractBearerToken(c)
 		if token == "" {
@@ -46,6 +58,17 @@ func OptionalAuth(secret string) gin.HandlerFunc {
 		claims, err := auth.ValidateAccessToken(token, secret)
 		if err != nil {
 			c.Next()
+			return
+		}
+
+		if banned, err := banCache.IsBanned(c.Request.Context(), claims.UserID); err == nil && banned {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"error": gin.H{
+					"code":    "USER_BANNED",
+					"message": "Account has been banned",
+				},
+			})
 			return
 		}
 
