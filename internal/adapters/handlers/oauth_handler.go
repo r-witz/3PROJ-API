@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
+	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/oauth"
 
@@ -92,15 +94,16 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 }
 
 // @Summary      GitHub OAuth callback
-// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=github instead of tokens.
+// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from GitHub"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
-// @Success      302 "Redirects to frontend with tokens or link result in URL fragment"
+// @Success      302 "Redirects to frontend with tokens, link result, or error in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
+// @Failure      403 {object} response.Response "User account is banned (or redirects with #error=USER_BANNED)"
 // @Failure      409 {object} response.Response "OAuth account already linked to another user (link mode)"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/github/callback [get]
@@ -126,12 +129,14 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
-		if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
-			fragment := url.Values{}
-			fragment.Set("error", err.Error())
-			redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
-			c.Redirect(http.StatusFound, redirectURL)
-			return
+		if errors.Is(err, domain.ErrUserBanned) {
+			if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
+				fragment := url.Values{}
+				fragment.Set("error", "USER_BANNED")
+				redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
+				c.Redirect(http.StatusFound, redirectURL)
+				return
+			}
 		}
 		response.HandleError(c, err)
 		return
@@ -190,15 +195,16 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 }
 
 // @Summary      Google OAuth callback
-// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=google instead of tokens.
+// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.
 // @Tags         oauth
 // @Produce      json
 // @Param        code  query string true "Authorization code from Google"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
-// @Success      302 "Redirects to frontend with tokens or link result in URL fragment"
+// @Success      302 "Redirects to frontend with tokens, link result, or error in URL fragment"
 // @Failure      400 {object} response.Response
 // @Failure      401 {object} response.Response
+// @Failure      403 {object} response.Response "User account is banned (or redirects with #error=USER_BANNED)"
 // @Failure      409 {object} response.Response "OAuth account already linked to another user (link mode)"
 // @Failure      500 {object} response.Response
 // @Router       /auth/oauth/google/callback [get]
@@ -224,12 +230,14 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
-		if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
-			fragment := url.Values{}
-			fragment.Set("error", err.Error())
-			redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
-			c.Redirect(http.StatusFound, redirectURL)
-			return
+		if errors.Is(err, domain.ErrUserBanned) {
+			if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
+				fragment := url.Values{}
+				fragment.Set("error", "USER_BANNED")
+				redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
+				c.Redirect(http.StatusFound, redirectURL)
+				return
+			}
 		}
 		response.HandleError(c, err)
 		return

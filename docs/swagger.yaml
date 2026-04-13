@@ -1656,10 +1656,10 @@ paths:
       - oauth
   /auth/oauth/github/callback:
     get:
-      description: Handle the GitHub OAuth callback. If a redirect_uri was provided
+      description: 'Handle the GitHub OAuth callback. If a redirect_uri was provided
         during authorization, redirects to that URL with tokens in the fragment. Otherwise
         returns JSON. When the state contains mode=link, redirects with linked=true&provider=github
-        instead of tokens.
+        instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.'
       parameters:
       - description: Authorization code from GitHub
         in: query
@@ -1684,13 +1684,18 @@ paths:
                   $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
         "302":
-          description: Redirects to frontend with tokens or link result in URL fragment
+          description: Redirects to frontend with tokens, link result, or error in
+            URL fragment
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: 'User account is banned (or redirects with #error=USER_BANNED)'
           schema:
             $ref: '#/definitions/response.Response'
         "409":
@@ -1812,10 +1817,10 @@ paths:
       - oauth
   /auth/oauth/google/callback:
     get:
-      description: Handle the Google OAuth callback. If a redirect_uri was provided
+      description: 'Handle the Google OAuth callback. If a redirect_uri was provided
         during authorization, redirects to that URL with tokens in the fragment. Otherwise
         returns JSON. When the state contains mode=link, redirects with linked=true&provider=google
-        instead of tokens.
+        instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.'
       parameters:
       - description: Authorization code from Google
         in: query
@@ -1840,13 +1845,18 @@ paths:
                   $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
         "302":
-          description: Redirects to frontend with tokens or link result in URL fragment
+          description: Redirects to frontend with tokens, link result, or error in
+            URL fragment
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: 'User account is banned (or redirects with #error=USER_BANNED)'
           schema:
             $ref: '#/definitions/response.Response'
         "409":

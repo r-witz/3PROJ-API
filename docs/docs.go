@@ -1047,7 +1047,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github/callback": {
             "get": {
-                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=github instead of tokens.",
+                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.",
                 "produces": [
                     "application/json"
                 ],
@@ -1091,7 +1091,7 @@ const docTemplate = `{
                         }
                     },
                     "302": {
-                        "description": "Redirects to frontend with tokens or link result in URL fragment"
+                        "description": "Redirects to frontend with tokens, link result, or error in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1101,6 +1101,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "User account is banned (or redirects with #error=USER_BANNED)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -1286,7 +1292,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google/callback": {
             "get": {
-                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=google instead of tokens.",
+                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.",
                 "produces": [
                     "application/json"
                 ],
@@ -1330,7 +1336,7 @@ const docTemplate = `{
                         }
                     },
                     "302": {
-                        "description": "Redirects to frontend with tokens or link result in URL fragment"
+                        "description": "Redirects to frontend with tokens, link result, or error in URL fragment"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1340,6 +1346,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "User account is banned (or redirects with #error=USER_BANNED)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
