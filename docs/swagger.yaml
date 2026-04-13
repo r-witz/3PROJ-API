@@ -349,18 +349,18 @@ definitions:
     type: object
   handlers.ImportLetterboxdResponse:
     properties:
-      failed:
-        items:
-          $ref: '#/definitions/ports.ImportFailure'
-        type: array
-      ratings:
-        $ref: '#/definitions/ports.ImportSectionResult'
-      reviews:
-        $ref: '#/definitions/ports.ImportSectionResult'
-      watched:
-        $ref: '#/definitions/ports.ImportSectionResult'
-      watchlist:
-        $ref: '#/definitions/ports.ImportSectionResult'
+      error:
+        type: string
+      phase:
+        type: string
+      resolved:
+        type: integer
+      result:
+        $ref: '#/definitions/ports.ImportResult'
+      status:
+        $ref: '#/definitions/ports.ImportStatus'
+      total:
+        type: integer
     type: object
   handlers.LastMessagePreview:
     properties:
@@ -904,6 +904,21 @@ definitions:
       year:
         type: integer
     type: object
+  ports.ImportResult:
+    properties:
+      failed:
+        items:
+          $ref: '#/definitions/ports.ImportFailure'
+        type: array
+      ratings:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      reviews:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watched:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watchlist:
+        $ref: '#/definitions/ports.ImportSectionResult'
+    type: object
   ports.ImportSectionResult:
     properties:
       imported:
@@ -911,6 +926,16 @@ definitions:
       skipped:
         type: integer
     type: object
+  ports.ImportStatus:
+    enum:
+    - processing
+    - completed
+    - failed
+    type: string
+    x-enum-varnames:
+    - ImportStatusProcessing
+    - ImportStatusCompleted
+    - ImportStatusFailed
   ports.LinkedProvidersResult:
     properties:
       github:
@@ -2241,9 +2266,10 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: Import watched films, watchlist, ratings, and reviews from a Letterboxd
-        account export zip file. Films are resolved to TMDB IDs via search. Existing
-        data is never overwritten — duplicates are skipped.
+      description: 'Start importing watched films, watchlist, ratings, and reviews
+        from a Letterboxd export zip file. Processing runs in the background. Real-time
+        progress is pushed via WebSocket (event: import.progress). Use GET /import/letterboxd/status
+        as a fallback to poll progress.'
       parameters:
       - description: Letterboxd export zip file
         in: formData
@@ -2253,8 +2279,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: Import results
+        "202":
+          description: Import started
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -2263,7 +2289,7 @@ paths:
                   $ref: '#/definitions/handlers.ImportLetterboxdResponse'
               type: object
         "400":
-          description: Invalid file or file too large
+          description: Invalid file
           schema:
             $ref: '#/definitions/response.Response'
         "401":
@@ -2277,6 +2303,35 @@ paths:
       security:
       - BearerAuth: []
       summary: Import Letterboxd data
+      tags:
+      - import
+  /import/letterboxd/status:
+    get:
+      description: Get the current progress of a Letterboxd import. Returns the resolution
+        progress during processing, and the full import result once completed.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Import progress
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.ImportLetterboxdResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: No import found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get Letterboxd import status
       tags:
       - import
   /messages:
@@ -4840,10 +4895,13 @@ paths:
       - users
   /ws:
     get:
-      description: 'Establishes a WebSocket connection for real-time messaging notifications.
-        The connection is read-only — messages are still sent via REST POST /messages/:id.
-        Events pushed: message.new, message.updated, message.deleted, reaction.added,
-        reaction.removed, conversation.read, messaging.blocked, messaging.unblocked.'
+      description: 'Establishes a WebSocket connection for real-time notifications.
+        The connection is read-only — actions are performed via REST endpoints. Events
+        pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed,
+        conversation.read, messaging.blocked, messaging.unblocked, import.progress.
+        The import.progress event is sent during a Letterboxd import with fields:
+        status (processing|completed|failed), phase (resolving|importing|done), resolved,
+        total, and result (when completed).'
       parameters:
       - description: JWT access token
         in: query

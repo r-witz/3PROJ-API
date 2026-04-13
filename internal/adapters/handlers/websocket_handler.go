@@ -28,7 +28,7 @@ func NewWebSocketHandler(hub *ws.Hub, accessTokenSecret string) *WebSocketHandle
 }
 
 // @Summary      WebSocket connection
-// @Description  Establishes a WebSocket connection for real-time messaging notifications. The connection is read-only — messages are still sent via REST POST /messages/:id. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked, messaging.unblocked.
+// @Description  Establishes a WebSocket connection for real-time notifications. The connection is read-only — actions are performed via REST endpoints. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked, messaging.unblocked, import.progress. The import.progress event is sent during a Letterboxd import with fields: status (processing|completed|failed), phase (resolving|importing|done), resolved, total, and result (when completed).
 // @Tags         websocket
 // @Produce      json
 // @Param        token query string true "JWT access token"

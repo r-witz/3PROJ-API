@@ -7,6 +7,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type ImportStatus string
+
+const (
+	ImportStatusProcessing ImportStatus = "processing"
+	ImportStatusCompleted  ImportStatus = "completed"
+	ImportStatusFailed     ImportStatus = "failed"
+)
+
+type ImportProgress struct {
+	Status   ImportStatus        `json:"status"`
+	Phase    string              `json:"phase"`
+	Resolved int                 `json:"resolved"`
+	Total    int                 `json:"total"`
+	Result   *ImportResult       `json:"result,omitempty"`
+	Error    string              `json:"error,omitempty"`
+}
+
 type ImportResult struct {
 	Watched   ImportSectionResult `json:"watched"`
 	Watchlist ImportSectionResult `json:"watchlist"`
@@ -27,5 +44,6 @@ type ImportFailure struct {
 }
 
 type ImportService interface {
-	ImportLetterboxd(ctx context.Context, userID uuid.UUID, zipReader io.ReaderAt, zipSize int64) (*ImportResult, error)
+	StartImportLetterboxd(ctx context.Context, userID uuid.UUID, zipReader io.ReaderAt, zipSize int64) (*ImportProgress, error)
+	GetImportStatus(userID uuid.UUID) *ImportProgress
 }

@@ -289,6 +289,7 @@ func (r *Router) setupImportRoutes(rg *gin.RouterGroup) {
 	importGroup.Use(middleware.Auth(r.config.AccessTokenSecret))
 	{
 		importGroup.POST("/letterboxd", r.importHandler.ImportLetterboxd)
+		importGroup.GET("/letterboxd/status", r.importHandler.GetImportStatus)
 	}
 }
 

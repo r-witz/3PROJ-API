@@ -9,6 +9,7 @@ const (
 	EventConversationRead = "conversation.read"
 	EventMessagingBlocked   = "messaging.blocked"
 	EventMessagingUnblocked = "messaging.unblocked"
+	EventImportProgress     = "import.progress"
 )
 
 type Event struct {

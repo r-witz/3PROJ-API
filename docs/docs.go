@@ -2006,7 +2006,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Import watched films, watchlist, ratings, and reviews from a Letterboxd account export zip file. Films are resolved to TMDB IDs via search. Existing data is never overwritten — duplicates are skipped.",
+                "description": "Start importing watched films, watchlist, ratings, and reviews from a Letterboxd export zip file. Processing runs in the background. Real-time progress is pushed via WebSocket (event: import.progress). Use GET /import/letterboxd/status as a fallback to poll progress.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -2027,8 +2027,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Import results",
+                    "202": {
+                        "description": "Import started",
                         "schema": {
                             "allOf": [
                                 {
@@ -2046,7 +2046,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid file or file too large",
+                        "description": "Invalid file",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2059,6 +2059,55 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/import/letterboxd/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the current progress of a Letterboxd import. Returns the resolution progress during processing, and the full import result once completed.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "import"
+                ],
+                "summary": "Get Letterboxd import status",
+                "responses": {
+                    "200": {
+                        "description": "Import progress",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.ImportLetterboxdResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "No import found",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6029,7 +6078,7 @@ const docTemplate = `{
         },
         "/ws": {
             "get": {
-                "description": "Establishes a WebSocket connection for real-time messaging notifications. The connection is read-only — messages are still sent via REST POST /messages/:id. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked, messaging.unblocked.",
+                "description": "Establishes a WebSocket connection for real-time notifications. The connection is read-only — actions are performed via REST endpoints. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, messaging.blocked, messaging.unblocked, import.progress. The import.progress event is sent during a Letterboxd import with fields: status (processing|completed|failed), phase (resolving|importing|done), resolved, total, and result (when completed).",
                 "produces": [
                     "application/json"
                 ],
@@ -6547,23 +6596,23 @@ const docTemplate = `{
         "handlers.ImportLetterboxdResponse": {
             "type": "object",
             "properties": {
-                "failed": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/ports.ImportFailure"
-                    }
+                "error": {
+                    "type": "string"
                 },
-                "ratings": {
-                    "$ref": "#/definitions/ports.ImportSectionResult"
+                "phase": {
+                    "type": "string"
                 },
-                "reviews": {
-                    "$ref": "#/definitions/ports.ImportSectionResult"
+                "resolved": {
+                    "type": "integer"
                 },
-                "watched": {
-                    "$ref": "#/definitions/ports.ImportSectionResult"
+                "result": {
+                    "$ref": "#/definitions/ports.ImportResult"
                 },
-                "watchlist": {
-                    "$ref": "#/definitions/ports.ImportSectionResult"
+                "status": {
+                    "$ref": "#/definitions/ports.ImportStatus"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -7333,6 +7382,29 @@ const docTemplate = `{
                 }
             }
         },
+        "ports.ImportResult": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ports.ImportFailure"
+                    }
+                },
+                "ratings": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watched": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watchlist": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                }
+            }
+        },
         "ports.ImportSectionResult": {
             "type": "object",
             "properties": {
@@ -7343,6 +7415,19 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "ports.ImportStatus": {
+            "type": "string",
+            "enum": [
+                "processing",
+                "completed",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "ImportStatusProcessing",
+                "ImportStatusCompleted",
+                "ImportStatusFailed"
+            ]
         },
         "ports.LinkedProvidersResult": {
             "type": "object",

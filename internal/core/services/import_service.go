@@ -10,11 +10,13 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/tmdb"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/google/uuid"
 )
@@ -24,6 +26,10 @@ type importService struct {
 	collectionItemRepo ports.CollectionItemRepository
 	reviewRepo         ports.ReviewRepository
 	tmdbClient         ports.TMDBClient
+	hub                *ws.Hub
+
+	// In-memory progress tracking per user
+	progress sync.Map // map[uuid.UUID]*ports.ImportProgress
 }
 
 func NewImportService(
@@ -31,12 +37,14 @@ func NewImportService(
 	collectionItemRepo ports.CollectionItemRepository,
 	reviewRepo ports.ReviewRepository,
 	tmdbClient ports.TMDBClient,
+	hub *ws.Hub,
 ) ports.ImportService {
 	return &importService{
 		collectionRepo:     collectionRepo,
 		collectionItemRepo: collectionItemRepo,
 		reviewRepo:         reviewRepo,
 		tmdbClient:         tmdbClient,
+		hub:                hub,
 	}
 }
 
@@ -63,22 +71,36 @@ type watchlistEntry struct {
 	Year int
 }
 
+type resolvedFilm struct {
+	tmdbID  int
+	runtime int16
+}
+
 func filmKey(name string, year int) string {
 	return strings.ToLower(name) + "|" + strconv.Itoa(year)
 }
 
-func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, zipReader io.ReaderAt, zipSize int64) (*ports.ImportResult, error) {
+func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.UUID, zipReader io.ReaderAt, zipSize int64) (*ports.ImportProgress, error) {
+	// Check if an import is already running for this user
+	if existing, ok := s.progress.Load(userID); ok {
+		p := existing.(*ports.ImportProgress)
+		if p.Status == ports.ImportStatusProcessing {
+			return p, nil
+		}
+	}
+
 	archive, err := zip.NewReader(zipReader, zipSize)
 	if err != nil {
 		return nil, domain.ErrInvalidImportFile
 	}
 
+	// Parse CSVs synchronously (fast, no API calls)
 	watched := parseWatched(archive)
 	ratings := parseRatings(archive)
 	reviews := parseReviews(archive)
 	watchlist := parseWatchlist(archive)
 
-	// Collect all unique films across all CSVs
+	// Collect all unique films
 	uniqueFilms := make(map[string]watchedEntry)
 	for _, w := range watched {
 		key := filmKey(w.Name, w.Year)
@@ -103,31 +125,99 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		}
 	}
 
-	// Resolve all films to TMDB IDs concurrently
-	resolved, failed := s.resolveFilms(ctx, uniqueFilms)
+	progress := &ports.ImportProgress{
+		Status: ports.ImportStatusProcessing,
+		Phase:  "resolving",
+		Total:  len(uniqueFilms),
+	}
+	s.setProgress(userID, progress)
 
+	// Launch the import in the background
+	go s.processImport(userID, uniqueFilms, watched, ratings, reviews, watchlist)
+
+	return progress, nil
+}
+
+func (s *importService) GetImportStatus(userID uuid.UUID) *ports.ImportProgress {
+	if p, ok := s.progress.Load(userID); ok {
+		return p.(*ports.ImportProgress)
+	}
+	return nil
+}
+
+// setProgress stores progress and pushes it to the user via WebSocket.
+func (s *importService) setProgress(userID uuid.UUID, p *ports.ImportProgress) {
+	s.progress.Store(userID, p)
+	s.hub.SendToUser(userID, ws.Event{
+		Type: ws.EventImportProgress,
+		Data: p,
+	})
+}
+
+func (s *importService) processImport(
+	userID uuid.UUID,
+	uniqueFilms map[string]watchedEntry,
+	watched []watchedEntry,
+	ratings []ratingEntry,
+	reviews []reviewEntry,
+	watchlist []watchlistEntry,
+) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	total := len(uniqueFilms)
+
+	// Phase 1: Resolve all films to TMDB IDs and fetch runtimes
+	resolved, failed := s.resolveFilms(ctx, uniqueFilms, func(count int) {
+		s.setProgress(userID, &ports.ImportProgress{
+			Status:   ports.ImportStatusProcessing,
+			Phase:    "resolving",
+			Total:    total,
+			Resolved: count,
+		})
+	})
+
+	s.setProgress(userID, &ports.ImportProgress{
+		Status:   ports.ImportStatusProcessing,
+		Phase:    "importing",
+		Total:    total,
+		Resolved: len(resolved),
+	})
+
+	// Phase 2: Import into collections and create reviews
 	result := &ports.ImportResult{
 		Failed: failed,
 	}
 
-	// Look up the "watched" and "to-watch" collection IDs once
 	watchedCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, "watched")
 	if err != nil || watchedCol == nil {
-		return nil, domain.ErrInternal
+		s.setProgress(userID, &ports.ImportProgress{
+			Status: ports.ImportStatusFailed,
+			Phase:  "importing",
+			Total:  total,
+			Error:  "failed to find watched collection",
+		})
+		return
 	}
 	toWatchCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, "to-watch")
 	if err != nil || toWatchCol == nil {
-		return nil, domain.ErrInternal
+		s.setProgress(userID, &ports.ImportProgress{
+			Status: ports.ImportStatusFailed,
+			Phase:  "importing",
+			Total:  total,
+			Error:  "failed to find to-watch collection",
+		})
+		return
 	}
 
-	// Import watched films — add directly to collection, skip TMDB detail fetch
+	// Import watched films
 	for _, w := range watched {
 		key := filmKey(w.Name, w.Year)
-		tmdbID, ok := resolved[key]
+		film, ok := resolved[key]
 		if !ok {
 			continue
 		}
-		if s.addCollectionItem(ctx, watchedCol.ID, tmdbID) {
+		if s.addCollectionItem(ctx, watchedCol.ID, film.tmdbID, film.runtime) {
 			result.Watched.Imported++
 		} else {
 			result.Watched.Skipped++
@@ -137,11 +227,11 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 	// Import watchlist
 	for _, w := range watchlist {
 		key := filmKey(w.Name, w.Year)
-		tmdbID, ok := resolved[key]
+		film, ok := resolved[key]
 		if !ok {
 			continue
 		}
-		if s.addCollectionItem(ctx, toWatchCol.ID, tmdbID) {
+		if s.addCollectionItem(ctx, toWatchCol.ID, film.tmdbID, film.runtime) {
 			result.Watchlist.Imported++
 		} else {
 			result.Watchlist.Skipped++
@@ -170,7 +260,7 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 
 	now := time.Now()
 	for key, m := range merged {
-		tmdbID, ok := resolved[key]
+		film, ok := resolved[key]
 		if !ok {
 			continue
 		}
@@ -179,7 +269,7 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 			continue
 		}
 
-		existing, err := s.reviewRepo.GetByUserIDAndTMDBID(ctx, userID, tmdbID)
+		existing, err := s.reviewRepo.GetByUserIDAndTMDBID(ctx, userID, film.tmdbID)
 		if err != nil {
 			continue
 		}
@@ -198,7 +288,7 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		review := &domain.Review{
 			ID:               uuid.New(),
 			UserID:           userID,
-			TMDBID:           tmdbID,
+			TMDBID:           film.tmdbID,
 			Rating:           m.Rating,
 			ContainsSpoilers: false,
 			CreatedAt:        now,
@@ -219,19 +309,26 @@ func (s *importService) ImportLetterboxd(ctx context.Context, userID uuid.UUID, 
 		}
 
 		// Ensure reviewed films are in the watched collection
-		s.addCollectionItem(ctx, watchedCol.ID, tmdbID)
+		s.addCollectionItem(ctx, watchedCol.ID, film.tmdbID, film.runtime)
 	}
 
 	if result.Failed == nil {
 		result.Failed = []ports.ImportFailure{}
 	}
 
-	return result, nil
+	// Mark as completed
+	s.setProgress(userID, &ports.ImportProgress{
+		Status:   ports.ImportStatusCompleted,
+		Phase:    "done",
+		Total:    total,
+		Resolved: len(resolved),
+		Result:   result,
+	})
 }
 
-// addCollectionItem adds a film to a collection directly, skipping TMDB detail fetch.
+// addCollectionItem adds a film to a collection directly.
 // Returns true if the item was added, false if it already existed or on error.
-func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid.UUID, tmdbID int) bool {
+func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid.UUID, tmdbID int, runtime int16) bool {
 	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collectionID, tmdbID)
 	if err != nil || existing != nil {
 		return false
@@ -241,7 +338,7 @@ func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid
 		CollectionID: collectionID,
 		TMDBID:       tmdbID,
 		AddedAt:      time.Now(),
-		Runtime:      0,
+		Runtime:      runtime,
 		Metadata:     json.RawMessage("{}"),
 	}
 
@@ -251,11 +348,13 @@ func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid
 	return true
 }
 
-func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry) (map[string]int, []ports.ImportFailure) {
-	resolved := make(map[string]int)
+// resolveFilms resolves film names to TMDB IDs and fetches runtimes concurrently.
+func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry, onProgress func(int)) (map[string]resolvedFilm, []ports.ImportFailure) {
+	resolved := make(map[string]resolvedFilm)
 	var failed []ports.ImportFailure
 	var mu sync.Mutex
 	var wg sync.WaitGroup
+	var count atomic.Int32
 	sem := make(chan struct{}, 10)
 
 	for key, film := range films {
@@ -270,20 +369,34 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 				Year:     film.Year,
 				Language: "en-US",
 			})
-
-			mu.Lock()
-			defer mu.Unlock()
-
 			if err != nil || resp == nil || len(resp.Results) == 0 {
+				mu.Lock()
 				failed = append(failed, ports.ImportFailure{
 					Name:   film.Name,
 					Year:   film.Year,
 					Reason: "no TMDB match found",
 				})
+				mu.Unlock()
+				newCount := int(count.Add(1))
+				onProgress(newCount)
 				return
 			}
 
-			resolved[key] = resp.Results[0].ID
+			tmdbID := resp.Results[0].ID
+
+			// Fetch runtime from movie details
+			var runtime int16
+			details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en-US")
+			if err == nil && details != nil && details.Runtime != nil {
+				runtime = int16(*details.Runtime)
+			}
+
+			mu.Lock()
+			resolved[key] = resolvedFilm{tmdbID: tmdbID, runtime: runtime}
+			mu.Unlock()
+
+			newCount := int(count.Add(1))
+			onProgress(newCount)
 		}(key, film)
 	}
 
@@ -405,7 +518,6 @@ func parseReviews(archive *zip.Reader) []reviewEntry {
 
 	var entries []reviewEntry
 	for _, row := range records[1:] {
-		// reviews.csv columns: Date, Name, Year, Letterboxd URI, Rating, Rewatch, Review, Tags, Watched Date
 		if len(row) < 7 {
 			continue
 		}
