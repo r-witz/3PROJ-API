@@ -361,21 +361,14 @@ func bestMatch(results []tmdb.MovieSummary, name string, year int) *tmdb.MovieSu
 		}
 	}
 
-	// Pass 2: exact year, any title (TMDB already filtered by query)
-	for i, r := range results {
-		if releaseYear(r.ReleaseDate) == year {
-			return &results[i]
-		}
-	}
-
-	// Pass 3: exact title match regardless of year
+	// Pass 2: exact title match regardless of year
 	for i, r := range results {
 		if strings.ToLower(r.Title) == nameLower || strings.ToLower(r.OriginalTitle) == nameLower {
 			return &results[i]
 		}
 	}
 
-	// Fallback: first result
+	// Fallback: first result (trust TMDB's relevance ranking)
 	return &results[0]
 }
 
