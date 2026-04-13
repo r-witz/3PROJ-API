@@ -126,6 +126,13 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
+		if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
+			fragment := url.Values{}
+			fragment.Set("error", err.Error())
+			redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
+			c.Redirect(http.StatusFound, redirectURL)
+			return
+		}
 		response.HandleError(c, err)
 		return
 	}
@@ -217,6 +224,13 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
+		if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
+			fragment := url.Values{}
+			fragment.Set("error", err.Error())
+			redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
+			c.Redirect(http.StatusFound, redirectURL)
+			return
+		}
 		response.HandleError(c, err)
 		return
 	}
