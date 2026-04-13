@@ -16,10 +16,11 @@ type CommentHandler struct {
 	commentService ports.CommentService
 	userService    ports.UserService
 	blockService   ports.BlockService
+	banCache       ports.BanCache
 }
 
-func NewCommentHandler(commentService ports.CommentService, userService ports.UserService, blockService ports.BlockService) *CommentHandler {
-	return &CommentHandler{commentService: commentService, userService: userService, blockService: blockService}
+func NewCommentHandler(commentService ports.CommentService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache) *CommentHandler {
+	return &CommentHandler{commentService: commentService, userService: userService, blockService: blockService, banCache: banCache}
 }
 
 type CreateCommentRequest struct {
@@ -102,7 +103,7 @@ func (h *CommentHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get comments for a review
-// @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out.
+// @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out. Comments by banned users are hidden for non-admin callers.
 // @Tags         comments
 // @Produce      json
 // @Security     BearerAuth
@@ -133,7 +134,7 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 		return
 	}
 
-	hiddenSet := h.getHiddenUserIDs(c)
+	hiddenSet := GetHiddenUserIDs(c, h.blockService, h.banCache)
 
 	resp := make([]CommentResponse, 0, len(comments))
 	hiddenCount := 0
@@ -322,26 +323,6 @@ func (h *CommentHandler) Unlike(c *gin.Context) {
 	})
 
 	c.Status(204)
-}
-
-func (h *CommentHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
-	hiddenSet := make(map[uuid.UUID]struct{})
-	currentUserID, ok := middleware.GetUserID(c)
-	if !ok {
-		return hiddenSet
-	}
-	ctx := c.Request.Context()
-	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockerIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockedIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	return hiddenSet
 }
 
 func toCommentResponse(comment *domain.Comment, likeCount int, likedByUser bool, user *domain.User) CommentResponse {

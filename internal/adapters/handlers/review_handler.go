@@ -19,10 +19,11 @@ type ReviewHandler struct {
 	movieService  ports.MovieService
 	userService   ports.UserService
 	blockService  ports.BlockService
+	banCache      ports.BanCache
 }
 
-func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService, blockService ports.BlockService) *ReviewHandler {
-	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService, blockService: blockService}
+func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache) *ReviewHandler {
+	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService, blockService: blockService, banCache: banCache}
 }
 
 type CreateReviewRequest struct {
@@ -132,7 +133,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get reviews for a movie
-// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded and reviews by blocked users are filtered out.
+// @Description  List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded and reviews by blocked users are filtered out. Reviews by banned users are hidden for non-admin callers.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -165,7 +166,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 		return
 	}
 
-	hiddenSet := h.getHiddenUserIDs(c)
+	hiddenSet := GetHiddenUserIDs(c, h.blockService, h.banCache)
 
 	language := middleware.GetLocale(c)
 	movie := h.fetchMovieSummary(c.Request.Context(), tmdbID, language)
@@ -188,7 +189,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 }
 
 // @Summary      Get a review by ID
-// @Description  Get a single review by its ID. Returns 403 if there is a block between the authenticated user and the review author.
+// @Description  Get a single review by its ID. Returns 404 if the review author is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the review author.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -196,7 +197,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 // @Success      200 {object} response.Response{data=ReviewResponse} "Review details"
 // @Failure      400 {object} response.Response "Invalid review ID"
 // @Failure      403 {object} response.Response "User blocked"
-// @Failure      404 {object} response.Response "Review not found"
+// @Failure      404 {object} response.Response "Review not found or author banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /reviews/{reviewId} [get]
 func (h *ReviewHandler) GetByID(c *gin.Context) {
@@ -217,6 +218,13 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	if requestingUserID == nil || review.Review.UserID != *requestingUserID {
+		if IsBannedForCaller(c, h.banCache, review.Review.UserID) {
+			response.HandleError(c, domain.ErrReviewNotFound)
+			return
+		}
+	}
+
 	if requestingUserID != nil && review.Review.UserID != *requestingUserID {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), review.Review.UserID, *requestingUserID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
@@ -231,7 +239,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      Get reviews by user
-// @Description  List all reviews by a specific user with pagination and sorting. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  List all reviews by a specific user with pagination and sorting. Returns 404 if the target user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         reviews
 // @Produce      json
 // @Security     BearerAuth
@@ -243,12 +251,18 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
+// @Failure      404 {object} response.Response "User not found or banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/reviews [get]
 func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, userID) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
@@ -472,26 +486,6 @@ func (h *ReviewHandler) Unlike(c *gin.Context) {
 	})
 
 	c.Status(204)
-}
-
-func (h *ReviewHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
-	hiddenSet := make(map[uuid.UUID]struct{})
-	currentUserID, ok := middleware.GetUserID(c)
-	if !ok {
-		return hiddenSet
-	}
-	ctx := c.Request.Context()
-	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockerIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockedIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	return hiddenSet
 }
 
 func (h *ReviewHandler) fetchMovieSummary(ctx context.Context, tmdbID int, language string) *MovieSummaryResponse {

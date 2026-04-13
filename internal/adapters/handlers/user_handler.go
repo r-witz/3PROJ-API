@@ -21,10 +21,11 @@ type UserHandler struct {
 	followService ports.FollowService
 	blockService  ports.BlockService
 	storage       *storage.MinioStorage
+	banCache      ports.BanCache
 }
 
-func NewUserHandler(userService ports.UserService, followService ports.FollowService, blockService ports.BlockService, storage *storage.MinioStorage) *UserHandler {
-	return &UserHandler{userService: userService, followService: followService, blockService: blockService, storage: storage}
+func NewUserHandler(userService ports.UserService, followService ports.FollowService, blockService ports.BlockService, storage *storage.MinioStorage, banCache ports.BanCache) *UserHandler {
+	return &UserHandler{userService: userService, followService: followService, blockService: blockService, storage: storage, banCache: banCache}
 }
 
 type UserPreferences struct {
@@ -435,7 +436,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 }
 
 // @Summary      Get user by ID
-// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         users
 // @Accept       json
 // @Produce      json
@@ -444,7 +445,7 @@ func (h *UserHandler) DeleteCurrentUser(c *gin.Context) {
 // @Success      200 {object} response.Response{data=PublicUserResponse} "User public profile"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
-// @Failure      404 {object} response.Response "User not found"
+// @Failure      404 {object} response.Response "User not found or banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId} [get]
 func (h *UserHandler) GetByID(c *gin.Context) {
@@ -452,6 +453,11 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, id) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
@@ -489,26 +495,6 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	}
 
 	response.Success(c, toPublicUserResponse(user, stats, isFollowing, isFollowedBy))
-}
-
-func (h *UserHandler) getHiddenUserIDs(c *gin.Context) map[uuid.UUID]struct{} {
-	hiddenSet := make(map[uuid.UUID]struct{})
-	currentUserID, ok := middleware.GetUserID(c)
-	if !ok {
-		return hiddenSet
-	}
-	ctx := c.Request.Context()
-	if blockerIDs, err := h.blockService.GetBlockerIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockerIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	if blockedIDs, err := h.blockService.GetBlockedIDs(ctx, currentUserID); err == nil {
-		for _, id := range blockedIDs {
-			hiddenSet[id] = struct{}{}
-		}
-	}
-	return hiddenSet
 }
 
 func toUserResponse(user *domain.User, stats UserStats) UserResponse {
@@ -625,7 +611,7 @@ func (h *UserHandler) Search(c *gin.Context) {
 		return
 	}
 
-	hiddenSet := h.getHiddenUserIDs(c)
+	hiddenSet := GetHiddenUserIDs(c, h.blockService, h.banCache)
 
 	isAdmin := callerRole == string(domain.UserRoleAdmin) || callerRole == string(domain.UserRoleSuperAdmin)
 

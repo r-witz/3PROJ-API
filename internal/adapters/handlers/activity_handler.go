@@ -18,10 +18,11 @@ type ActivityHandler struct {
 	activityService ports.ActivityService
 	movieService    ports.MovieService
 	blockService    ports.BlockService
+	banCache        ports.BanCache
 }
 
-func NewActivityHandler(activityService ports.ActivityService, movieService ports.MovieService, blockService ports.BlockService) *ActivityHandler {
-	return &ActivityHandler{activityService: activityService, movieService: movieService, blockService: blockService}
+func NewActivityHandler(activityService ports.ActivityService, movieService ports.MovieService, blockService ports.BlockService, banCache ports.BanCache) *ActivityHandler {
+	return &ActivityHandler{activityService: activityService, movieService: movieService, blockService: blockService, banCache: banCache}
 }
 
 type ReviewSummary struct {
@@ -71,7 +72,7 @@ func parseActivityTypes(c *gin.Context) []domain.ActivityType {
 }
 
 // @Summary      Get user activities
-// @Description  Get a user's activity feed. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get a user's activity feed. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         activities
 // @Produce      json
 // @Security     BearerAuth
@@ -82,12 +83,18 @@ func parseActivityTypes(c *gin.Context) []domain.ActivityType {
 // @Success      200 {object} response.PaginatedResponse{data=[]ActivityResponse} "List of activities"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
+// @Failure      404 {object} response.Response "User not found or banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/activities [get]
 func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, userID) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
@@ -123,7 +130,7 @@ func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 }
 
 // @Summary      Get following feed
-// @Description  Get the authenticated user's feed of activities from users they follow
+// @Description  Get the authenticated user's feed of activities from users they follow. Activities from banned users are hidden for non-admin callers.
 // @Tags         activities
 // @Produce      json
 // @Security     BearerAuth
@@ -150,18 +157,29 @@ func (h *ActivityHandler) GetFeed(c *gin.Context) {
 		return
 	}
 
-	language := middleware.GetLocale(c)
-	movies := h.fetchMoviesForActivities(c.Request.Context(), items, language)
+	hiddenSet := GetHiddenUserIDs(c, h.blockService, h.banCache)
 
-	resp := make([]ActivityResponse, len(items))
-	for i, item := range items {
+	filteredItems := make([]*ports.ActivityFeedItem, 0, len(items))
+	for _, item := range items {
+		if _, hidden := hiddenSet[item.Activity.UserID]; hidden {
+			continue
+		}
+		filteredItems = append(filteredItems, item)
+	}
+	hiddenCount := len(items) - len(filteredItems)
+
+	language := middleware.GetLocale(c)
+	movies := h.fetchMoviesForActivities(c.Request.Context(), filteredItems, language)
+
+	resp := make([]ActivityResponse, len(filteredItems))
+	for i, item := range filteredItems {
 		resp[i] = toActivityResponse(item, movies)
 	}
 
 	response.SuccessPaginated(c, resp, &response.Pagination{
 		Offset: offset,
 		Limit:  limit,
-		Total:  total,
+		Total:  total - hiddenCount,
 	})
 }
 

@@ -22,6 +22,22 @@ func (c *BanCache) IsBanned(ctx context.Context, userID uuid.UUID) (bool, error)
 	return c.client.SIsMember(ctx, bannedUsersKey, userID.String()).Result()
 }
 
+func (c *BanCache) GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error) {
+	members, err := c.client.SMembers(ctx, bannedUsersKey).Result()
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uuid.UUID, 0, len(members))
+	for _, m := range members {
+		id, err := uuid.Parse(m)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 func (c *BanCache) SetBanned(ctx context.Context, userID uuid.UUID) error {
 	return c.client.SAdd(ctx, bannedUsersKey, userID.String()).Err()
 }

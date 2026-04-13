@@ -16,10 +16,11 @@ import (
 type CollectionHandler struct {
 	collectionService ports.CollectionService
 	blockService      ports.BlockService
+	banCache          ports.BanCache
 }
 
-func NewCollectionHandler(collectionService ports.CollectionService, blockService ports.BlockService) *CollectionHandler {
-	return &CollectionHandler{collectionService: collectionService, blockService: blockService}
+func NewCollectionHandler(collectionService ports.CollectionService, blockService ports.BlockService, banCache ports.BanCache) *CollectionHandler {
+	return &CollectionHandler{collectionService: collectionService, blockService: blockService, banCache: banCache}
 }
 
 type CreateCollectionRequest struct {
@@ -115,7 +116,7 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 }
 
 // @Summary      Get collection by slug
-// @Description  Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner. Returns 403 if there is a block between the authenticated user and the collection owner.
+// @Description  Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner. Returns 404 if the collection owner is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the collection owner.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -125,13 +126,18 @@ func (h *CollectionHandler) Create(c *gin.Context) {
 // @Success      200 {object} response.Response{data=CollectionResponse} "Collection details"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
-// @Failure      404 {object} response.Response "Collection not found"
+// @Failure      404 {object} response.Response "Collection not found or owner banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections/{slug} [get]
 func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, userID) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
@@ -159,7 +165,7 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 }
 
 // @Summary      Get user's collections
-// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -176,6 +182,11 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, userID) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
@@ -416,7 +427,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 }
 
 // @Summary      Get collection items
-// @Description  Get all items in a collection with pagination and TMDB movie details. Respects visibility rules. Returns 403 if there is a block between the authenticated user and the collection owner.
+// @Description  Get all items in a collection with pagination and TMDB movie details. Respects visibility rules. Returns 404 if the collection owner is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the collection owner.
 // @Tags         collections
 // @Accept       json
 // @Produce      json
@@ -429,13 +440,18 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Success      200 {object} response.PaginatedResponse "List of items"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
-// @Failure      404 {object} response.Response "Collection not found"
+// @Failure      404 {object} response.Response "Collection not found or owner banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/collections/{slug}/items [get]
 func (h *CollectionHandler) GetItems(c *gin.Context) {
 	userID, err := uuid.Parse(c.Param("userId"))
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, userID) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 

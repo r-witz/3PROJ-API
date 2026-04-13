@@ -1944,7 +1944,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the authenticated user's feed of activities from users they follow",
+                "description": "Get the authenticated user's feed of activities from users they follow. Activities from banned users are hidden for non-admin callers.",
                 "produces": [
                     "application/json"
                 ],
@@ -3312,7 +3312,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded and reviews by blocked users are filtered out.",
+                "description": "List all reviews for a movie by TMDB ID with pagination and sorting. Only reviews with content are returned. If authenticated, the logged-in user's own review is excluded and reviews by blocked users are filtered out. Reviews by banned users are hidden for non-admin callers.",
                 "produces": [
                     "application/json"
                 ],
@@ -3613,7 +3613,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a single review by its ID. Returns 403 if there is a block between the authenticated user and the review author.",
+                "description": "Get a single review by its ID. Returns 404 if the review author is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the review author.",
                 "produces": [
                     "application/json"
                 ],
@@ -3663,7 +3663,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Review not found",
+                        "description": "Review not found or author banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3831,7 +3831,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out.",
+                "description": "List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out. Comments by banned users are hidden for non-admin callers.",
                 "produces": [
                     "application/json"
                 ],
@@ -4628,7 +4628,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get the public profile of a user by their ID. If authenticated, includes follow relationship info. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4681,7 +4681,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "User not found or banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4702,7 +4702,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a user's activity feed. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get a user's activity feed. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "produces": [
                     "application/json"
                 ],
@@ -4770,6 +4770,12 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "User blocked",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found or banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4906,7 +4912,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get all collections for a user. Returns all collections if the requester is the owner, only public ones otherwise. When tmdb_id is provided, each collection includes a has_movie flag indicating whether the movie is in that collection. Use the type parameter to filter by collection type. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5080,7 +5086,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner. Returns 403 if there is a block between the authenticated user and the collection owner.",
+                "description": "Get a collection by user ID and slug. Returns the collection if public or if the requester is the owner. Returns 404 if the collection owner is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the collection owner.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5140,7 +5146,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Collection not found",
+                        "description": "Collection not found or owner banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -5331,7 +5337,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all items in a collection with pagination and TMDB movie details. Respects visibility rules. Returns 403 if there is a block between the authenticated user and the collection owner.",
+                "description": "Get all items in a collection with pagination and TMDB movie details. Respects visibility rules. Returns 404 if the collection owner is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the collection owner.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5399,7 +5405,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Collection not found",
+                        "description": "Collection not found or owner banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -5709,7 +5715,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results.",
+                "description": "Get the paginated list of followers for a user. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.",
                 "produces": [
                     "application/json"
                 ],
@@ -5845,7 +5851,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results.",
+                "description": "Get the paginated list of users that a user is following. Optionally filter by username. If authenticated, users involved in a block relationship with the current user are excluded from results. Banned users are hidden for non-admin callers.",
                 "produces": [
                     "application/json"
                 ],
@@ -5927,7 +5933,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "List all reviews by a specific user with pagination and sorting. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "List all reviews by a specific user with pagination and sorting. Returns 404 if the target user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "produces": [
                     "application/json"
                 ],
@@ -6014,6 +6020,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "404": {
+                        "description": "User not found or banned",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -6030,7 +6042,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
                 "produces": [
                     "application/json"
                 ],
@@ -6080,7 +6092,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "User not found or banned",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

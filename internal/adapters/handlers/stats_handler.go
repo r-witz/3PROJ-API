@@ -16,10 +16,11 @@ import (
 type StatsHandler struct {
 	statsService ports.StatsService
 	blockService ports.BlockService
+	banCache     ports.BanCache
 }
 
-func NewStatsHandler(statsService ports.StatsService, blockService ports.BlockService) *StatsHandler {
-	return &StatsHandler{statsService: statsService, blockService: blockService}
+func NewStatsHandler(statsService ports.StatsService, blockService ports.BlockService, banCache ports.BanCache) *StatsHandler {
+	return &StatsHandler{statsService: statsService, blockService: blockService, banCache: banCache}
 }
 
 type ReviewStatsResponse struct {
@@ -54,7 +55,7 @@ type UserStatsResponse struct {
 }
 
 // @Summary      Get user statistics
-// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
@@ -62,7 +63,7 @@ type UserStatsResponse struct {
 // @Success      200 {object} response.Response{data=UserStatsResponse} "User statistics"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
-// @Failure      404 {object} response.Response "User not found"
+// @Failure      404 {object} response.Response "User not found or banned"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/stats [get]
 func (h *StatsHandler) GetUserStats(c *gin.Context) {
@@ -70,6 +71,11 @@ func (h *StatsHandler) GetUserStats(c *gin.Context) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID", nil)
+		return
+	}
+
+	if IsBannedForCaller(c, h.banCache, id) {
+		response.HandleError(c, domain.ErrUserNotFound)
 		return
 	}
 
