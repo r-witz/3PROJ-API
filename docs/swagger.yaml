@@ -347,6 +347,21 @@ definitions:
         example: johndoe
         type: string
     type: object
+  handlers.ImportLetterboxdResponse:
+    properties:
+      failed:
+        items:
+          $ref: '#/definitions/ports.ImportFailure'
+        type: array
+      ratings:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      reviews:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watched:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watchlist:
+        $ref: '#/definitions/ports.ImportSectionResult'
+    type: object
   handlers.LastMessagePreview:
     properties:
       content:
@@ -878,6 +893,22 @@ definitions:
         type: integer
       total_runtime:
         example: 21600
+        type: integer
+    type: object
+  ports.ImportFailure:
+    properties:
+      name:
+        type: string
+      reason:
+        type: string
+      year:
+        type: integer
+    type: object
+  ports.ImportSectionResult:
+    properties:
+      imported:
+        type: integer
+      skipped:
         type: integer
     type: object
   ports.LinkedProvidersResult:
@@ -2206,6 +2237,48 @@ paths:
       summary: Get following feed
       tags:
       - activities
+  /import/letterboxd:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Import watched films, watchlist, ratings, and reviews from a Letterboxd
+        account export zip file. Films are resolved to TMDB IDs via search. Existing
+        data is never overwritten — duplicates are skipped.
+      parameters:
+      - description: Letterboxd export zip file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Import results
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.ImportLetterboxdResponse'
+              type: object
+        "400":
+          description: Invalid file or file too large
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Import Letterboxd data
+      tags:
+      - import
   /messages:
     get:
       description: Get list of all conversations for the authenticated user with last

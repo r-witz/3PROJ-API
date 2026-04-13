@@ -121,3 +121,8 @@ var (
 	ErrReportAlreadyResolved = errors.New("report is already resolved or dismissed")
 	ErrInvalidReportTarget   = errors.New("report must target exactly one entity")
 )
+
+var (
+	ErrInvalidImportFile  = errors.New("invalid import file")
+	ErrImportFileTooLarge = errors.New("import file too large")
+)

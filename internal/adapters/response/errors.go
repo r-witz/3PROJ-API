@@ -115,6 +115,10 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrReportNotFound:        {http.StatusNotFound, "REPORT_NOT_FOUND", "Report not found"},
 	domain.ErrReportAlreadyResolved: {http.StatusConflict, "REPORT_ALREADY_RESOLVED", "Report is already resolved or dismissed"},
 	domain.ErrInvalidReportTarget:   {http.StatusBadRequest, "INVALID_REPORT_TARGET", "Report must target exactly one entity"},
+
+	// Import errors
+	domain.ErrInvalidImportFile:  {http.StatusBadRequest, "INVALID_IMPORT_FILE", "Invalid import file"},
+	domain.ErrImportFileTooLarge: {http.StatusBadRequest, "IMPORT_FILE_TOO_LARGE", "Import file exceeds maximum size"},
 }
 
 func HandleError(c *gin.Context, err error) {

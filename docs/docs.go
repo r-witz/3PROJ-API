@@ -1999,6 +1999,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/import/letterboxd": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Import watched films, watchlist, ratings, and reviews from a Letterboxd account export zip file. Films are resolved to TMDB IDs via search. Existing data is never overwritten — duplicates are skipped.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "import"
+                ],
+                "summary": "Import Letterboxd data",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Letterboxd export zip file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Import results",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.ImportLetterboxdResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid file or file too large",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/messages": {
             "get": {
                 "security": [
@@ -6477,6 +6544,29 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ImportLetterboxdResponse": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ports.ImportFailure"
+                    }
+                },
+                "ratings": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watched": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watchlist": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                }
+            }
+        },
         "handlers.LastMessagePreview": {
             "type": "object",
             "properties": {
@@ -7226,6 +7316,31 @@ const docTemplate = `{
                 "total_runtime": {
                     "type": "integer",
                     "example": 21600
+                }
+            }
+        },
+        "ports.ImportFailure": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ports.ImportSectionResult": {
+            "type": "object",
+            "properties": {
+                "imported": {
+                    "type": "integer"
+                },
+                "skipped": {
+                    "type": "integer"
                 }
             }
         },

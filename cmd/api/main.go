@@ -184,7 +184,10 @@ func main() {
 	followHandler := handlers.NewFollowHandler(followService, blockService, hub)
 	messageHandler := handlers.NewMessageHandler(messageService, hub)
 	blockHandler := handlers.NewBlockHandler(blockService, hub)
+	importService := services.NewImportService(collectionService, reviewRepo, cachedTMDB)
+
 	adminHandler := handlers.NewAdminHandler(adminService, reportService)
+	importHandler := handlers.NewImportHandler(importService)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 
 	router := http.NewRouter(
@@ -207,6 +210,7 @@ func main() {
 		activityHandler,
 		wsHandler,
 		adminHandler,
+		importHandler,
 		userService,
 		activityRepo,
 	)

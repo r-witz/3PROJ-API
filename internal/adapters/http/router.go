@@ -37,6 +37,7 @@ type Router struct {
 	activityHandler   *handlers.ActivityHandler
 	wsHandler         *handlers.WebSocketHandler
 	adminHandler      *handlers.AdminHandler
+	importHandler     *handlers.ImportHandler
 	userService       ports.UserService
 	activityRepo      ports.ActivityRepository
 }
@@ -58,6 +59,7 @@ func NewRouter(
 	activityHandler *handlers.ActivityHandler,
 	wsHandler *handlers.WebSocketHandler,
 	adminHandler *handlers.AdminHandler,
+	importHandler *handlers.ImportHandler,
 	userService ports.UserService,
 	activityRepo ports.ActivityRepository,
 ) *Router {
@@ -79,6 +81,7 @@ func NewRouter(
 		activityHandler:   activityHandler,
 		wsHandler:         wsHandler,
 		adminHandler:      adminHandler,
+		importHandler:     importHandler,
 		userService:       userService,
 		activityRepo:      activityRepo,
 	}
@@ -105,6 +108,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupActivityRoutes(v1)
 		r.setupReportRoutes(v1)
 		r.setupAdminRoutes(v1)
+		r.setupImportRoutes(v1)
 		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
@@ -277,6 +281,14 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 		{
 			superOnly.PATCH("/users/:userId/role", r.adminHandler.SetUserRole)
 		}
+	}
+}
+
+func (r *Router) setupImportRoutes(rg *gin.RouterGroup) {
+	importGroup := rg.Group("/import")
+	importGroup.Use(middleware.Auth(r.config.AccessTokenSecret))
+	{
+		importGroup.POST("/letterboxd", r.importHandler.ImportLetterboxd)
 	}
 }
 
