@@ -100,9 +100,10 @@ var (
 )
 
 var (
-	ErrReactionAlreadyExists = errors.New("reaction already exists")
-	ErrReactionNotFound      = errors.New("reaction not found")
-	ErrNotParticipant        = errors.New("user is not a participant of this conversation")
+	ErrReactionAlreadyExists  = errors.New("reaction already exists")
+	ErrReactionNotFound       = errors.New("reaction not found")
+	ErrNotParticipant         = errors.New("user is not a participant of this conversation")
+	ErrTooManyReactionTypes   = errors.New("maximum of 5 different emoji reactions per message")
 )
 
 var (

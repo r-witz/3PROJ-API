@@ -408,7 +408,7 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 }
 
 // @Summary      Add a reaction to a message
-// @Description  Add an emoji reaction to a message. Only participants of the conversation can react.
+// @Description  Add an emoji reaction to a message. Only participants of the conversation can react. A message can have at most 5 different emoji types, but multiple users can react with the same emoji.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
@@ -416,7 +416,7 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 // @Param        messageId path string true "Message ID" format(uuid)
 // @Param        request body AddReactionRequest true "Reaction emoji"
 // @Success      201 {object} response.Response "Reaction added"
-// @Failure      400 {object} response.Response "Invalid request"
+// @Failure      400 {object} response.Response "Invalid request or too many reaction types (max 5)"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Not a participant or user blocked"
 // @Failure      404 {object} response.Response "Message not found"

@@ -324,6 +324,27 @@ func (s *messageService) AddReaction(ctx context.Context, messageID, userID uuid
 		return nil, domain.ErrReactionAlreadyExists
 	}
 
+	distinctCount, err := s.reactionRepo.CountDistinctEmojis(ctx, messageID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if distinctCount >= 5 {
+		reactions, err := s.reactionRepo.GetByMessageID(ctx, messageID)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+		emojiAlreadyUsed := false
+		for _, r := range reactions {
+			if r.Emoji == emoji {
+				emojiAlreadyUsed = true
+				break
+			}
+		}
+		if !emojiAlreadyUsed {
+			return nil, domain.ErrTooManyReactionTypes
+		}
+	}
+
 	reaction := &domain.MessageReaction{
 		MessageID: messageID,
 		UserID:    userID,

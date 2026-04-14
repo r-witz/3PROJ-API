@@ -88,3 +88,10 @@ func (r *MessageReactionRepository) Exists(ctx context.Context, messageID, userI
 	err := r.db.Pool.QueryRow(ctx, query, messageID, userID, emoji).Scan(&exists)
 	return exists, err
 }
+
+func (r *MessageReactionRepository) CountDistinctEmojis(ctx context.Context, messageID uuid.UUID) (int, error) {
+	query := `SELECT COUNT(DISTINCT emoji) FROM message_reactions WHERE message_id = $1`
+	var count int
+	err := r.db.Pool.QueryRow(ctx, query, messageID).Scan(&count)
+	return count, err
+}

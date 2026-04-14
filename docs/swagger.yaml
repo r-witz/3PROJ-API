@@ -2848,7 +2848,8 @@ paths:
       consumes:
       - application/json
       description: Add an emoji reaction to a message. Only participants of the conversation
-        can react.
+        can react. A message can have at most 5 different emoji types, but multiple
+        users can react with the same emoji.
       parameters:
       - description: Message ID
         format: uuid
@@ -2870,7 +2871,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "400":
-          description: Invalid request
+          description: Invalid request or too many reaction types (max 5)
           schema:
             $ref: '#/definitions/response.Response'
         "401":

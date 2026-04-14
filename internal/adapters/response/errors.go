@@ -103,6 +103,7 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrReactionAlreadyExists: {http.StatusConflict, "REACTION_EXISTS", "Reaction already exists"},
 	domain.ErrReactionNotFound:      {http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found"},
 	domain.ErrNotParticipant:        {http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant of this conversation"},
+	domain.ErrTooManyReactionTypes:  {http.StatusBadRequest, "TOO_MANY_REACTION_TYPES", "Maximum of 5 different emoji reactions per message"},
 
 	// Conversation state errors
 	domain.ErrConversationAlreadyClosed: {http.StatusConflict, "CONVERSATION_ALREADY_CLOSED", "Conversation is already closed"},

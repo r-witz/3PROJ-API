@@ -14,4 +14,5 @@ type MessageReactionRepository interface {
 	GetByMessageID(ctx context.Context, messageID uuid.UUID) ([]*domain.MessageReaction, error)
 	GetByMessageIDs(ctx context.Context, messageIDs []uuid.UUID) (map[uuid.UUID][]*domain.MessageReaction, error)
 	Exists(ctx context.Context, messageID, userID uuid.UUID, emoji string) (bool, error)
+	CountDistinctEmojis(ctx context.Context, messageID uuid.UUID) (int, error)
 }

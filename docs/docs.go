@@ -2641,7 +2641,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Add an emoji reaction to a message. Only participants of the conversation can react.",
+                "description": "Add an emoji reaction to a message. Only participants of the conversation can react. A message can have at most 5 different emoji types, but multiple users can react with the same emoji.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2679,7 +2679,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "Invalid request or too many reaction types (max 5)",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
