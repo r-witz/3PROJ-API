@@ -197,6 +197,17 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 }
 
 func (c *Client) handleErrorResponse(statusCode int, body []byte, endpoint string) error {
+	switch statusCode {
+	case http.StatusUnauthorized:
+		return ErrUnauthorized
+	case http.StatusNotFound:
+		return ErrNotFound
+	case http.StatusTooManyRequests:
+		return ErrRateLimited
+	case http.StatusServiceUnavailable:
+		return ErrServiceUnavailable
+	}
+
 	var apiErr APIError
 	if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.StatusMessage != "" {
 		logger.Logger.Error("TMDB API error",
@@ -207,20 +218,9 @@ func (c *Client) handleErrorResponse(statusCode int, body []byte, endpoint strin
 		return &apiErr
 	}
 
-	switch statusCode {
-	case http.StatusUnauthorized:
-		return ErrUnauthorized
-	case http.StatusNotFound:
-		return ErrNotFound
-	case http.StatusTooManyRequests:
-		return ErrRateLimited
-	case http.StatusServiceUnavailable:
-		return ErrServiceUnavailable
-	default:
-		return &RequestError{
-			Operation: endpoint,
-			Err:       fmt.Errorf("unexpected status code: %d", statusCode),
-		}
+	return &RequestError{
+		Operation: endpoint,
+		Err:       fmt.Errorf("unexpected status code: %d", statusCode),
 	}
 }
 
