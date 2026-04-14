@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	verificationPrefix     = "verification"
-	verificationRatePrefix = "verification:rate"
-	maxRequestsPerWindow   = 3
+	verificationPrefix         = "verification"
+	verificationRatePrefix     = "verification:rate"
+	verificationCooldownPrefix = "verification:cooldown"
+	maxRequestsPerWindow       = 3
+	cooldownDuration           = 60 * time.Second
 )
 
 type VerificationCodeRepo struct {
@@ -61,7 +63,21 @@ func (r *VerificationCodeRepo) Delete(ctx context.Context, email string, purpose
 	return r.client.Del(ctx, codeKey(purpose, email)).Err()
 }
 
+func cooldownKey(purpose domain.VerificationCodePurpose, email string) string {
+	return fmt.Sprintf("%s:%s:%s", verificationCooldownPrefix, purpose, email)
+}
+
 func (r *VerificationCodeRepo) CanRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose) (bool, error) {
+	// Check per-request cooldown (1 minute between requests)
+	exists, err := r.client.Exists(ctx, cooldownKey(purpose, email)).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check cooldown: %w", err)
+	}
+	if exists > 0 {
+		return false, nil
+	}
+
+	// Check window limit (3 per 15 minutes)
 	count, err := r.client.Get(ctx, rateKey(purpose, email)).Int()
 	if err == redis.Nil {
 		return true, nil
@@ -73,10 +89,13 @@ func (r *VerificationCodeRepo) CanRequest(ctx context.Context, email string, pur
 }
 
 func (r *VerificationCodeRepo) RecordRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose, window time.Duration) error {
-	key := rateKey(purpose, email)
 	pipe := r.client.Pipeline()
+	// Window counter (3 per 15 minutes)
+	key := rateKey(purpose, email)
 	pipe.Incr(ctx, key)
 	pipe.Expire(ctx, key, window)
+	// Per-request cooldown (60 seconds)
+	pipe.Set(ctx, cooldownKey(purpose, email), 1, cooldownDuration)
 	_, err := pipe.Exec(ctx)
 	return err
 }

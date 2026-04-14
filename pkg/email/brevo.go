@@ -73,7 +73,7 @@ func (s *BrevoSender) SendPasswordResetCode(ctx context.Context, to string, code
 func (s *BrevoSender) send(ctx context.Context, to, subject, htmlContent string) error {
 	reqBody := brevoRequest{
 		Sender:      s.from,
-		To:          []emailAddress{{Email: to}},
+		To:          []emailAddress{{Email: to, Name: to}},
 		Subject:     subject,
 		HTMLContent: htmlContent,
 	}

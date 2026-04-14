@@ -101,7 +101,10 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 
 	if s.emailSender != nil && s.verificationRepo != nil {
 		if err := s.sendVerificationCodeForUser(ctx, user); err != nil {
-			logger.Logger.Warn("Failed to send verification email on registration", zap.Error(err), zap.String("email", user.Email))
+			logger.Logger.Error("Failed to send verification email on registration", zap.Error(err), zap.String("email", user.Email))
+			_ = s.sessionRepo.DeleteByUserID(ctx, user.ID)
+			_ = s.userRepo.Delete(ctx, user.ID)
+			return nil, nil, domain.ErrInternal
 		}
 	}
 
@@ -222,7 +225,14 @@ func (s *authService) SendVerificationCode(ctx context.Context, userID uuid.UUID
 		return domain.ErrEmailAlreadyVerified
 	}
 
-	return s.sendVerificationCodeForUser(ctx, user)
+	if err := s.sendVerificationCodeForUser(ctx, user); err != nil {
+		if errors.Is(err, domain.ErrVerificationCodeRateLimit) {
+			return err
+		}
+		logger.Logger.Error("Failed to send verification code", zap.Error(err), zap.String("email", user.Email))
+		return domain.ErrInternal
+	}
+	return nil
 }
 
 func (s *authService) VerifyEmail(ctx context.Context, userID uuid.UUID, code string) error {
@@ -290,6 +300,7 @@ func (s *authService) RequestPasswordReset(ctx context.Context, email string) er
 	}
 
 	if err := s.emailSender.SendPasswordResetCode(ctx, email, code); err != nil {
+		logger.Logger.Error("Failed to send password reset email", zap.Error(err), zap.String("email", email))
 		return domain.ErrInternal
 	}
 
@@ -330,7 +341,7 @@ func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswo
 func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *domain.User) error {
 	canRequest, err := s.verificationRepo.CanRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
 	if err != nil {
-		return domain.ErrInternal
+		return fmt.Errorf("check rate limit: %w", err)
 	}
 	if !canRequest {
 		return domain.ErrVerificationCodeRateLimit
@@ -338,7 +349,7 @@ func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *dom
 
 	code, err := generateVerificationCode()
 	if err != nil {
-		return domain.ErrInternal
+		return fmt.Errorf("generate code: %w", err)
 	}
 
 	vc := &domain.VerificationCode{
@@ -350,15 +361,15 @@ func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *dom
 	}
 
 	if err := s.verificationRepo.Store(ctx, vc, verificationCodeTTL); err != nil {
-		return domain.ErrInternal
+		return fmt.Errorf("store code: %w", err)
 	}
 
 	if err := s.verificationRepo.RecordRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify, verificationRateWindow); err != nil {
-		return domain.ErrInternal
+		return fmt.Errorf("record request: %w", err)
 	}
 
 	if err := s.emailSender.SendVerificationCode(ctx, user.Email, code); err != nil {
-		return domain.ErrInternal
+		return fmt.Errorf("send email: %w", err)
 	}
 
 	return nil
