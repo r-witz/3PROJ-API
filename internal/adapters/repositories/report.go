@@ -63,7 +63,10 @@ func (r *ReportRepository) List(ctx context.Context, filter ports.ReportFilter) 
 	}
 
 	if filter.TargetUserID != nil {
-		conditions = append(conditions, fmt.Sprintf("target_user_id = $%d", argIndex))
+		conditions = append(conditions, fmt.Sprintf(
+			"(target_user_id = $%d OR target_review_id IN (SELECT id FROM reviews WHERE user_id = $%d) OR target_comment_id IN (SELECT id FROM comments WHERE user_id = $%d))",
+			argIndex, argIndex, argIndex,
+		))
 		args = append(args, *filter.TargetUserID)
 		argIndex++
 	}
