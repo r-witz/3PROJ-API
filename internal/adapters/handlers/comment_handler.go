@@ -122,6 +122,53 @@ func (h *CommentHandler) Create(c *gin.Context) {
 	response.Created(c, toCommentResponse(comment, 0, false, user))
 }
 
+// @Summary      Get a comment by ID
+// @Description  Get a single comment by its ID, including author details and like metadata. Returns 404 if the comment author is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the comment author.
+// @Tags         comments
+// @Produce      json
+// @Security     BearerAuth
+// @Param        commentId path string true "Comment ID" format(uuid)
+// @Success      200 {object} response.Response{data=CommentResponse} "Comment details"
+// @Failure      400 {object} response.Response "Invalid comment ID"
+// @Failure      403 {object} response.Response "User blocked"
+// @Failure      404 {object} response.Response "Comment not found"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /comments/{commentId} [get]
+func (h *CommentHandler) GetByID(c *gin.Context) {
+	commentID, err := uuid.Parse(c.Param("commentId"))
+	if err != nil {
+		response.BadRequest(c, "Invalid comment ID", nil)
+		return
+	}
+
+	var requestingUserID *uuid.UUID
+	if uid, ok := middleware.GetUserID(c); ok {
+		requestingUserID = &uid
+	}
+
+	result, err := h.commentService.GetByIDWithMeta(c.Request.Context(), commentID, requestingUserID)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	if requestingUserID == nil || result.Comment.UserID != *requestingUserID {
+		if IsBannedForCaller(c, h.banCache, result.Comment.UserID) {
+			response.HandleError(c, domain.ErrCommentNotFound)
+			return
+		}
+	}
+
+	if requestingUserID != nil && result.Comment.UserID != *requestingUserID {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), result.Comment.UserID, *requestingUserID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
+	}
+
+	response.Success(c, toCommentResponse(result.Comment, result.LikeCount, result.LikedByUser, result.User))
+}
+
 // @Summary      Get comments for a review
 // @Description  List all comments on a review with pagination. Comments are sorted from oldest to newest. If authenticated, comments by blocked users are filtered out. Comments by banned users are hidden for non-admin callers.
 // @Tags         comments

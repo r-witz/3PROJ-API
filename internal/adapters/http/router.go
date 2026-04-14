@@ -236,6 +236,7 @@ func (r *Router) setupReviewRoutes(rg *gin.RouterGroup) {
 func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
 	comments := rg.Group("/comments")
 	{
+		comments.GET("/:commentId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.GetByID)
 		comments.PATCH("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Update)
 		comments.DELETE("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Delete)
 		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Like)

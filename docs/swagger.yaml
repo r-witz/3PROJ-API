@@ -2337,6 +2337,51 @@ paths:
       summary: Delete a comment
       tags:
       - comments
+    get:
+      description: Get a single comment by its ID, including author details and like
+        metadata. Returns 404 if the comment author is banned (non-admin callers).
+        Returns 403 if there is a block between the authenticated user and the comment
+        author.
+      parameters:
+      - description: Comment ID
+        format: uuid
+        in: path
+        name: commentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Comment details
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/handlers.CommentResponse'
+              type: object
+        "400":
+          description: Invalid comment ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: User blocked
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Comment not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get a comment by ID
+      tags:
+      - comments
     patch:
       consumes:
       - application/json

@@ -45,6 +45,42 @@ func (s *commentService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Com
 	return comment, nil
 }
 
+func (s *commentService) GetByIDWithMeta(ctx context.Context, id uuid.UUID, requestingUserID *uuid.UUID) (*ports.CommentWithMeta, error) {
+	comment, err := s.commentRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if comment == nil {
+		return nil, domain.ErrCommentNotFound
+	}
+
+	user, err := s.userRepo.GetByID(ctx, comment.UserID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	likeCount, err := s.commentLikeRepo.CountByCommentID(ctx, comment.ID)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+
+	var likedByUser bool
+	if requestingUserID != nil {
+		existing, err := s.commentLikeRepo.GetByUserIDAndCommentID(ctx, *requestingUserID, comment.ID)
+		if err != nil {
+			return nil, domain.ErrInternal
+		}
+		likedByUser = existing != nil
+	}
+
+	return &ports.CommentWithMeta{
+		Comment:     comment,
+		LikeCount:   likeCount,
+		LikedByUser: likedByUser,
+		User:        user,
+	}, nil
+}
+
 func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID, input ports.CreateCommentInput) (*domain.Comment, error) {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {
