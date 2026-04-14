@@ -64,13 +64,6 @@ func (h *BlockHandler) BlockUser(c *gin.Context) {
 			Reason: "blocked",
 		},
 	})
-	h.hub.SendToUser(blockerID, ws.Event{
-		Type: ws.EventMessagingBlocked,
-		Data: ws.MessagingBlockedPayload{
-			UserID: blockedID.String(),
-			Reason: "blocked",
-		},
-	})
 
 	c.Status(204)
 }
@@ -109,13 +102,6 @@ func (h *BlockHandler) UnblockUser(c *gin.Context) {
 		Type: ws.EventMessagingUnblocked,
 		Data: ws.MessagingUnblockedPayload{
 			UserID: blockerID.String(),
-			Reason: "unblocked",
-		},
-	})
-	h.hub.SendToUser(blockerID, ws.Event{
-		Type: ws.EventMessagingUnblocked,
-		Data: ws.MessagingUnblockedPayload{
-			UserID: blockedID.String(),
 			Reason: "unblocked",
 		},
 	})

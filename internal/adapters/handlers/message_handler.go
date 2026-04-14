@@ -158,7 +158,6 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	}
 
 	event := ws.Event{Type: ws.EventMessageNew, Data: resp}
-	h.hub.SendToUser(senderID, event)
 	h.hub.SendToUser(receiverID, event)
 
 	response.Created(c, resp)
@@ -358,7 +357,6 @@ func (h *MessageHandler) UpdateMessage(c *gin.Context) {
 
 	resp := toMessageResponse(message)
 	event := ws.Event{Type: ws.EventMessageUpdated, Data: resp}
-	h.hub.SendToUser(message.SenderID, event)
 	h.hub.SendToUser(message.ReceiverID, event)
 
 	response.Success(c, resp)
@@ -401,7 +399,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		SenderID:   message.SenderID.String(),
 		ReceiverID: message.ReceiverID.String(),
 	}}
-	h.hub.SendToUser(message.SenderID, event)
 	h.hub.SendToUser(message.ReceiverID, event)
 
 	c.Status(204)
@@ -456,8 +453,11 @@ func (h *MessageHandler) AddReaction(c *gin.Context) {
 			UserID:     userID.String(),
 			Emoji:      req.Emoji,
 		}}
-		h.hub.SendToUser(msg.SenderID, event)
-		h.hub.SendToUser(msg.ReceiverID, event)
+		otherID := msg.SenderID
+		if msg.SenderID == userID {
+			otherID = msg.ReceiverID
+		}
+		h.hub.SendToUser(otherID, event)
 	}
 
 	c.Status(201)
@@ -509,8 +509,11 @@ func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 			UserID:     userID.String(),
 			Emoji:      req.Emoji,
 		}}
-		h.hub.SendToUser(msg.SenderID, event)
-		h.hub.SendToUser(msg.ReceiverID, event)
+		otherID := msg.SenderID
+		if msg.SenderID == userID {
+			otherID = msg.ReceiverID
+		}
+		h.hub.SendToUser(otherID, event)
 	}
 
 	c.Status(204)
