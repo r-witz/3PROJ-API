@@ -148,6 +148,12 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 
 		if existingUser != nil {
 			user = existingUser
+			if !user.EmailVerified {
+				if err := s.userRepo.SetEmailVerified(ctx, user.ID, true); err != nil {
+					return nil, domain.ErrInternal
+				}
+				user.EmailVerified = true
+			}
 			if err := s.linkOAuthAccount(ctx, user.ID, input.Provider, oauthUserInfo); err != nil {
 				return nil, err
 			}
