@@ -123,6 +123,12 @@ var errorMappings = map[error]ErrorMapping{
 	// Import errors
 	domain.ErrInvalidImportFile:  {http.StatusBadRequest, "INVALID_IMPORT_FILE", "Invalid import file"},
 	domain.ErrImportFileTooLarge: {http.StatusBadRequest, "IMPORT_FILE_TOO_LARGE", "Import file exceeds maximum size"},
+
+	// Email verification errors
+	domain.ErrEmailAlreadyVerified:      {http.StatusConflict, "EMAIL_ALREADY_VERIFIED", "Email is already verified"},
+	domain.ErrVerificationCodeInvalid:   {http.StatusBadRequest, "INVALID_CODE", "Invalid or expired verification code"},
+	domain.ErrVerificationCodeRateLimit: {http.StatusTooManyRequests, "RATE_LIMIT", "Too many code requests, please try again later"},
+	domain.ErrEmailNotVerified:          {http.StatusForbidden, "EMAIL_NOT_VERIFIED", "Email address has not been verified"},
 }
 
 func HandleError(c *gin.Context, err error) {

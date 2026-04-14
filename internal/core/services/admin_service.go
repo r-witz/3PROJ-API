@@ -155,15 +155,16 @@ func (s *AdminService) SeedSuperAdmin(ctx context.Context, input ports.SeedSuper
 
 	now := time.Now()
 	user := &domain.User{
-		ID:           uuid.New(),
-		Email:        input.Email,
-		Username:     input.Username,
-		PasswordHash: &passwordHash,
-		Role:         domain.UserRoleSuperAdmin,
-		Theme:        domain.UserThemeSystem,
-		Locale:       domain.UserLocaleEN,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:            uuid.New(),
+		Email:         input.Email,
+		EmailVerified: true,
+		Username:      input.Username,
+		PasswordHash:  &passwordHash,
+		Role:          domain.UserRoleSuperAdmin,
+		Theme:         domain.UserThemeSystem,
+		Locale:        domain.UserLocaleEN,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {

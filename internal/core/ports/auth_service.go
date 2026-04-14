@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"duskforge-api/internal/core/domain"
+
+	"github.com/google/uuid"
 )
 
 type RegisterInput struct {
@@ -23,9 +25,19 @@ type AuthTokens struct {
 	ExpiresIn    int64
 }
 
+type ResetPasswordInput struct {
+	Email       string
+	Code        string
+	NewPassword string
+}
+
 type AuthService interface {
 	Register(ctx context.Context, input RegisterInput) (*domain.User, *AuthTokens, error)
 	Login(ctx context.Context, input LoginInput) (*domain.User, *AuthTokens, error)
 	Refresh(ctx context.Context, refreshToken string) (*AuthTokens, error)
 	Logout(ctx context.Context, refreshToken string) error
+	SendVerificationCode(ctx context.Context, userID uuid.UUID) error
+	VerifyEmail(ctx context.Context, userID uuid.UUID, code string) error
+	RequestPasswordReset(ctx context.Context, email string) error
+	ResetPassword(ctx context.Context, input ResetPasswordInput) error
 }

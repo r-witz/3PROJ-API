@@ -2,20 +2,32 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
+	"math/big"
 	"time"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/auth"
+	"duskforge-api/pkg/logger"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+)
+
+const (
+	verificationCodeTTL    = 15 * time.Minute
+	verificationRateWindow = 15 * time.Minute
 )
 
 type authService struct {
 	userRepo          ports.UserRepository
 	sessionRepo       ports.SessionRepository
 	collectionService ports.CollectionService
+	emailSender       ports.EmailSender
+	verificationRepo  ports.VerificationCodeRepository
 	config            TokenConfig
 }
 
@@ -23,12 +35,16 @@ func NewAuthService(
 	userRepo ports.UserRepository,
 	sessionRepo ports.SessionRepository,
 	collectionService ports.CollectionService,
+	emailSender ports.EmailSender,
+	verificationRepo ports.VerificationCodeRepository,
 	config TokenConfig,
 ) ports.AuthService {
 	return &authService{
 		userRepo:          userRepo,
 		sessionRepo:       sessionRepo,
 		collectionService: collectionService,
+		emailSender:       emailSender,
+		verificationRepo:  verificationRepo,
 		config:            config,
 	}
 }
@@ -83,6 +99,12 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 		return nil, nil, err
 	}
 
+	if s.emailSender != nil && s.verificationRepo != nil {
+		if err := s.sendVerificationCodeForUser(ctx, user); err != nil {
+			logger.Logger.Warn("Failed to send verification email on registration", zap.Error(err), zap.String("email", user.Email))
+		}
+	}
+
 	return user, tokens, nil
 }
 
@@ -106,6 +128,10 @@ func (s *authService) Login(ctx context.Context, input ports.LoginInput) (*domai
 	match, err := auth.ComparePassword(*user.PasswordHash, input.Password)
 	if err != nil || !match {
 		return nil, nil, domain.ErrInvalidCredentials
+	}
+
+	if !user.EmailVerified {
+		return nil, nil, domain.ErrEmailNotVerified
 	}
 
 	tokens, err := createSession(ctx, s.sessionRepo, user, s.config)
@@ -184,6 +210,166 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	return s.sessionRepo.Delete(ctx, session.ID)
+}
+
+func (s *authService) SendVerificationCode(ctx context.Context, userID uuid.UUID) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return domain.ErrInternal
+	}
+
+	if user.EmailVerified {
+		return domain.ErrEmailAlreadyVerified
+	}
+
+	return s.sendVerificationCodeForUser(ctx, user)
+}
+
+func (s *authService) VerifyEmail(ctx context.Context, userID uuid.UUID, code string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return domain.ErrInternal
+	}
+
+	if user.EmailVerified {
+		return domain.ErrEmailAlreadyVerified
+	}
+
+	stored, err := s.verificationRepo.Get(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if stored == nil || stored.Code != code {
+		return domain.ErrVerificationCodeInvalid
+	}
+
+	if err := s.userRepo.SetEmailVerified(ctx, userID, true); err != nil {
+		return domain.ErrInternal
+	}
+
+	_ = s.verificationRepo.Delete(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+	return nil
+}
+
+func (s *authService) RequestPasswordReset(ctx context.Context, email string) error {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if user == nil {
+		return nil // silent success to prevent email enumeration
+	}
+
+	canRequest, err := s.verificationRepo.CanRequest(ctx, email, domain.VerificationCodePurposePasswordReset)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if !canRequest {
+		return domain.ErrVerificationCodeRateLimit
+	}
+
+	code, err := generateVerificationCode()
+	if err != nil {
+		return domain.ErrInternal
+	}
+
+	vc := &domain.VerificationCode{
+		UserID:    user.ID,
+		Email:     email,
+		Code:      code,
+		Purpose:   domain.VerificationCodePurposePasswordReset,
+		ExpiresAt: time.Now().Add(verificationCodeTTL),
+	}
+
+	if err := s.verificationRepo.Store(ctx, vc, verificationCodeTTL); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.verificationRepo.RecordRequest(ctx, email, domain.VerificationCodePurposePasswordReset, verificationRateWindow); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.emailSender.SendPasswordResetCode(ctx, email, code); err != nil {
+		return domain.ErrInternal
+	}
+
+	return nil
+}
+
+func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswordInput) error {
+	stored, err := s.verificationRepo.Get(ctx, input.Email, domain.VerificationCodePurposePasswordReset)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if stored == nil || stored.Code != input.Code {
+		return domain.ErrVerificationCodeInvalid
+	}
+
+	user, err := s.userRepo.GetByEmail(ctx, input.Email)
+	if err != nil || user == nil {
+		return domain.ErrInternal
+	}
+
+	passwordHash, err := auth.HashPassword(input.NewPassword)
+	if err != nil {
+		return mapPasswordError(err)
+	}
+
+	user.PasswordHash = &passwordHash
+	user.UpdatedAt = time.Now()
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return domain.ErrInternal
+	}
+
+	_ = s.verificationRepo.Delete(ctx, input.Email, domain.VerificationCodePurposePasswordReset)
+	_ = s.sessionRepo.DeleteByUserID(ctx, user.ID)
+
+	return nil
+}
+
+func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *domain.User) error {
+	canRequest, err := s.verificationRepo.CanRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if !canRequest {
+		return domain.ErrVerificationCodeRateLimit
+	}
+
+	code, err := generateVerificationCode()
+	if err != nil {
+		return domain.ErrInternal
+	}
+
+	vc := &domain.VerificationCode{
+		UserID:    user.ID,
+		Email:     user.Email,
+		Code:      code,
+		Purpose:   domain.VerificationCodePurposeEmailVerify,
+		ExpiresAt: time.Now().Add(verificationCodeTTL),
+	}
+
+	if err := s.verificationRepo.Store(ctx, vc, verificationCodeTTL); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.verificationRepo.RecordRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify, verificationRateWindow); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.emailSender.SendVerificationCode(ctx, user.Email, code); err != nil {
+		return domain.ErrInternal
+	}
+
+	return nil
+}
+
+func generateVerificationCode() (string, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(1000000))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%06d", n.Int64()), nil
 }
 
 func mapPasswordError(err error) error {

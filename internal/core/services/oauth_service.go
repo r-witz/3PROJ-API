@@ -245,16 +245,17 @@ func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuth
 
 	now := time.Now()
 	user := &domain.User{
-		ID:           uuid.New(),
-		Email:        info.Email,
-		Username:     username,
-		PasswordHash: nil,
-		AvatarURL:    info.AvatarURL,
-		Role:         domain.UserRoleUser,
-		Theme:        domain.UserThemeSystem,
-		Locale:       domain.UserLocaleEN,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:            uuid.New(),
+		Email:         info.Email,
+		EmailVerified: true,
+		Username:      username,
+		PasswordHash:  nil,
+		AvatarURL:     info.AvatarURL,
+		Role:          domain.UserRoleUser,
+		Theme:         domain.UserThemeSystem,
+		Locale:        domain.UserLocaleEN,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {

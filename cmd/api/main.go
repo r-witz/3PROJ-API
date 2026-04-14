@@ -15,6 +15,7 @@ import (
 	"duskforge-api/internal/core/services"
 	"duskforge-api/pkg/cache"
 	"duskforge-api/pkg/database"
+	"duskforge-api/pkg/email"
 	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/oauth"
 	"duskforge-api/pkg/storage"
@@ -77,6 +78,15 @@ func main() {
 
 	cachedTMDB := tmdb.NewCachedClient(tmdbClient, redisClient)
 	banCache := repositories.NewBanCache(redisClient)
+	verificationRepo := repositories.NewVerificationCodeRepo(redisClient)
+
+	var emailSender ports.EmailSender
+	if cfg.BrevoAPIKey != "" {
+		emailSender = email.NewBrevoSender(cfg.BrevoAPIKey, cfg.EmailFromAddress, cfg.EmailFromName)
+		logger.Logger.Info("Brevo email sender initialized")
+	} else {
+		logger.Logger.Warn("BREVO_API_KEY not set, email sending disabled")
+	}
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
@@ -121,7 +131,7 @@ func main() {
 		RefreshTokenExpiry: cfg.RefreshTokenExpiry,
 	}
 
-	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, tokenConfig)
+	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, emailSender, verificationRepo, tokenConfig)
 	userService := services.NewUserService(userRepo)
 
 	followService := services.NewFollowService(followRepo, userRepo)

@@ -131,3 +131,10 @@ var (
 var (
 	ErrNotificationNotFound = errors.New("notification not found")
 )
+
+var (
+	ErrEmailAlreadyVerified      = errors.New("email is already verified")
+	ErrVerificationCodeInvalid   = errors.New("invalid or expired verification code")
+	ErrVerificationCodeRateLimit = errors.New("too many code requests, please wait")
+	ErrEmailNotVerified          = errors.New("email is not verified")
+)

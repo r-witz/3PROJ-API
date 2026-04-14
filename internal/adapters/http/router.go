@@ -129,6 +129,10 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 		auth.POST("/login", r.authHandler.Login)
 		auth.POST("/refresh", r.authHandler.Refresh)
 		auth.POST("/logout", r.authHandler.Logout)
+		auth.POST("/verify-email/send", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.authHandler.SendVerificationCode)
+		auth.POST("/verify-email", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.authHandler.VerifyEmail)
+		auth.POST("/password-reset/request", r.authHandler.RequestPasswordReset)
+		auth.POST("/password-reset", r.authHandler.ResetPassword)
 
 		oauth := auth.Group("/oauth")
 		{

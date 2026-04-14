@@ -525,6 +525,14 @@ definitions:
         example: Bearer
         type: string
     type: object
+  handlers.PasswordResetRequestBody:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
   handlers.PublicUserResponse:
     properties:
       avatar_url:
@@ -640,6 +648,24 @@ definitions:
       target_user_id:
         example: 550e8400-e29b-41d4-a716-446655440002
         type: string
+    type: object
+  handlers.ResetPasswordRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+      email:
+        example: user@example.com
+        type: string
+      new_password:
+        example: NewSecure123!
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - code
+    - email
+    - new_password
     type: object
   handlers.ResolveReportRequest:
     properties:
@@ -960,6 +986,14 @@ definitions:
       username:
         example: johndoe
         type: string
+    type: object
+  handlers.VerifyEmailRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+    required:
+    - code
     type: object
   handlers.WatchedStatsResponse:
     properties:
@@ -1628,7 +1662,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user with email and password
+      description: Authenticate user with email and password. Returns 403 if the email
+        has not been verified yet.
       parameters:
       - description: Login credentials
         in: body
@@ -2047,6 +2082,70 @@ paths:
       summary: Get linked OAuth providers
       tags:
       - oauth
+  /auth/password-reset:
+    post:
+      consumes:
+      - application/json
+      description: Reset the user's password with a verification code
+      parameters:
+      - description: Reset details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Reset password
+      tags:
+      - auth
+  /auth/password-reset/request:
+    post:
+      consumes:
+      - application/json
+      description: Send a password reset code to the specified email
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PasswordResetRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Request password reset
+      tags:
+      - auth
   /auth/refresh:
     post:
       consumes:
@@ -2090,7 +2189,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account and return authentication tokens
+      description: Create a new user account, return authentication tokens, and send
+        a verification code to the user's email. The user must verify their email
+        before they can log in.
       parameters:
       - description: Registration details
         in: body
@@ -2123,6 +2224,77 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: Register a new user
+      tags:
+      - auth
+  /auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: Verify the authenticated user's email with a 6-digit code
+      parameters:
+      - description: Verification code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Verify email
+      tags:
+      - auth
+  /auth/verify-email/send:
+    post:
+      description: Send a verification code to the authenticated user's email
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Send verification code
       tags:
       - auth
   /comments/{commentId}:

@@ -26,6 +26,7 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*domain.User, error)
 	SearchByUsername(ctx context.Context, params UserSearchParams) ([]*domain.User, int, error)
 	Update(ctx context.Context, user *domain.User) error
+	SetEmailVerified(ctx context.Context, id uuid.UUID, verified bool) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error)
 	GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error)

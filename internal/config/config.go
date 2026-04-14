@@ -34,6 +34,10 @@ type Config struct {
 
 	CORSAllowedOrigins string `mapstructure:"CORS_ALLOWED_ORIGINS"`
 
+	BrevoAPIKey      string `mapstructure:"BREVO_API_KEY"`
+	EmailFromAddress string `mapstructure:"EMAIL_FROM_ADDRESS"`
+	EmailFromName    string `mapstructure:"EMAIL_FROM_NAME"`
+
 	SeedAdminEmail    string `mapstructure:"SEED_ADMIN_EMAIL"`
 	SeedAdminUsername string `mapstructure:"SEED_ADMIN_USERNAME"`
 	SeedAdminPassword string `mapstructure:"SEED_ADMIN_PASSWORD"`
@@ -54,6 +58,7 @@ func LoadConfig() (Config, error) {
 	viper.BindEnv("GOOGLE_CLIENT_ID")
 	viper.BindEnv("GOOGLE_CLIENT_SECRET")
 	viper.BindEnv("OAUTH_STATE_SECRET")
+	viper.BindEnv("BREVO_API_KEY")
 
 	viper.SetDefault("SERVER_PORT", "8080")
 	viper.SetDefault("LOG_LEVEL", "info")
@@ -65,6 +70,8 @@ func LoadConfig() (Config, error) {
 	viper.SetDefault("REDIS_URL", "redis://localhost:6379/0")
 	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
 	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
+	viper.SetDefault("EMAIL_FROM_ADDRESS", "noreply@duskforge.studio")
+	viper.SetDefault("EMAIL_FROM_NAME", "Duskforge")
 	viper.SetDefault("SEED_ADMIN_EMAIL", "admin@duskforge.studio")
 	viper.SetDefault("SEED_ADMIN_USERNAME", "superadmin")
 	viper.SetDefault("SEED_ADMIN_PASSWORD", "Admin123!")

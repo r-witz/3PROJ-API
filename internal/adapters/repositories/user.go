@@ -23,11 +23,11 @@ func NewUserRepository(db *database.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		INSERT INTO users (id, email, email_verified, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
 	_, err := r.db.Pool.Exec(ctx, query,
-		user.ID, user.Email, user.PasswordHash, user.Username,
+		user.ID, user.Email, user.EmailVerified, user.PasswordHash, user.Username,
 		user.AvatarURL, user.Bio, user.Website, user.Role, user.Theme, user.Locale,
 		user.CreatedAt, user.UpdatedAt, user.BannedAt,
 	)
@@ -36,12 +36,12 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, email_verified, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE id = $1
 	`
 	user := &domain.User{}
 	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
-		&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+		&user.ID, &user.Email, &user.EmailVerified, &user.PasswordHash, &user.Username,
 		&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 		&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 	)
@@ -53,12 +53,12 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, email_verified, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE email = $1
 	`
 	user := &domain.User{}
 	err := r.db.Pool.QueryRow(ctx, query, email).Scan(
-		&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+		&user.ID, &user.Email, &user.EmailVerified, &user.PasswordHash, &user.Username,
 		&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 		&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 	)
@@ -70,12 +70,12 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, email_verified, password_hash, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE username = $1
 	`
 	user := &domain.User{}
 	err := r.db.Pool.QueryRow(ctx, query, username).Scan(
-		&user.ID, &user.Email, &user.PasswordHash, &user.Username,
+		&user.ID, &user.Email, &user.EmailVerified, &user.PasswordHash, &user.Username,
 		&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 		&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 	)
@@ -151,7 +151,7 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 	args = append(args, params.Limit, params.Offset)
 
 	selectQuery := fmt.Sprintf(`
-		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, email_verified, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users%s
 		ORDER BY %s
 		LIMIT $%d OFFSET $%d
@@ -167,7 +167,7 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 	for rows.Next() {
 		user := &domain.User{}
 		err := rows.Scan(
-			&user.ID, &user.Email, &user.Username,
+			&user.ID, &user.Email, &user.EmailVerified, &user.Username,
 			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 		)
@@ -183,12 +183,12 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	query := `
 		UPDATE users
-		SET email = $2, password_hash = $3, username = $4, avatar_url = $5,
-		    bio = $6, website = $7, role = $8, theme = $9, locale = $10, updated_at = $11, banned_at = $12
+		SET email = $2, email_verified = $3, password_hash = $4, username = $5, avatar_url = $6,
+		    bio = $7, website = $8, role = $9, theme = $10, locale = $11, updated_at = $12, banned_at = $13
 		WHERE id = $1
 	`
 	_, err := r.db.Pool.Exec(ctx, query,
-		user.ID, user.Email, user.PasswordHash, user.Username,
+		user.ID, user.Email, user.EmailVerified, user.PasswordHash, user.Username,
 		user.AvatarURL, user.Bio, user.Website, user.Role, user.Theme, user.Locale,
 		user.UpdatedAt, user.BannedAt,
 	)
@@ -201,7 +201,7 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 	}
 
 	query := `
-		SELECT id, email, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
+		SELECT id, email, email_verified, username, avatar_url, bio, website, role, theme, locale, created_at, updated_at, banned_at
 		FROM users WHERE id = ANY($1)
 	`
 	rows, err := r.db.Pool.Query(ctx, query, ids)
@@ -214,7 +214,7 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 	for rows.Next() {
 		user := &domain.User{}
 		err := rows.Scan(
-			&user.ID, &user.Email, &user.Username,
+			&user.ID, &user.Email, &user.EmailVerified, &user.Username,
 			&user.AvatarURL, &user.Bio, &user.Website, &user.Role, &user.Theme, &user.Locale,
 			&user.CreatedAt, &user.UpdatedAt, &user.BannedAt,
 		)
@@ -224,6 +224,12 @@ func (r *UserRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*doma
 		users = append(users, user)
 	}
 	return users, rows.Err()
+}
+
+func (r *UserRepository) SetEmailVerified(ctx context.Context, id uuid.UUID, verified bool) error {
+	query := `UPDATE users SET email_verified = $2, updated_at = NOW() WHERE id = $1`
+	_, err := r.db.Pool.Exec(ctx, query, id, verified)
+	return err
 }
 
 func (r *UserRepository) ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error) {
