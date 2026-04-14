@@ -81,7 +81,7 @@ func (h *StatsHandler) GetUserStats(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != id {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != id && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(ctx, currentUserID, id); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return

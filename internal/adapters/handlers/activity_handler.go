@@ -99,7 +99,7 @@ func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return

@@ -159,7 +159,7 @@ func (h *CommentHandler) GetByID(c *gin.Context) {
 		}
 	}
 
-	if requestingUserID != nil && result.Comment.UserID != *requestingUserID {
+	if requestingUserID != nil && result.Comment.UserID != *requestingUserID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), result.Comment.UserID, *requestingUserID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return

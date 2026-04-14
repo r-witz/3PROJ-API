@@ -9,11 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
+func IsCallerAdmin(c *gin.Context) bool {
+	role, _ := middleware.GetRole(c)
+	return role == string(domain.UserRoleAdmin) || role == string(domain.UserRoleSuperAdmin)
+}
+
 func GetHiddenUserIDs(c *gin.Context, blockService ports.BlockService, banCache ports.BanCache) map[uuid.UUID]struct{} {
 	hiddenSet := make(map[uuid.UUID]struct{})
 
-	role, _ := middleware.GetRole(c)
-	isAdmin := role == string(domain.UserRoleAdmin) || role == string(domain.UserRoleSuperAdmin)
+	isAdmin := IsCallerAdmin(c)
 
 	if !isAdmin {
 		if bannedIDs, err := banCache.GetBannedUserIDs(c.Request.Context()); err == nil {
@@ -24,7 +28,7 @@ func GetHiddenUserIDs(c *gin.Context, blockService ports.BlockService, banCache 
 	}
 
 	currentUserID, ok := middleware.GetUserID(c)
-	if !ok {
+	if !ok || isAdmin {
 		return hiddenSet
 	}
 
@@ -44,9 +48,7 @@ func GetHiddenUserIDs(c *gin.Context, blockService ports.BlockService, banCache 
 }
 
 func IsBannedForCaller(c *gin.Context, banCache ports.BanCache, userID uuid.UUID) bool {
-	role, _ := middleware.GetRole(c)
-	isAdmin := role == string(domain.UserRoleAdmin) || role == string(domain.UserRoleSuperAdmin)
-	if isAdmin {
+	if IsCallerAdmin(c) {
 		return false
 	}
 	banned, err := banCache.IsBanned(c.Request.Context(), userID)

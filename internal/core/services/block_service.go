@@ -39,6 +39,10 @@ func (s *blockService) BlockUser(ctx context.Context, blockerID, blockedID uuid.
 		return domain.ErrUserNotFound
 	}
 
+	if user.Role == domain.UserRoleAdmin || user.Role == domain.UserRoleSuperAdmin {
+		return domain.ErrCannotBlockAdmin
+	}
+
 	existing, err := s.blockRepo.GetByBlockerAndBlocked(ctx, blockerID, blockedID)
 	if err != nil {
 		return domain.ErrInternal

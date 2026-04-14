@@ -85,10 +85,11 @@ var (
 )
 
 var (
-	ErrCannotBlockSelf = errors.New("cannot block yourself")
-	ErrAlreadyBlocked  = errors.New("user is already blocked")
-	ErrNotBlocked      = errors.New("user is not blocked")
-	ErrUserBlocked     = errors.New("action blocked due to user block")
+	ErrCannotBlockSelf  = errors.New("cannot block yourself")
+	ErrCannotBlockAdmin = errors.New("cannot block an admin or super-admin")
+	ErrAlreadyBlocked   = errors.New("user is already blocked")
+	ErrNotBlocked       = errors.New("user is not blocked")
+	ErrUserBlocked      = errors.New("action blocked due to user block")
 )
 
 var (

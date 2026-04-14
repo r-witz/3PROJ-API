@@ -58,9 +58,11 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 		return
 	}
 
-	if blocked, err := h.blockService.IsBlocked(c.Request.Context(), followerID, followingID); err == nil && blocked {
-		response.HandleError(c, domain.ErrUserBlocked)
-		return
+	if !IsCallerAdmin(c) {
+		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), followerID, followingID); err == nil && blocked {
+			response.HandleError(c, domain.ErrUserBlocked)
+			return
+		}
 	}
 
 	if err := h.followService.Follow(c.Request.Context(), followerID, followingID); err != nil {

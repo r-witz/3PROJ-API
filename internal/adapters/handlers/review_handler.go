@@ -231,7 +231,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 		}
 	}
 
-	if requestingUserID != nil && review.Review.UserID != *requestingUserID {
+	if requestingUserID != nil && review.Review.UserID != *requestingUserID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), review.Review.UserID, *requestingUserID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return
@@ -273,7 +273,7 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return

@@ -1760,12 +1760,7 @@ const docTemplate = `{
         },
         "/auth/verify-email": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Verify the authenticated user's email with a 6-digit code",
+                "description": "Verify a user's email with their email address and a 6-digit code",
                 "consumes": [
                     "application/json"
                 ],
@@ -1778,7 +1773,7 @@ const docTemplate = `{
                 "summary": "Verify email",
                 "parameters": [
                     {
-                        "description": "Verification code",
+                        "description": "Email and verification code",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -1800,12 +1795,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
                     "409": {
                         "description": "Conflict",
                         "schema": {
@@ -1823,12 +1812,10 @@ const docTemplate = `{
         },
         "/auth/verify-email/send": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "Send a verification code to the specified email address. Returns success even if the email doesn't exist to prevent enumeration.",
+                "consumes": [
+                    "application/json"
                 ],
-                "description": "Send a verification code to the authenticated user's email",
                 "produces": [
                     "application/json"
                 ],
@@ -1836,6 +1823,17 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Send verification code",
+                "parameters": [
+                    {
+                        "description": "Email address",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SendVerificationCodeRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1843,8 +1841,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -7919,6 +7917,18 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.SendVerificationCodeRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
         "handlers.SetUserRoleRequest": {
             "type": "object",
             "required": [
@@ -8240,12 +8250,17 @@ const docTemplate = `{
         "handlers.VerifyEmailRequest": {
             "type": "object",
             "required": [
-                "code"
+                "code",
+                "email"
             ],
             "properties": {
                 "code": {
                     "type": "string",
                     "example": "123456"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
                 }
             }
         },

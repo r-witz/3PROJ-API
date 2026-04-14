@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/ports"
 
@@ -35,8 +34,13 @@ type LogoutRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
+type SendVerificationCodeRequest struct {
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
 type VerifyEmailRequest struct {
-	Code string `json:"code" binding:"required,len=6" example:"123456"`
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+	Code  string `json:"code" binding:"required,len=6" example:"123456"`
 }
 
 type PasswordResetRequestBody struct {
@@ -192,24 +196,28 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // @Summary      Send verification code
-// @Description  Send a verification code to the authenticated user's email
+// @Description  Send a verification code to the specified email address. Returns success even if the email doesn't exist to prevent enumeration.
 // @Tags         auth
+// @Accept       json
 // @Produce      json
-// @Security     BearerAuth
+// @Param        request body SendVerificationCodeRequest true "Email address"
 // @Success      200 {object} response.Response
-// @Failure      401 {object} response.Response
+// @Failure      400 {object} response.Response
 // @Failure      409 {object} response.Response
 // @Failure      429 {object} response.Response
 // @Failure      500 {object} response.Response
 // @Router       /auth/verify-email/send [post]
 func (h *AuthHandler) SendVerificationCode(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		response.HandleError(c, nil)
+	var req SendVerificationCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
+		response.BadRequest(c, "Invalid request body", err.Error())
 		return
 	}
 
-	if err := h.authService.SendVerificationCode(c.Request.Context(), userID); err != nil {
+	if err := h.authService.SendVerificationCode(c.Request.Context(), req.Email); err != nil {
 		response.HandleError(c, err)
 		return
 	}
@@ -218,32 +226,27 @@ func (h *AuthHandler) SendVerificationCode(c *gin.Context) {
 }
 
 // @Summary      Verify email
-// @Description  Verify the authenticated user's email with a 6-digit code
+// @Description  Verify a user's email with their email address and a 6-digit code
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Security     BearerAuth
-// @Param        request body VerifyEmailRequest true "Verification code"
+// @Param        request body VerifyEmailRequest true "Email and verification code"
 // @Success      200 {object} response.Response
 // @Failure      400 {object} response.Response
-// @Failure      401 {object} response.Response
 // @Failure      409 {object} response.Response
 // @Failure      500 {object} response.Response
 // @Router       /auth/verify-email [post]
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		response.HandleError(c, nil)
-		return
-	}
-
 	var req VerifyEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
 		response.BadRequest(c, "Invalid request body", err.Error())
 		return
 	}
 
-	if err := h.authService.VerifyEmail(c.Request.Context(), userID, req.Code); err != nil {
+	if err := h.authService.VerifyEmail(c.Request.Context(), req.Email, req.Code); err != nil {
 		response.HandleError(c, err)
 		return
 	}

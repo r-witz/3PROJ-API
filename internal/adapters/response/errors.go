@@ -87,8 +87,9 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrCannotMessageSelf: {http.StatusBadRequest, "CANNOT_MESSAGE_SELF", "Cannot send a message to yourself"},
 
 	// Block errors
-	domain.ErrCannotBlockSelf: {http.StatusBadRequest, "CANNOT_BLOCK_SELF", "Cannot block yourself"},
-	domain.ErrAlreadyBlocked:  {http.StatusConflict, "ALREADY_BLOCKED", "User is already blocked"},
+	domain.ErrCannotBlockSelf:  {http.StatusBadRequest, "CANNOT_BLOCK_SELF", "Cannot block yourself"},
+	domain.ErrCannotBlockAdmin: {http.StatusForbidden, "CANNOT_BLOCK_ADMIN", "Cannot block an admin or super-admin"},
+	domain.ErrAlreadyBlocked:   {http.StatusConflict, "ALREADY_BLOCKED", "User is already blocked"},
 	domain.ErrNotBlocked:      {http.StatusNotFound, "NOT_BLOCKED", "User is not blocked"},
 	domain.ErrUserBlocked:     {http.StatusForbidden, "USER_BLOCKED", "Action blocked due to user block"},
 

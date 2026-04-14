@@ -141,7 +141,7 @@ func (h *CollectionHandler) GetBySlug(c *gin.Context) {
 		return
 	}
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return
@@ -190,7 +190,7 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 		return
 	}
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return
@@ -455,7 +455,7 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 		return
 	}
 
-	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID {
+	if currentUserID, ok := middleware.GetUserID(c); ok && currentUserID != userID && !IsCallerAdmin(c) {
 		if blocked, err := h.blockService.IsBlocked(c.Request.Context(), currentUserID, userID); err == nil && blocked {
 			response.HandleError(c, domain.ErrUserBlocked)
 			return

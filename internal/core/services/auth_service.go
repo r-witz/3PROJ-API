@@ -215,10 +215,13 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	return s.sessionRepo.Delete(ctx, session.ID)
 }
 
-func (s *authService) SendVerificationCode(ctx context.Context, userID uuid.UUID) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil || user == nil {
+func (s *authService) SendVerificationCode(ctx context.Context, email string) error {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
 		return domain.ErrInternal
+	}
+	if user == nil {
+		return nil // silent success to prevent email enumeration
 	}
 
 	if user.EmailVerified {
@@ -235,17 +238,20 @@ func (s *authService) SendVerificationCode(ctx context.Context, userID uuid.UUID
 	return nil
 }
 
-func (s *authService) VerifyEmail(ctx context.Context, userID uuid.UUID, code string) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil || user == nil {
+func (s *authService) VerifyEmail(ctx context.Context, email string, code string) error {
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
 		return domain.ErrInternal
+	}
+	if user == nil {
+		return domain.ErrVerificationCodeInvalid
 	}
 
 	if user.EmailVerified {
 		return domain.ErrEmailAlreadyVerified
 	}
 
-	stored, err := s.verificationRepo.Get(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+	stored, err := s.verificationRepo.Get(ctx, email, domain.VerificationCodePurposeEmailVerify)
 	if err != nil {
 		return domain.ErrInternal
 	}
@@ -253,11 +259,11 @@ func (s *authService) VerifyEmail(ctx context.Context, userID uuid.UUID, code st
 		return domain.ErrVerificationCodeInvalid
 	}
 
-	if err := s.userRepo.SetEmailVerified(ctx, userID, true); err != nil {
+	if err := s.userRepo.SetEmailVerified(ctx, user.ID, true); err != nil {
 		return domain.ErrInternal
 	}
 
-	_ = s.verificationRepo.Delete(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+	_ = s.verificationRepo.Delete(ctx, email, domain.VerificationCodePurposeEmailVerify)
 	return nil
 }
 

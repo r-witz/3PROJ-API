@@ -762,6 +762,14 @@ definitions:
         example: johndoe
         type: string
     type: object
+  handlers.SendVerificationCodeRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
   handlers.SetUserRoleRequest:
     properties:
       role:
@@ -992,8 +1000,12 @@ definitions:
       code:
         example: "123456"
         type: string
+      email:
+        example: user@example.com
+        type: string
     required:
     - code
+    - email
     type: object
   handlers.WatchedStatsResponse:
     properties:
@@ -2230,9 +2242,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Verify the authenticated user's email with a 6-digit code
+      description: Verify a user's email with their email address and a 6-digit code
       parameters:
-      - description: Verification code
+      - description: Email and verification code
         in: body
         name: request
         required: true
@@ -2249,10 +2261,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
@@ -2261,14 +2269,22 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
       summary: Verify email
       tags:
       - auth
   /auth/verify-email/send:
     post:
-      description: Send a verification code to the authenticated user's email
+      consumes:
+      - application/json
+      description: Send a verification code to the specified email address. Returns
+        success even if the email doesn't exist to prevent enumeration.
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SendVerificationCodeRequest'
       produces:
       - application/json
       responses:
@@ -2276,8 +2292,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/response.Response'
         "409":
@@ -2292,8 +2308,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
       summary: Send verification code
       tags:
       - auth
