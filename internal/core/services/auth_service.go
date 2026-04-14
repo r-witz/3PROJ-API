@@ -100,7 +100,7 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 	}
 
 	if s.emailSender != nil && s.verificationRepo != nil {
-		if err := s.sendVerificationCodeForUser(ctx, user); err != nil {
+		if err := s.sendVerificationCodeForUser(ctx, user, false); err != nil {
 			logger.Logger.Error("Failed to send verification email on registration", zap.Error(err), zap.String("email", user.Email))
 			_ = s.sessionRepo.DeleteByUserID(ctx, user.ID)
 			_ = s.userRepo.Delete(ctx, user.ID)
@@ -228,7 +228,7 @@ func (s *authService) SendVerificationCode(ctx context.Context, email string) er
 		return domain.ErrEmailAlreadyVerified
 	}
 
-	if err := s.sendVerificationCodeForUser(ctx, user); err != nil {
+	if err := s.sendVerificationCodeForUser(ctx, user, true); err != nil {
 		if errors.Is(err, domain.ErrVerificationCodeRateLimit) {
 			return err
 		}
@@ -344,13 +344,15 @@ func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswo
 	return nil
 }
 
-func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *domain.User) error {
-	canRequest, err := s.verificationRepo.CanRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
-	if err != nil {
-		return fmt.Errorf("check rate limit: %w", err)
-	}
-	if !canRequest {
-		return domain.ErrVerificationCodeRateLimit
+func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *domain.User, checkRateLimit bool) error {
+	if checkRateLimit {
+		canRequest, err := s.verificationRepo.CanRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)
+		if err != nil {
+			return fmt.Errorf("check rate limit: %w", err)
+		}
+		if !canRequest {
+			return domain.ErrVerificationCodeRateLimit
+		}
 	}
 
 	code, err := generateVerificationCode()

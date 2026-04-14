@@ -245,6 +245,25 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *UserRepository) GetUnverifiedBefore(ctx context.Context, before time.Time) ([]*domain.User, error) {
+	query := `SELECT id, email FROM users WHERE email_verified = FALSE AND created_at < $1`
+	rows, err := r.db.Pool.Query(ctx, query, before)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []*domain.User
+	for rows.Next() {
+		user := &domain.User{}
+		if err := rows.Scan(&user.ID, &user.Email); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, rows.Err()
+}
+
 func (r *UserRepository) DeleteUnverifiedBefore(ctx context.Context, before time.Time) (int64, error) {
 	query := `DELETE FROM users WHERE email_verified = FALSE AND created_at < $1`
 	result, err := r.db.Pool.Exec(ctx, query, before)

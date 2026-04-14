@@ -88,6 +88,21 @@ func (r *VerificationCodeRepo) CanRequest(ctx context.Context, email string, pur
 	return count < maxRequestsPerWindow, nil
 }
 
+func (r *VerificationCodeRepo) DeleteAllForEmail(ctx context.Context, email string) error {
+	purposes := []domain.VerificationCodePurpose{
+		domain.VerificationCodePurposeEmailVerify,
+		domain.VerificationCodePurposePasswordReset,
+	}
+	pipe := r.client.Pipeline()
+	for _, p := range purposes {
+		pipe.Del(ctx, codeKey(p, email))
+		pipe.Del(ctx, rateKey(p, email))
+		pipe.Del(ctx, cooldownKey(p, email))
+	}
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
 func (r *VerificationCodeRepo) RecordRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose, window time.Duration) error {
 	pipe := r.client.Pipeline()
 	// Window counter (3 per 15 minutes)

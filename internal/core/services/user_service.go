@@ -12,11 +12,12 @@ import (
 )
 
 type userService struct {
-	userRepo ports.UserRepository
+	userRepo         ports.UserRepository
+	verificationRepo ports.VerificationCodeRepository
 }
 
-func NewUserService(userRepo ports.UserRepository) ports.UserService {
-	return &userService{userRepo: userRepo}
+func NewUserService(userRepo ports.UserRepository, verificationRepo ports.VerificationCodeRepository) ports.UserService {
+	return &userService{userRepo: userRepo, verificationRepo: verificationRepo}
 }
 
 func (s *userService) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
@@ -176,8 +177,14 @@ func (s *userService) DeleteCurrentUser(ctx context.Context, userID uuid.UUID) e
 		return domain.ErrCannotDeleteSuperAdmin
 	}
 
+	email := user.Email
+
 	if err := s.userRepo.Delete(ctx, userID); err != nil {
 		return domain.ErrInternal
+	}
+
+	if s.verificationRepo != nil {
+		_ = s.verificationRepo.DeleteAllForEmail(ctx, email)
 	}
 
 	return nil

@@ -132,7 +132,7 @@ func main() {
 	}
 
 	authService := services.NewAuthService(userRepo, sessionRepo, collectionService, emailSender, verificationRepo, tokenConfig)
-	userService := services.NewUserService(userRepo)
+	userService := services.NewUserService(userRepo, verificationRepo)
 
 	followService := services.NewFollowService(followRepo, userRepo)
 	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
@@ -244,13 +244,25 @@ func main() {
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 		for range ticker.C {
+			ctx := context.Background()
 			cutoff := time.Now().Add(-24 * time.Hour)
-			deleted, err := userRepo.DeleteUnverifiedBefore(context.Background(), cutoff)
+			users, err := userRepo.GetUnverifiedBefore(ctx, cutoff)
+			if err != nil {
+				logger.Logger.Error("Failed to fetch unverified accounts for cleanup", zap.Error(err))
+				continue
+			}
+			if len(users) == 0 {
+				continue
+			}
+			deleted, err := userRepo.DeleteUnverifiedBefore(ctx, cutoff)
 			if err != nil {
 				logger.Logger.Error("Failed to cleanup unverified accounts", zap.Error(err))
-			} else if deleted > 0 {
-				logger.Logger.Info("Cleaned up unverified accounts", zap.Int64("deleted", deleted))
+				continue
 			}
+			for _, u := range users {
+				_ = verificationRepo.DeleteAllForEmail(ctx, u.Email)
+			}
+			logger.Logger.Info("Cleaned up unverified accounts", zap.Int64("deleted", deleted))
 		}
 	}()
 

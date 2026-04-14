@@ -13,4 +13,5 @@ type VerificationCodeRepository interface {
 	Delete(ctx context.Context, email string, purpose domain.VerificationCodePurpose) error
 	CanRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose) (bool, error)
 	RecordRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose, window time.Duration) error
+	DeleteAllForEmail(ctx context.Context, email string) error
 }
