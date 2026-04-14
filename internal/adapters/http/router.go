@@ -149,6 +149,7 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 
 func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 	users := rg.Group("/users")
+	users.Use(middleware.Locale(r.userService))
 	{
 		users.GET("/search", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.userHandler.Search)
 		users.GET("/me", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.userHandler.GetCurrentUser)
@@ -216,6 +217,7 @@ func (r *Router) setupActorRoutes(rg *gin.RouterGroup) {
 
 func (r *Router) setupReviewRoutes(rg *gin.RouterGroup) {
 	reviews := rg.Group("/reviews")
+	reviews.Use(middleware.Locale(r.userService))
 	{
 		reviews.GET("/:reviewId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.GetByID)
 		reviews.PATCH("/:reviewId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Update)
@@ -238,7 +240,7 @@ func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
 }
 
 func (r *Router) setupActivityRoutes(rg *gin.RouterGroup) {
-	rg.GET("/feed", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.activityHandler.GetFeed)
+	rg.GET("/feed", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.Locale(r.userService), r.activityHandler.GetFeed)
 }
 
 func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {

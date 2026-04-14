@@ -78,6 +78,7 @@ type ReviewResponse struct {
 // @Security     BearerAuth
 // @Param        id path int true "TMDB movie ID"
 // @Param        request body CreateReviewRequest true "Review details"
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      201 {object} response.Response{data=ReviewResponse} "Review created"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"
@@ -144,6 +145,7 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-likes)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid movie ID"
 // @Failure      500 {object} response.Response "Internal server error"
@@ -197,6 +199,7 @@ func (h *ReviewHandler) GetByMovieID(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        reviewId path string true "Review ID" format(uuid)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.Response{data=ReviewResponse} "Review details"
 // @Failure      400 {object} response.Response "Invalid review ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -251,6 +254,7 @@ func (h *ReviewHandler) GetByID(c *gin.Context) {
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
 // @Param        sort query string false "Sort field with direction prefix (+asc, -desc)" Enums(+likes, -likes, +rating, -rating, +created_at, -created_at) default(-created_at)
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ReviewResponse} "List of reviews"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -323,6 +327,7 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        reviewId path string true "Review ID" format(uuid)
 // @Param        request body UpdateReviewRequest true "Fields to update"
+// @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.Response{data=ReviewResponse} "Updated review"
 // @Failure      400 {object} response.Response "Invalid request body"
 // @Failure      401 {object} response.Response "Unauthorized"

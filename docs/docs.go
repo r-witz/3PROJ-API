@@ -1972,6 +1972,12 @@ const docTemplate = `{
                         "description": "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created",
                         "name": "types",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3356,6 +3362,12 @@ const docTemplate = `{
                         "description": "Sort field with direction prefix (+asc, -desc)",
                         "name": "sort",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -3427,6 +3439,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/handlers.CreateReviewRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4020,6 +4038,12 @@ const docTemplate = `{
                         "name": "reviewId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -4161,6 +4185,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/handlers.UpdateReviewRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -5129,6 +5159,12 @@ const docTemplate = `{
                         "description": "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created",
                         "name": "types",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -6375,6 +6411,12 @@ const docTemplate = `{
                         "description": "Sort field with direction prefix (+asc, -desc)",
                         "name": "sort",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Language code (e.g., en, fr)",
+                        "name": "Accept-Language",
+                        "in": "header"
                     }
                 ],
                 "responses": {

@@ -2325,6 +2325,10 @@ paths:
         in: query
         name: types
         type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       produces:
       - application/json
       responses:
@@ -3017,6 +3021,10 @@ paths:
         in: query
         name: sort
         type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       produces:
       - application/json
       responses:
@@ -3060,6 +3068,10 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/handlers.CreateReviewRequest'
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       produces:
       - application/json
       responses:
@@ -3677,6 +3689,10 @@ paths:
         name: reviewId
         required: true
         type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       produces:
       - application/json
       responses:
@@ -3727,6 +3743,10 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/handlers.UpdateReviewRequest'
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
+        type: string
       produces:
       - application/json
       responses:
@@ -4028,6 +4048,10 @@ paths:
           user_followed, user_unfollowed, watchlist_item_added, comment_created'
         in: query
         name: types
+        type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
         type: string
       produces:
       - application/json
@@ -4849,6 +4873,10 @@ paths:
         - -created_at
         in: query
         name: sort
+        type: string
+      - description: Language code (e.g., en, fr)
+        in: header
+        name: Accept-Language
         type: string
       produces:
       - application/json
