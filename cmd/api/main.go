@@ -239,6 +239,21 @@ func main() {
 		banCache,
 	)
 
+	// Cleanup unverified accounts older than 24 hours, every hour
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			cutoff := time.Now().Add(-24 * time.Hour)
+			deleted, err := userRepo.DeleteUnverifiedBefore(context.Background(), cutoff)
+			if err != nil {
+				logger.Logger.Error("Failed to cleanup unverified accounts", zap.Error(err))
+			} else if deleted > 0 {
+				logger.Logger.Info("Cleaned up unverified accounts", zap.Int64("deleted", deleted))
+			}
+		}
+	}()
+
 	router.Setup()
 	srv := router.CreateServer(":" + cfg.ServerPort)
 

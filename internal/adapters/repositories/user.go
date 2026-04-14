@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
@@ -242,6 +243,15 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Pool.Exec(ctx, query, id)
 	return err
+}
+
+func (r *UserRepository) DeleteUnverifiedBefore(ctx context.Context, before time.Time) (int64, error) {
+	query := `DELETE FROM users WHERE email_verified = FALSE AND created_at < $1`
+	result, err := r.db.Pool.Exec(ctx, query, before)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 func (r *UserRepository) GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error) {

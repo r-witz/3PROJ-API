@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"duskforge-api/internal/core/domain"
 
@@ -28,6 +29,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *domain.User) error
 	SetEmailVerified(ctx context.Context, id uuid.UUID, verified bool) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	DeleteUnverifiedBefore(ctx context.Context, before time.Time) (int64, error)
 	ExistsByRole(ctx context.Context, role domain.UserRole) (bool, error)
 	GetBannedUserIDs(ctx context.Context) ([]uuid.UUID, error)
 }
