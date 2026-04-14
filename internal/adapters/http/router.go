@@ -133,6 +133,8 @@ func (r *Router) setupAuthRoutes(rg *gin.RouterGroup) {
 		auth.POST("/verify-email", r.authHandler.VerifyEmail)
 		auth.POST("/password-reset/request", r.authHandler.RequestPasswordReset)
 		auth.POST("/password-reset", r.authHandler.ResetPassword)
+		auth.POST("/email-change/request", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.authHandler.RequestEmailChange)
+		auth.POST("/email-change/confirm", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.authHandler.ConfirmEmailChange)
 
 		oauth := auth.Group("/oauth")
 		{

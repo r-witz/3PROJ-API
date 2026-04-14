@@ -11,6 +11,7 @@ type VerificationCodePurpose string
 const (
 	VerificationCodePurposeEmailVerify  VerificationCodePurpose = "email_verify"
 	VerificationCodePurposePasswordReset VerificationCodePurpose = "password_reset"
+	VerificationCodePurposeEmailChange  VerificationCodePurpose = "email_change"
 )
 
 type VerificationCode struct {

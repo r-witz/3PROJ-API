@@ -247,6 +247,14 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
+  handlers.ConfirmEmailChangeRequest:
+    properties:
+      code:
+        example: "123456"
+        type: string
+    required:
+    - code
+    type: object
   handlers.ConversationListResponse:
     properties:
       last_message:
@@ -649,6 +657,14 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440002
         type: string
     type: object
+  handlers.RequestEmailChangeRequest:
+    properties:
+      new_email:
+        example: newemail@example.com
+        type: string
+    required:
+    - new_email
+    type: object
   handlers.ResetPasswordRequest:
     properties:
       code:
@@ -902,9 +918,6 @@ definitions:
       bio:
         example: Updated bio
         maxLength: 500
-        type: string
-      email:
-        example: newemail@example.com
         type: string
       preferences:
         $ref: '#/definitions/handlers.UpdatePreferencesRequest'
@@ -1670,6 +1683,92 @@ paths:
       summary: Set user role
       tags:
       - admin
+  /auth/email-change/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirm the email change with the 6-digit code sent to the new
+        email address
+      parameters:
+      - description: Verification code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ConfirmEmailChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Confirm email change
+      tags:
+      - auth
+  /auth/email-change/request:
+    post:
+      consumes:
+      - application/json
+      description: Send a verification code to the new email address. The email is
+        not changed until the code is confirmed.
+      parameters:
+      - description: New email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RequestEmailChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.Response'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Request email change
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:

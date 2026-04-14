@@ -344,6 +344,110 @@ func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswo
 	return nil
 }
 
+func (s *authService) RequestEmailChange(ctx context.Context, userID uuid.UUID, newEmail string) error {
+	// Check the new email isn't already taken
+	existing, err := s.userRepo.GetByEmail(ctx, newEmail)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if existing != nil {
+		return domain.ErrEmailAlreadyExists
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return domain.ErrInternal
+	}
+
+	canRequest, err := s.verificationRepo.CanRequest(ctx, newEmail, domain.VerificationCodePurposeEmailChange)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if !canRequest {
+		return domain.ErrVerificationCodeRateLimit
+	}
+
+	code, err := generateVerificationCode()
+	if err != nil {
+		return domain.ErrInternal
+	}
+
+	vc := &domain.VerificationCode{
+		UserID:    userID,
+		Email:     newEmail,
+		Code:      code,
+		Purpose:   domain.VerificationCodePurposeEmailChange,
+		ExpiresAt: time.Now().Add(verificationCodeTTL),
+	}
+
+	if err := s.verificationRepo.Store(ctx, vc, verificationCodeTTL); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.verificationRepo.StorePendingEmail(ctx, userID, newEmail, verificationCodeTTL); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.verificationRepo.RecordRequest(ctx, newEmail, domain.VerificationCodePurposeEmailChange, verificationRateWindow); err != nil {
+		return domain.ErrInternal
+	}
+
+	if err := s.emailSender.SendVerificationCode(ctx, newEmail, code); err != nil {
+		logger.Logger.Error("Failed to send email change verification", zap.Error(err), zap.String("email", newEmail))
+		return domain.ErrInternal
+	}
+
+	return nil
+}
+
+func (s *authService) ConfirmEmailChange(ctx context.Context, userID uuid.UUID, code string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil || user == nil {
+		return domain.ErrInternal
+	}
+
+	// Find the pending email change code for this user
+	// We need to scan all email_change keys for this user, but we stored the code keyed by the NEW email.
+	// The code contains the userID, so we retrieve it by iterating... but that's not efficient.
+	// Instead, we store a pointer from userID -> newEmail in Redis alongside the code.
+	newEmail, err := s.verificationRepo.GetPendingEmail(ctx, userID)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if newEmail == "" {
+		return domain.ErrVerificationCodeInvalid
+	}
+
+	stored, err := s.verificationRepo.Get(ctx, newEmail, domain.VerificationCodePurposeEmailChange)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if stored == nil || stored.Code != code || stored.UserID != userID {
+		return domain.ErrVerificationCodeInvalid
+	}
+
+	// Check the new email is still available
+	existing, err := s.userRepo.GetByEmail(ctx, newEmail)
+	if err != nil {
+		return domain.ErrInternal
+	}
+	if existing != nil {
+		return domain.ErrEmailAlreadyExists
+	}
+
+	user.Email = newEmail
+	user.EmailVerified = true
+	user.UpdatedAt = time.Now()
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		return domain.ErrInternal
+	}
+
+	_ = s.verificationRepo.Delete(ctx, newEmail, domain.VerificationCodePurposeEmailChange)
+	_ = s.verificationRepo.DeletePendingEmail(ctx, userID)
+
+	return nil
+}
+
 func (s *authService) sendVerificationCodeForUser(ctx context.Context, user *domain.User, checkRateLimit bool) error {
 	if checkRateLimit {
 		canRequest, err := s.verificationRepo.CanRequest(ctx, user.Email, domain.VerificationCodePurposeEmailVerify)

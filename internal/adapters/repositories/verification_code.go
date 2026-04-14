@@ -8,6 +8,7 @@ import (
 
 	"duskforge-api/internal/core/domain"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -92,6 +93,7 @@ func (r *VerificationCodeRepo) DeleteAllForEmail(ctx context.Context, email stri
 	purposes := []domain.VerificationCodePurpose{
 		domain.VerificationCodePurposeEmailVerify,
 		domain.VerificationCodePurposePasswordReset,
+		domain.VerificationCodePurposeEmailChange,
 	}
 	pipe := r.client.Pipeline()
 	for _, p := range purposes {
@@ -101,6 +103,29 @@ func (r *VerificationCodeRepo) DeleteAllForEmail(ctx context.Context, email stri
 	}
 	_, err := pipe.Exec(ctx)
 	return err
+}
+
+func pendingEmailKey(userID uuid.UUID) string {
+	return fmt.Sprintf("verification:pending_email:%s", userID.String())
+}
+
+func (r *VerificationCodeRepo) StorePendingEmail(ctx context.Context, userID uuid.UUID, newEmail string, ttl time.Duration) error {
+	return r.client.Set(ctx, pendingEmailKey(userID), newEmail, ttl).Err()
+}
+
+func (r *VerificationCodeRepo) GetPendingEmail(ctx context.Context, userID uuid.UUID) (string, error) {
+	email, err := r.client.Get(ctx, pendingEmailKey(userID)).Result()
+	if err == redis.Nil {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to get pending email: %w", err)
+	}
+	return email, nil
+}
+
+func (r *VerificationCodeRepo) DeletePendingEmail(ctx context.Context, userID uuid.UUID) error {
+	return r.client.Del(ctx, pendingEmailKey(userID)).Err()
 }
 
 func (r *VerificationCodeRepo) RecordRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose, window time.Duration) error {

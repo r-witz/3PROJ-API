@@ -44,17 +44,6 @@ func (s *userService) UpdateCurrentUser(ctx context.Context, userID uuid.UUID, i
 		return nil, domain.ErrUserNotFound
 	}
 
-	if input.Email != nil {
-		existing, err := s.userRepo.GetByEmail(ctx, *input.Email)
-		if err != nil {
-			return nil, domain.ErrInternal
-		}
-		if existing != nil && existing.ID != userID {
-			return nil, domain.ErrEmailAlreadyExists
-		}
-		user.Email = *input.Email
-	}
-
 	if input.Username != nil {
 		existing, err := s.userRepo.GetByUsername(ctx, *input.Username)
 		if err != nil {

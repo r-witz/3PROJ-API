@@ -90,7 +90,6 @@ type UpdatePreferencesRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Email       *string                   `json:"email" binding:"omitempty,email" example:"newemail@example.com"`
 	Username    *string                   `json:"username" binding:"omitempty,min=3,max=50" example:"newusername"`
 	Bio         *string                   `json:"bio" binding:"omitempty,max=500" example:"Updated bio"`
 	Website     *string                   `json:"website" example:"https://newwebsite.com"`
@@ -180,7 +179,6 @@ func (h *UserHandler) UpdateCurrentUser(c *gin.Context) {
 	}
 
 	input := ports.UpdateUserInput{
-		Email:    req.Email,
 		Username: req.Username,
 		Bio:      req.Bio,
 		Website:  req.Website,

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/ports"
 
@@ -45,6 +46,14 @@ type VerifyEmailRequest struct {
 
 type PasswordResetRequestBody struct {
 	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+type RequestEmailChangeRequest struct {
+	NewEmail string `json:"new_email" binding:"required,email" example:"newemail@example.com"`
+}
+
+type ConfirmEmailChangeRequest struct {
+	Code string `json:"code" binding:"required,len=6" example:"123456"`
 }
 
 type ResetPasswordRequest struct {
@@ -313,4 +322,76 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "Password reset successfully"})
+}
+
+// @Summary      Request email change
+// @Description  Send a verification code to the new email address. The email is not changed until the code is confirmed.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body RequestEmailChangeRequest true "New email address"
+// @Success      200 {object} response.Response
+// @Failure      400 {object} response.Response
+// @Failure      401 {object} response.Response
+// @Failure      409 {object} response.Response
+// @Failure      429 {object} response.Response
+// @Failure      500 {object} response.Response
+// @Router       /auth/email-change/request [post]
+func (h *AuthHandler) RequestEmailChange(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.HandleError(c, nil)
+		return
+	}
+
+	var req RequestEmailChangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		if response.HandleValidationError(c, err) {
+			return
+		}
+		response.BadRequest(c, "Invalid request body", err.Error())
+		return
+	}
+
+	if err := h.authService.RequestEmailChange(c.Request.Context(), userID, req.NewEmail); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "Verification code sent to new email"})
+}
+
+// @Summary      Confirm email change
+// @Description  Confirm the email change with the 6-digit code sent to the new email address
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body ConfirmEmailChangeRequest true "Verification code"
+// @Success      200 {object} response.Response
+// @Failure      400 {object} response.Response
+// @Failure      401 {object} response.Response
+// @Failure      409 {object} response.Response
+// @Failure      500 {object} response.Response
+// @Router       /auth/email-change/confirm [post]
+func (h *AuthHandler) ConfirmEmailChange(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.HandleError(c, nil)
+		return
+	}
+
+	var req ConfirmEmailChangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body", err.Error())
+		return
+	}
+
+	if err := h.authService.ConfirmEmailChange(c.Request.Context(), userID, req.Code); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "Email changed successfully"})
 }

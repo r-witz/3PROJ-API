@@ -9,7 +9,6 @@ import (
 )
 
 type UpdateUserInput struct {
-	Email    *string
 	Username *string
 	Bio      *string
 	Website  *string

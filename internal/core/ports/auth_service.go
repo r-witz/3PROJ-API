@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"duskforge-api/internal/core/domain"
+
+	"github.com/google/uuid"
 )
 
 type RegisterInput struct {
@@ -38,4 +40,6 @@ type AuthService interface {
 	VerifyEmail(ctx context.Context, email string, code string) error
 	RequestPasswordReset(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, input ResetPasswordInput) error
+	RequestEmailChange(ctx context.Context, userID uuid.UUID, newEmail string) error
+	ConfirmEmailChange(ctx context.Context, userID uuid.UUID, code string) error
 }
