@@ -76,6 +76,46 @@ func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UU
 	return notifications, rows.Err()
 }
 
+func (r *NotificationRepository) GetByUserIDPaginated(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Notification, error) {
+	query := `
+		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at
+		FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var notifications []*domain.Notification
+	for rows.Next() {
+		notification := &domain.Notification{}
+		if err := rows.Scan(
+			&notification.ID, &notification.UserID, &notification.ActorID, &notification.Type,
+			&notification.ReviewID, &notification.CommentID, &notification.Message,
+			&notification.ReadAt, &notification.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		notifications = append(notifications, notification)
+	}
+	return notifications, rows.Err()
+}
+
+func (r *NotificationRepository) CountByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	query := `SELECT COUNT(*) FROM notifications WHERE user_id = $1`
+	var count int
+	err := r.db.Pool.QueryRow(ctx, query, userID).Scan(&count)
+	return count, err
+}
+
+func (r *NotificationRepository) CountUnreadByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	query := `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL`
+	var count int
+	err := r.db.Pool.QueryRow(ctx, query, userID).Scan(&count)
+	return count, err
+}
+
 func (r *NotificationRepository) GetUnreadByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Notification, error) {
 	query := `
 		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at

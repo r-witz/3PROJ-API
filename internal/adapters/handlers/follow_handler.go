@@ -16,10 +16,11 @@ type FollowHandler struct {
 	blockService  ports.BlockService
 	hub           *ws.Hub
 	banCache      ports.BanCache
+	notifService  ports.NotificationService
 }
 
-func NewFollowHandler(followService ports.FollowService, blockService ports.BlockService, hub *ws.Hub, banCache ports.BanCache) *FollowHandler {
-	return &FollowHandler{followService: followService, blockService: blockService, hub: hub, banCache: banCache}
+func NewFollowHandler(followService ports.FollowService, blockService ports.BlockService, hub *ws.Hub, banCache ports.BanCache, notifService ports.NotificationService) *FollowHandler {
+	return &FollowHandler{followService: followService, blockService: blockService, hub: hub, banCache: banCache, notifService: notifService}
 }
 
 type FollowUserResponse struct {
@@ -73,6 +74,18 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 		UserID:       followerID,
 		TargetUserID: &followingID,
 	})
+
+	notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
+		UserID:  followingID,
+		ActorID: followerID,
+		Type:    domain.NotificationTypeNewFollow,
+	})
+	if notif != nil {
+		h.hub.SendToUser(followingID, ws.Event{
+			Type: ws.EventNotificationNew,
+			Data: notif,
+		})
+	}
 
 	if mutual, _ := h.followService.IsFollowing(c.Request.Context(), followingID, followerID); mutual {
 		event := ws.Event{

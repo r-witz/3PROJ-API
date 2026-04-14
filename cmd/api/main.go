@@ -96,6 +96,8 @@ func main() {
 	statsRepo := repositories.NewStatsRepository(db)
 	activityRepo := repositories.NewActivityRepository(db)
 	reportRepo := repositories.NewReportRepository(db)
+	notifRepo := repositories.NewNotificationRepository(db)
+	notifPrefRepo := repositories.NewNotificationPreferencesRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -132,6 +134,7 @@ func main() {
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
 	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo, banCache)
+	notifService := services.NewNotificationService(notifRepo, notifPrefRepo)
 
 	bannedIDs, err := userRepo.GetBannedUserIDs(context.Background())
 	if err != nil {
@@ -182,14 +185,14 @@ func main() {
 	movieHandler := handlers.NewMovieHandler(movieService)
 	actorHandler := handlers.NewActorHandler(actorService)
 	collectionHandler := handlers.NewCollectionHandler(collectionService, blockService, banCache)
-	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService, blockService, banCache)
-	commentHandler := handlers.NewCommentHandler(commentService, userService, blockService, banCache)
 	statsHandler := handlers.NewStatsHandler(statsService, blockService, banCache)
 	activityHandler := handlers.NewActivityHandler(activityService, movieService, blockService, banCache)
 	hub := ws.NewHub()
 	go hub.Run()
 
-	followHandler := handlers.NewFollowHandler(followService, blockService, hub, banCache)
+	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService, blockService, banCache, notifService, hub)
+	commentHandler := handlers.NewCommentHandler(commentService, userService, blockService, banCache, notifService, hub, reviewService)
+	followHandler := handlers.NewFollowHandler(followService, blockService, hub, banCache, notifService)
 	messageHandler := handlers.NewMessageHandler(messageService, hub)
 	blockHandler := handlers.NewBlockHandler(blockService, hub)
 	importService := services.NewImportService(collectionRepo, collectionItemRepo, reviewRepo, cachedTMDB, hub)
@@ -197,6 +200,7 @@ func main() {
 	adminHandler := handlers.NewAdminHandler(adminService, reportService, messageRepo, hub)
 	importHandler := handlers.NewImportHandler(importService)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
+	notificationHandler := handlers.NewNotificationHandler(notifService)
 
 	router := http.NewRouter(
 		http.RouterConfig{
@@ -219,6 +223,7 @@ func main() {
 		wsHandler,
 		adminHandler,
 		importHandler,
+		notificationHandler,
 		userService,
 		activityRepo,
 		banCache,

@@ -7,6 +7,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -17,10 +18,13 @@ type CommentHandler struct {
 	userService    ports.UserService
 	blockService   ports.BlockService
 	banCache       ports.BanCache
+	notifService   ports.NotificationService
+	hub            *ws.Hub
+	reviewService  ports.ReviewService
 }
 
-func NewCommentHandler(commentService ports.CommentService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache) *CommentHandler {
-	return &CommentHandler{commentService: commentService, userService: userService, blockService: blockService, banCache: banCache}
+func NewCommentHandler(commentService ports.CommentService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache, notifService ports.NotificationService, hub *ws.Hub, reviewService ports.ReviewService) *CommentHandler {
+	return &CommentHandler{commentService: commentService, userService: userService, blockService: blockService, banCache: banCache, notifService: notifService, hub: hub, reviewService: reviewService}
 }
 
 type CreateCommentRequest struct {
@@ -96,6 +100,22 @@ func (h *CommentHandler) Create(c *gin.Context) {
 		UserID:    userID,
 		CommentID: &comment.ID,
 	})
+
+	reviewMeta, err := h.reviewService.GetByID(c.Request.Context(), reviewID, nil)
+	if err == nil && reviewMeta != nil {
+		notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
+			UserID:    reviewMeta.Review.UserID,
+			ActorID:   userID,
+			Type:      domain.NotificationTypeNewComment,
+			CommentID: &comment.ID,
+		})
+		if notif != nil {
+			h.hub.SendToUser(reviewMeta.Review.UserID, ws.Event{
+				Type: ws.EventNotificationNew,
+				Data: notif,
+			})
+		}
+	}
 
 	user, _ := h.userService.GetByID(c.Request.Context(), userID)
 
@@ -280,6 +300,22 @@ func (h *CommentHandler) Like(c *gin.Context) {
 		UserID:    userID,
 		CommentID: &commentID,
 	})
+
+	commentObj, err := h.commentService.GetByID(c.Request.Context(), commentID)
+	if err == nil && commentObj != nil {
+		notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
+			UserID:    commentObj.UserID,
+			ActorID:   userID,
+			Type:      domain.NotificationTypeLikeComment,
+			CommentID: &commentID,
+		})
+		if notif != nil {
+			h.hub.SendToUser(commentObj.UserID, ws.Event{
+				Type: ws.EventNotificationNew,
+				Data: notif,
+			})
+		}
+	}
 
 	c.Status(204)
 }

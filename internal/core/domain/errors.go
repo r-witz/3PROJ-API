@@ -127,3 +127,7 @@ var (
 	ErrInvalidImportFile  = errors.New("invalid import file")
 	ErrImportFileTooLarge = errors.New("import file too large")
 )
+
+var (
+	ErrNotificationNotFound = errors.New("notification not found")
+)

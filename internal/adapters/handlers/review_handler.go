@@ -9,6 +9,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,10 +21,12 @@ type ReviewHandler struct {
 	userService   ports.UserService
 	blockService  ports.BlockService
 	banCache      ports.BanCache
+	notifService  ports.NotificationService
+	hub           *ws.Hub
 }
 
-func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache) *ReviewHandler {
-	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService, blockService: blockService, banCache: banCache}
+func NewReviewHandler(reviewService ports.ReviewService, movieService ports.MovieService, userService ports.UserService, blockService ports.BlockService, banCache ports.BanCache, notifService ports.NotificationService, hub *ws.Hub) *ReviewHandler {
+	return &ReviewHandler{reviewService: reviewService, movieService: movieService, userService: userService, blockService: blockService, banCache: banCache, notifService: notifService, hub: hub}
 }
 
 type CreateReviewRequest struct {
@@ -443,6 +446,22 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 		UserID:   userID,
 		ReviewID: &reviewID,
 	})
+
+	reviewMeta, err := h.reviewService.GetByID(c.Request.Context(), reviewID, nil)
+	if err == nil && reviewMeta != nil {
+		notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
+			UserID:   reviewMeta.Review.UserID,
+			ActorID:  userID,
+			Type:     domain.NotificationTypeLikeReview,
+			ReviewID: &reviewID,
+		})
+		if notif != nil {
+			h.hub.SendToUser(reviewMeta.Review.UserID, ws.Event{
+				Type: ws.EventNotificationNew,
+				Data: notif,
+			})
+		}
+	}
 
 	c.Status(204)
 }

@@ -35,12 +35,13 @@ type Router struct {
 	blockHandler      *handlers.BlockHandler
 	statsHandler      *handlers.StatsHandler
 	activityHandler   *handlers.ActivityHandler
-	wsHandler         *handlers.WebSocketHandler
-	adminHandler      *handlers.AdminHandler
-	importHandler     *handlers.ImportHandler
-	userService       ports.UserService
-	activityRepo      ports.ActivityRepository
-	banCache          ports.BanCache
+	wsHandler            *handlers.WebSocketHandler
+	adminHandler         *handlers.AdminHandler
+	importHandler        *handlers.ImportHandler
+	notificationHandler  *handlers.NotificationHandler
+	userService          ports.UserService
+	activityRepo         ports.ActivityRepository
+	banCache             ports.BanCache
 }
 
 func NewRouter(
@@ -61,6 +62,7 @@ func NewRouter(
 	wsHandler *handlers.WebSocketHandler,
 	adminHandler *handlers.AdminHandler,
 	importHandler *handlers.ImportHandler,
+	notificationHandler *handlers.NotificationHandler,
 	userService ports.UserService,
 	activityRepo ports.ActivityRepository,
 	banCache ports.BanCache,
@@ -81,12 +83,13 @@ func NewRouter(
 		blockHandler:      blockHandler,
 		statsHandler:      statsHandler,
 		activityHandler:   activityHandler,
-		wsHandler:         wsHandler,
-		adminHandler:      adminHandler,
-		importHandler:     importHandler,
-		userService:       userService,
-		activityRepo:      activityRepo,
-		banCache:          banCache,
+		wsHandler:           wsHandler,
+		adminHandler:        adminHandler,
+		importHandler:       importHandler,
+		notificationHandler: notificationHandler,
+		userService:         userService,
+		activityRepo:        activityRepo,
+		banCache:            banCache,
 	}
 }
 
@@ -112,6 +115,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupReportRoutes(v1)
 		r.setupAdminRoutes(v1)
 		r.setupImportRoutes(v1)
+		r.setupNotificationRoutes(v1)
 		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
@@ -293,6 +297,20 @@ func (r *Router) setupImportRoutes(rg *gin.RouterGroup) {
 	{
 		importGroup.POST("/letterboxd", r.importHandler.ImportLetterboxd)
 		importGroup.GET("/letterboxd/status", r.importHandler.GetImportStatus)
+	}
+}
+
+func (r *Router) setupNotificationRoutes(rg *gin.RouterGroup) {
+	notifications := rg.Group("/notifications")
+	notifications.Use(middleware.Auth(r.config.AccessTokenSecret, r.banCache))
+	{
+		notifications.GET("", r.notificationHandler.GetNotifications)
+		notifications.GET("/unread/count", r.notificationHandler.GetUnreadCount)
+		notifications.PUT("/read", r.notificationHandler.MarkAllAsRead)
+		notifications.GET("/preferences", r.notificationHandler.GetPreferences)
+		notifications.PATCH("/preferences", r.notificationHandler.UpdatePreferences)
+		notifications.PUT("/:notificationId/read", r.notificationHandler.MarkAsRead)
+		notifications.DELETE("/:notificationId", r.notificationHandler.Delete)
 	}
 }
 

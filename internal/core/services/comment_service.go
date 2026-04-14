@@ -34,6 +34,17 @@ func NewCommentService(
 	}
 }
 
+func (s *commentService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Comment, error) {
+	comment, err := s.commentRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	if comment == nil {
+		return nil, domain.ErrCommentNotFound
+	}
+	return comment, nil
+}
+
 func (s *commentService) Create(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID, input ports.CreateCommentInput) (*domain.Comment, error) {
 	review, err := s.reviewRepo.GetByID(ctx, reviewID)
 	if err != nil {

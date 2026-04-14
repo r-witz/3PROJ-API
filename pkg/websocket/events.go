@@ -11,6 +11,7 @@ const (
 	EventMessagingUnblocked = "messaging.unblocked"
 	EventImportProgress     = "import.progress"
 	EventUserBanned         = "user.banned"
+	EventNotificationNew    = "notification.new"
 )
 
 type Event struct {
@@ -49,4 +50,14 @@ type MessagingUnblockedPayload struct {
 
 type UserBannedPayload struct {
 	UserID string `json:"user_id"`
+}
+
+type NotificationPayload struct {
+	ID        string  `json:"id"`
+	Type      string  `json:"type"`
+	ActorID   *string `json:"actor_id,omitempty"`
+	ReviewID  *string `json:"review_id,omitempty"`
+	CommentID *string `json:"comment_id,omitempty"`
+	Message   *string `json:"message,omitempty"`
+	CreatedAt string  `json:"created_at"`
 }

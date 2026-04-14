@@ -66,6 +66,9 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrCollectionItemAlreadyExists:  {http.StatusConflict, "ITEM_EXISTS", "Item already exists in this collection"},
 	domain.ErrCollectionItemNotFound:       {http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found in this collection"},
 
+	// Notification errors
+	domain.ErrNotificationNotFound: {http.StatusNotFound, "NOTIFICATION_NOT_FOUND", "Notification not found"},
+
 	// Review & comment errors
 	domain.ErrReviewNotFound:      {http.StatusNotFound, "REVIEW_NOT_FOUND", "Review not found"},
 	domain.ErrReviewAlreadyExists: {http.StatusConflict, "REVIEW_EXISTS", "You have already reviewed this movie"},

@@ -27,6 +27,7 @@ type CommentWithMeta struct {
 
 type CommentService interface {
 	Create(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID, input CreateCommentInput) (*domain.Comment, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*domain.Comment, error)
 	GetByReviewID(ctx context.Context, reviewID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int) ([]*CommentWithMeta, int, error)
 	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input UpdateCommentInput) (*CommentWithMeta, error)
 	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
