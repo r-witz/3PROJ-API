@@ -233,6 +233,10 @@ func (h *FollowHandler) GetFollowers(c *gin.Context) {
 			hiddenCount++
 			continue
 		}
+		if u.User.Role == domain.UserRoleSuperAdmin {
+			hiddenCount++
+			continue
+		}
 		users = append(users, toFollowUserResponse(u))
 	}
 
@@ -278,6 +282,10 @@ func (h *FollowHandler) GetFollowing(c *gin.Context) {
 	hiddenCount := 0
 	for _, u := range result.Users {
 		if _, hidden := hiddenSet[u.User.ID]; hidden {
+			hiddenCount++
+			continue
+		}
+		if u.User.Role == domain.UserRoleSuperAdmin {
 			hiddenCount++
 			continue
 		}
