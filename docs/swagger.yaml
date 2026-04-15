@@ -3132,7 +3132,8 @@ paths:
       - messages
   /messages/{userId}/close:
     delete:
-      description: Reopen a previously closed/archived conversation
+      description: Reopen a previously closed/archived conversation. Sends a "conversation.reopened"
+        WebSocket event to all connected clients of the calling user.
       parameters:
       - description: Other user ID
         format: uuid
@@ -3168,7 +3169,8 @@ paths:
       - messages
     post:
       description: Close/archive a conversation with another user. The conversation
-        will be hidden from the default list.
+        will be hidden from the default list. Sends a "conversation.closed" WebSocket
+        event to all connected clients of the calling user.
       parameters:
       - description: Other user ID
         format: uuid

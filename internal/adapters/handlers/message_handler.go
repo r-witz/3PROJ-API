@@ -518,7 +518,7 @@ func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 }
 
 // @Summary      Close a conversation
-// @Description  Close/archive a conversation with another user. The conversation will be hidden from the default list.
+// @Description  Close/archive a conversation with another user. The conversation will be hidden from the default list. Sends a "conversation.closed" WebSocket event to all connected clients of the calling user.
 // @Tags         messages
 // @Produce      json
 // @Security     BearerAuth
@@ -547,11 +547,18 @@ func (h *MessageHandler) CloseConversation(c *gin.Context) {
 		return
 	}
 
+	h.hub.SendToUser(userID, ws.Event{
+		Type: ws.EventConversationClosed,
+		Data: ws.ConversationClosedPayload{
+			OtherUserID: otherUserID.String(),
+		},
+	})
+
 	c.Status(204)
 }
 
 // @Summary      Reopen a conversation
-// @Description  Reopen a previously closed/archived conversation
+// @Description  Reopen a previously closed/archived conversation. Sends a "conversation.reopened" WebSocket event to all connected clients of the calling user.
 // @Tags         messages
 // @Produce      json
 // @Security     BearerAuth
@@ -579,6 +586,13 @@ func (h *MessageHandler) ReopenConversation(c *gin.Context) {
 		response.HandleError(c, err)
 		return
 	}
+
+	h.hub.SendToUser(userID, ws.Event{
+		Type: ws.EventConversationReopened,
+		Data: ws.ConversationClosedPayload{
+			OtherUserID: otherUserID.String(),
+		},
+	})
 
 	c.Status(204)
 }

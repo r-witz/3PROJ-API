@@ -3115,7 +3115,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Close/archive a conversation with another user. The conversation will be hidden from the default list.",
+                "description": "Close/archive a conversation with another user. The conversation will be hidden from the default list. Sends a \"conversation.closed\" WebSocket event to all connected clients of the calling user.",
                 "produces": [
                     "application/json"
                 ],
@@ -3169,7 +3169,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Reopen a previously closed/archived conversation",
+                "description": "Reopen a previously closed/archived conversation. Sends a \"conversation.reopened\" WebSocket event to all connected clients of the calling user.",
                 "produces": [
                     "application/json"
                 ],

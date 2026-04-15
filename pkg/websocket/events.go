@@ -9,9 +9,11 @@ const (
 	EventConversationRead = "conversation.read"
 	EventMessagingBlocked   = "messaging.blocked"
 	EventMessagingUnblocked = "messaging.unblocked"
-	EventImportProgress     = "import.progress"
-	EventUserBanned         = "user.banned"
-	EventNotificationNew    = "notification.new"
+	EventConversationClosed   = "conversation.closed"
+	EventConversationReopened = "conversation.reopened"
+	EventImportProgress       = "import.progress"
+	EventUserBanned           = "user.banned"
+	EventNotificationNew      = "notification.new"
 )
 
 type Event struct {
@@ -36,6 +38,10 @@ type ReactionPayload struct {
 type ConversationReadPayload struct {
 	ReaderID string `json:"reader_id"`
 	OtherID  string `json:"other_id"`
+}
+
+type ConversationClosedPayload struct {
+	OtherUserID string `json:"other_user_id"`
 }
 
 type MessagingBlockedPayload struct {
