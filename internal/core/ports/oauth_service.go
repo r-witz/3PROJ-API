@@ -14,6 +14,7 @@ type OAuthCallbackInput struct {
 	Code        string
 	State       string
 	RedirectURI string
+	Locale      domain.UserLocale
 }
 
 type OAuthAuthResult struct {

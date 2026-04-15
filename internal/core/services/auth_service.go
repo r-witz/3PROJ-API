@@ -71,6 +71,11 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 		return nil, nil, mapPasswordError(err)
 	}
 
+	locale := input.Locale
+	if locale == "" {
+		locale = domain.UserLocaleEN
+	}
+
 	now := time.Now()
 	user := &domain.User{
 		ID:           uuid.New(),
@@ -79,7 +84,7 @@ func (s *authService) Register(ctx context.Context, input ports.RegisterInput) (
 		PasswordHash: &passwordHash,
 		Role:         domain.UserRoleUser,
 		Theme:        domain.UserThemeSystem,
-		Locale:       domain.UserLocaleEN,
+		Locale:       locale,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}

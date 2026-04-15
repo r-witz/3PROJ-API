@@ -12,6 +12,7 @@ type RegisterInput struct {
 	Email    string
 	Username string
 	Password string
+	Locale   domain.UserLocale
 }
 
 type LoginInput struct {

@@ -158,7 +158,7 @@ func (s *oauthService) HandleCallback(ctx context.Context, input ports.OAuthCall
 				return nil, err
 			}
 		} else {
-			user, err = s.createOAuthUser(ctx, input.Provider, oauthUserInfo)
+			user, err = s.createOAuthUser(ctx, input.Provider, oauthUserInfo, input.Locale)
 			if err != nil {
 				return nil, err
 			}
@@ -243,10 +243,14 @@ func (s *oauthService) GetLinkedProviders(ctx context.Context, userID uuid.UUID)
 	}, nil
 }
 
-func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuthProvider, info *oauth.UserInfo) (*domain.User, error) {
+func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuthProvider, info *oauth.UserInfo, locale domain.UserLocale) (*domain.User, error) {
 	username, err := s.generateUniqueUsername(ctx, info.Username)
 	if err != nil {
 		return nil, err
+	}
+
+	if locale == "" {
+		locale = domain.UserLocaleEN
 	}
 
 	now := time.Now()
@@ -259,7 +263,7 @@ func (s *oauthService) createOAuthUser(ctx context.Context, provider oauth.OAuth
 		AvatarURL:     info.AvatarURL,
 		Role:          domain.UserRoleUser,
 		Theme:         domain.UserThemeSystem,
-		Locale:        domain.UserLocaleEN,
+		Locale:        locale,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}

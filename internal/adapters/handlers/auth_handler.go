@@ -3,6 +3,7 @@ package handlers
 import (
 	"duskforge-api/internal/adapters/middleware"
 	"duskforge-api/internal/adapters/response"
+	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 
 	"github.com/gin-gonic/gin"
@@ -70,10 +71,11 @@ type TokensResponse struct {
 }
 
 // @Summary      Register a new user
-// @Description  Create a new user account, return authentication tokens, and send a verification code to the user's email. The user must verify their email before they can log in.
+// @Description  Create a new user account, return authentication tokens, and send a verification code to the user's email. The user must verify their email before they can log in. The Accept-Language header is used to set the user's preferred locale (en, fr, es). Defaults to en.
 // @Tags         auth
 // @Accept       json
 // @Produce      json
+// @Param        Accept-Language header string false "Preferred language (e.g. fr, es). Defaults to en" default(en)
 // @Param        request body RegisterRequest true "Registration details"
 // @Success      201 {object} response.Response{data=TokensResponse}
 // @Failure      400 {object} response.Response
@@ -90,10 +92,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	locale := domain.LocaleFromAcceptLanguage(c.GetHeader("Accept-Language"))
+
 	_, tokens, err := h.authService.Register(c.Request.Context(), ports.RegisterInput{
 		Email:    req.Email,
 		Username: req.Username,
 		Password: req.Password,
+		Locale:   locale,
 	})
 	if err != nil {
 		response.HandleError(c, err)

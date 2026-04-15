@@ -1,10 +1,33 @@
 package domain
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+// LocaleFromAcceptLanguage parses the Accept-Language header and returns the
+// best matching UserLocale, defaulting to UserLocaleEN.
+func LocaleFromAcceptLanguage(acceptLang string) UserLocale {
+	if acceptLang == "" {
+		return UserLocaleEN
+	}
+
+	lang := strings.Split(acceptLang, ",")[0]
+	lang = strings.Split(lang, ";")[0]
+	lang = strings.TrimSpace(lang)
+	lang = strings.ToLower(lang)
+
+	switch {
+	case strings.HasPrefix(lang, "fr"):
+		return UserLocaleFR
+	case strings.HasPrefix(lang, "es"):
+		return UserLocaleES
+	default:
+		return UserLocaleEN
+	}
+}
 
 type UserRole string
 

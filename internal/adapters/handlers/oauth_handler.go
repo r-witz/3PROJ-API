@@ -94,9 +94,10 @@ func (h *OAuthHandler) GitHubRedirect(c *gin.Context) {
 }
 
 // @Summary      GitHub OAuth callback
-// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.
+// @Description  Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED. The Accept-Language header is used to set the preferred locale for new accounts.
 // @Tags         oauth
 // @Produce      json
+// @Param        Accept-Language header string false "Preferred language for new accounts (e.g. fr, es). Defaults to en" default(en)
 // @Param        code  query string true "Authorization code from GitHub"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
@@ -122,11 +123,13 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/github/callback"
+	locale := domain.LocaleFromAcceptLanguage(c.GetHeader("Accept-Language"))
 	result, err := h.oauthService.HandleCallback(c.Request.Context(), ports.OAuthCallbackInput{
 		Provider:    oauth.ProviderGitHub,
 		Code:        req.Code,
 		State:       req.State,
 		RedirectURI: redirectURI,
+		Locale:      locale,
 	})
 	if err != nil {
 		if errors.Is(err, domain.ErrUserBanned) || errors.Is(err, domain.ErrOAuthAccountAlreadyLinked) {
@@ -199,9 +202,10 @@ func (h *OAuthHandler) GoogleRedirect(c *gin.Context) {
 }
 
 // @Summary      Google OAuth callback
-// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.
+// @Description  Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true&provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED. The Accept-Language header is used to set the preferred locale for new accounts.
 // @Tags         oauth
 // @Produce      json
+// @Param        Accept-Language header string false "Preferred language for new accounts (e.g. fr, es). Defaults to en" default(en)
 // @Param        code  query string true "Authorization code from Google"
 // @Param        state query string true "State parameter for CSRF protection"
 // @Success      200 {object} response.Response{data=OAuthTokensResponse}
@@ -227,11 +231,13 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	redirectURI := h.redirectBase + "/api/v1/auth/oauth/google/callback"
+	locale := domain.LocaleFromAcceptLanguage(c.GetHeader("Accept-Language"))
 	result, err := h.oauthService.HandleCallback(c.Request.Context(), ports.OAuthCallbackInput{
 		Provider:    oauth.ProviderGoogle,
 		Code:        req.Code,
 		State:       req.State,
 		RedirectURI: redirectURI,
+		Locale:      locale,
 	})
 	if err != nil {
 		if errors.Is(err, domain.ErrUserBanned) || errors.Is(err, domain.ErrOAuthAccountAlreadyLinked) {

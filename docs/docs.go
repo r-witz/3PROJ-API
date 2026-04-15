@@ -1179,7 +1179,7 @@ const docTemplate = `{
         },
         "/auth/oauth/github/callback": {
             "get": {
-                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.",
+                "description": "Handle the GitHub OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=github instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED. The Accept-Language header is used to set the preferred locale for new accounts.",
                 "produces": [
                     "application/json"
                 ],
@@ -1188,6 +1188,13 @@ const docTemplate = `{
                 ],
                 "summary": "GitHub OAuth callback",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Preferred language for new accounts (e.g. fr, es). Defaults to en",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Authorization code from GitHub",
@@ -1424,7 +1431,7 @@ const docTemplate = `{
         },
         "/auth/oauth/google/callback": {
             "get": {
-                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED.",
+                "description": "Handle the Google OAuth callback. If a redirect_uri was provided during authorization, redirects to that URL with tokens in the fragment. Otherwise returns JSON. When the state contains mode=link, redirects with linked=true\u0026provider=google instead of tokens. Banned users are redirected to the frontend with #error=USER_BANNED. The Accept-Language header is used to set the preferred locale for new accounts.",
                 "produces": [
                     "application/json"
                 ],
@@ -1433,6 +1440,13 @@ const docTemplate = `{
                 ],
                 "summary": "Google OAuth callback",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Preferred language for new accounts (e.g. fr, es). Defaults to en",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
                     {
                         "type": "string",
                         "description": "Authorization code from Google",
@@ -1828,7 +1842,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Create a new user account, return authentication tokens, and send a verification code to the user's email. The user must verify their email before they can log in.",
+                "description": "Create a new user account, return authentication tokens, and send a verification code to the user's email. The user must verify their email before they can log in. The Accept-Language header is used to set the user's preferred locale (en, fr, es). Defaults to en.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1840,6 +1854,13 @@ const docTemplate = `{
                 ],
                 "summary": "Register a new user",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "default": "en",
+                        "description": "Preferred language (e.g. fr, es). Defaults to en",
+                        "name": "Accept-Language",
+                        "in": "header"
+                    },
                     {
                         "description": "Registration details",
                         "name": "request",
