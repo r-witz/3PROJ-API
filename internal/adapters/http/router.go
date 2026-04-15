@@ -39,6 +39,7 @@ type Router struct {
 	adminHandler         *handlers.AdminHandler
 	importHandler        *handlers.ImportHandler
 	notificationHandler  *handlers.NotificationHandler
+	exportHandler        *handlers.ExportHandler
 	userService          ports.UserService
 	activityRepo         ports.ActivityRepository
 	banCache             ports.BanCache
@@ -63,6 +64,7 @@ func NewRouter(
 	adminHandler *handlers.AdminHandler,
 	importHandler *handlers.ImportHandler,
 	notificationHandler *handlers.NotificationHandler,
+	exportHandler *handlers.ExportHandler,
 	userService ports.UserService,
 	activityRepo ports.ActivityRepository,
 	banCache ports.BanCache,
@@ -87,6 +89,7 @@ func NewRouter(
 		adminHandler:        adminHandler,
 		importHandler:       importHandler,
 		notificationHandler: notificationHandler,
+		exportHandler:       exportHandler,
 		userService:         userService,
 		activityRepo:        activityRepo,
 		banCache:            banCache,
@@ -164,6 +167,7 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.DELETE("/me/avatar", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.userHandler.DeleteAvatar)
 		users.PUT("/me/password", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.userHandler.ChangePassword)
 		users.DELETE("/me", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.userHandler.DeleteCurrentUser)
+		users.GET("/me/export", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.exportHandler.ExportUserData)
 		users.GET("/me/blocked", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.blockHandler.GetBlockedUsers)
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.userHandler.GetByID)
 		users.GET("/:userId/stats", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.statsHandler.GetUserStats)

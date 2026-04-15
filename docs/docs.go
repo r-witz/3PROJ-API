@@ -5305,6 +5305,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/me/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Export all personal data associated with the authenticated user as a JSON file download. Data is generated on-the-fly and not stored on disk.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "export"
+                ],
+                "summary": "Export user data (GDPR)",
+                "responses": {
+                    "200": {
+                        "description": "JSON file containing all user data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me/password": {
             "put": {
                 "security": [

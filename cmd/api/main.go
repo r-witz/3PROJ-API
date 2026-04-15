@@ -108,6 +108,7 @@ func main() {
 	reportRepo := repositories.NewReportRepository(db)
 	notifRepo := repositories.NewNotificationRepository(db)
 	notifPrefRepo := repositories.NewNotificationPreferencesRepository(db)
+	exportRepo := repositories.NewExportRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -145,6 +146,7 @@ func main() {
 	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
 	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo, banCache)
 	notifService := services.NewNotificationService(notifRepo, notifPrefRepo)
+	exportService := services.NewExportService(exportRepo)
 
 	bannedIDs, err := userRepo.GetBannedUserIDs(context.Background())
 	if err != nil {
@@ -209,6 +211,7 @@ func main() {
 
 	adminHandler := handlers.NewAdminHandler(adminService, reportService, messageRepo, hub)
 	importHandler := handlers.NewImportHandler(importService)
+	exportHandler := handlers.NewExportHandler(exportService)
 	wsHandler := handlers.NewWebSocketHandler(hub, cfg.AccessTokenSecret)
 	notificationHandler := handlers.NewNotificationHandler(notifService)
 
@@ -234,6 +237,7 @@ func main() {
 		adminHandler,
 		importHandler,
 		notificationHandler,
+		exportHandler,
 		userService,
 		activityRepo,
 		banCache,
