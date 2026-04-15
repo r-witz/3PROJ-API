@@ -129,10 +129,14 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
-		if errors.Is(err, domain.ErrUserBanned) {
+		if errors.Is(err, domain.ErrUserBanned) || errors.Is(err, domain.ErrOAuthAccountAlreadyLinked) {
 			if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
 				fragment := url.Values{}
-				fragment.Set("error", "USER_BANNED")
+				if errors.Is(err, domain.ErrUserBanned) {
+					fragment.Set("error", "USER_BANNED")
+				} else {
+					fragment.Set("error", "OAUTH_ALREADY_LINKED")
+				}
 				redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
 				c.Redirect(http.StatusFound, redirectURL)
 				return
@@ -230,10 +234,14 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		RedirectURI: redirectURI,
 	})
 	if err != nil {
-		if errors.Is(err, domain.ErrUserBanned) {
+		if errors.Is(err, domain.ErrUserBanned) || errors.Is(err, domain.ErrOAuthAccountAlreadyLinked) {
 			if frontendURI, extractErr := h.oauthService.ExtractRedirectURI(req.State); extractErr == nil && frontendURI != "" {
 				fragment := url.Values{}
-				fragment.Set("error", "USER_BANNED")
+				if errors.Is(err, domain.ErrUserBanned) {
+					fragment.Set("error", "USER_BANNED")
+				} else {
+					fragment.Set("error", "OAUTH_ALREADY_LINKED")
+				}
 				redirectURL := fmt.Sprintf("%s#%s", frontendURI, fragment.Encode())
 				c.Redirect(http.StatusFound, redirectURL)
 				return
