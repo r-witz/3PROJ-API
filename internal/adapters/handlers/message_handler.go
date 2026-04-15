@@ -311,6 +311,7 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		ReaderID: userID.String(),
 		OtherID:  otherUserID.String(),
 	}}
+	h.hub.SendToUser(userID, event)
 	h.hub.SendToUser(otherUserID, event)
 
 	c.Status(204)
