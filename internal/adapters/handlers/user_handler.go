@@ -59,6 +59,7 @@ type PublicUserResponse struct {
 	AvatarURL    *string   `json:"avatar_url" example:"https://example.com/avatar.jpg"`
 	Bio          *string   `json:"bio" example:"Movie enthusiast"`
 	Website      *string   `json:"website" example:"https://example.com"`
+	Role         *string   `json:"role,omitempty" example:"user"`
 	Stats        UserStats `json:"stats"`
 	IsFollowing  bool      `json:"is_following" example:"true"`
 	IsFollowedBy bool      `json:"is_followed_by" example:"false"`
@@ -492,7 +493,9 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 		isFollowedBy, _ = h.followService.IsFollowing(ctx, id, currentUserID)
 	}
 
-	response.Success(c, toPublicUserResponse(user, stats, isFollowing, isFollowedBy))
+	callerRole, _ := middleware.GetRole(c)
+	callerIsSuperAdmin := callerRole == string(domain.UserRoleSuperAdmin)
+	response.Success(c, toPublicUserResponse(user, stats, isFollowing, isFollowedBy, callerIsSuperAdmin))
 }
 
 func toUserResponse(user *domain.User, stats UserStats) UserResponse {
@@ -519,7 +522,7 @@ func toUserResponse(user *domain.User, stats UserStats) UserResponse {
 	return resp
 }
 
-func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFollowedBy bool) PublicUserResponse {
+func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFollowedBy bool, callerIsSuperAdmin bool) PublicUserResponse {
 	resp := PublicUserResponse{
 		ID:           user.ID.String(),
 		Username:    user.Username,
@@ -530,6 +533,10 @@ func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFol
 		IsFollowing:  isFollowing,
 		IsFollowedBy: isFollowedBy,
 		CreatedAt:   user.CreatedAt.Format(time.RFC3339),
+	}
+	if callerIsSuperAdmin {
+		role := string(user.Role)
+		resp.Role = &role
 	}
 	if user.BannedAt != nil {
 		bannedAt := user.BannedAt.Format(time.RFC3339)
