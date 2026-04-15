@@ -9,6 +9,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -18,13 +20,13 @@ import (
 )
 
 type Client struct {
-	apiKey        string
-	httpClient    *http.Client
-	rateLimiter   *RateLimiter
-	imageURLs     *ImageURLBuilder
-	baseURL       string
-	configReady   atomic.Bool
-	retryCancel   context.CancelFunc
+	apiKeys     []string
+	keyIndex    atomic.Uint64
+	httpClient  *http.Client
+	imageURLs   *ImageURLBuilder
+	baseURL     string
+	configReady atomic.Bool
+	retryCancel context.CancelFunc
 }
 
 type ClientOption func(*Client)
@@ -41,16 +43,16 @@ func WithBaseURL(baseURL string) ClientOption {
 	}
 }
 
-func New(apiKey string, opts ...ClientOption) (*Client, error) {
-	if apiKey == "" {
+func New(apiKeys string, opts ...ClientOption) (*Client, error) {
+	keys := parseAPIKeys(apiKeys)
+	if len(keys) == 0 {
 		logger.Logger.Error("TMDB API key is required")
 		return nil, ErrUnauthorized
 	}
 
 	c := &Client{
-		apiKey:      apiKey,
-		baseURL:     BaseURL,
-		rateLimiter: NewRateLimiter(),
+		apiKeys: keys,
+		baseURL: BaseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -64,9 +66,27 @@ func New(apiKey string, opts ...ClientOption) (*Client, error) {
 
 	logger.Logger.Info("TMDB client initialized",
 		zap.String("base_url", c.baseURL),
+		zap.Int("api_key_count", len(keys)),
 	)
 
 	return c, nil
+}
+
+func parseAPIKeys(raw string) []string {
+	var keys []string
+	for _, k := range strings.Split(raw, ",") {
+		k = strings.TrimSpace(k)
+		if k != "" {
+			keys = append(keys, k)
+		}
+	}
+	return keys
+}
+
+// nextKey returns the next API key using round-robin.
+func (c *Client) nextKey() string {
+	idx := c.keyIndex.Add(1) - 1
+	return c.apiKeys[idx%uint64(len(c.apiKeys))]
 }
 
 func (c *Client) InitializeConfiguration(ctx context.Context) error {
@@ -138,33 +158,47 @@ func isTransientError(err error) bool {
 	return false
 }
 
-func (c *Client) doRequest(ctx context.Context, method, endpoint string, params url.Values) ([]byte, error) {
-	if err := c.rateLimiter.Wait(ctx); err != nil {
-		return nil, &RequestError{Operation: endpoint, Err: err}
-	}
-
-	fullURL := fmt.Sprintf("%s%s", c.baseURL, endpoint)
+func (c *Client) buildURL(endpoint, apiKey string, params url.Values) string {
 	if params == nil {
 		params = url.Values{}
 	}
-	params.Set("api_key", c.apiKey)
-	fullURL = fmt.Sprintf("%s?%s", fullURL, params.Encode())
+	params.Set("api_key", apiKey)
+	return fmt.Sprintf("%s%s?%s", c.baseURL, endpoint, params.Encode())
+}
 
-	const maxRetries = 3
+func (c *Client) doRequest(ctx context.Context, method, endpoint string, params url.Values) ([]byte, error) {
+	// Try up to len(apiKeys) different keys on 429, then one final wait+retry.
+	maxAttempts := len(c.apiKeys) + 1
 	var lastErr error
+	var retryAfter time.Duration
 
-	for attempt := range maxRetries {
+	for attempt := range maxAttempts {
+		apiKey := c.nextKey()
+		fullURL := c.buildURL(endpoint, apiKey, params)
+
+		// If the previous attempt got a 429 and we've exhausted all keys, wait before retrying.
+		if attempt == len(c.apiKeys) && retryAfter > 0 {
+			logger.Logger.Warn("TMDB all keys rate limited, waiting",
+				zap.String("endpoint", endpoint),
+				zap.Duration("wait", retryAfter),
+			)
+			select {
+			case <-ctx.Done():
+				return nil, &RequestError{Operation: endpoint, Err: ctx.Err()}
+			case <-time.After(retryAfter):
+			}
+		}
+
 		req, err := http.NewRequestWithContext(ctx, method, fullURL, nil)
 		if err != nil {
 			return nil, &RequestError{Operation: endpoint, Err: err}
 		}
-
 		req.Header.Set("Accept", "application/json")
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
 			lastErr = err
-			if isTransientError(err) && attempt < maxRetries-1 {
+			if isTransientError(err) {
 				logger.Logger.Warn("TMDB request failed, retrying",
 					zap.String("endpoint", endpoint),
 					zap.Int("attempt", attempt+1),
@@ -186,6 +220,15 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 			return nil, &RequestError{Operation: endpoint, Err: err}
 		}
 
+		if resp.StatusCode == http.StatusTooManyRequests && attempt < maxAttempts-1 {
+			retryAfter = parseRetryAfter(resp.Header.Get("Retry-After"))
+			logger.Logger.Warn("TMDB rate limited, rotating key",
+				zap.String("endpoint", endpoint),
+				zap.Int("attempt", attempt+1),
+			)
+			continue
+		}
+
 		if resp.StatusCode >= 400 {
 			return nil, c.handleErrorResponse(resp.StatusCode, body, endpoint)
 		}
@@ -194,6 +237,19 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 	}
 
 	return nil, &RequestError{Operation: endpoint, Err: lastErr}
+}
+
+// parseRetryAfter parses the Retry-After header value (in seconds).
+// Falls back to 1 second if missing or unparseable.
+func parseRetryAfter(header string) time.Duration {
+	if header == "" {
+		return 1 * time.Second
+	}
+	seconds, err := strconv.Atoi(header)
+	if err != nil || seconds <= 0 {
+		return 1 * time.Second
+	}
+	return time.Duration(seconds) * time.Second
 }
 
 func (c *Client) handleErrorResponse(statusCode int, body []byte, endpoint string) error {
