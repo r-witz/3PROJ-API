@@ -564,6 +564,9 @@ definitions:
       is_following:
         example: true
         type: boolean
+      role:
+        example: user
+        type: string
       stats:
         $ref: '#/definitions/handlers.UserStats'
       username:
@@ -3705,6 +3708,26 @@ paths:
       tags:
       - movies
   /notifications:
+    delete:
+      description: Delete all notifications for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: All notifications deleted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete all notifications
+      tags:
+      - notifications
     get:
       description: Get the authenticated user's notifications with pagination
       parameters:

@@ -109,6 +109,13 @@ func (s *notificationService) MarkAllAsRead(ctx context.Context, userID uuid.UUI
 	return nil
 }
 
+func (s *notificationService) DeleteAll(ctx context.Context, userID uuid.UUID) error {
+	if err := s.notifRepo.DeleteAllByUserID(ctx, userID); err != nil {
+		return domain.ErrInternal
+	}
+	return nil
+}
+
 func (s *notificationService) Delete(ctx context.Context, notificationID uuid.UUID, userID uuid.UUID) error {
 	notification, err := s.notifRepo.GetByID(ctx, notificationID)
 	if err != nil {

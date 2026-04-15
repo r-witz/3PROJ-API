@@ -172,6 +172,30 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	c.Status(204)
 }
 
+// @Summary      Delete all notifications
+// @Description  Delete all notifications for the authenticated user
+// @Tags         notifications
+// @Produce      json
+// @Security     BearerAuth
+// @Success      204 "All notifications deleted"
+// @Failure      401 {object} response.Response "Unauthorized"
+// @Failure      500 {object} response.Response "Internal server error"
+// @Router       /notifications [delete]
+func (h *NotificationHandler) DeleteAll(c *gin.Context) {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
+
+	if err := h.notifService.DeleteAll(c.Request.Context(), userID); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	c.Status(204)
+}
+
 // @Summary      Delete a notification
 // @Description  Delete a specific notification
 // @Tags         notifications

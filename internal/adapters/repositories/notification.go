@@ -158,6 +158,12 @@ func (r *NotificationRepository) Delete(ctx context.Context, id uuid.UUID) error
 	return err
 }
 
+func (r *NotificationRepository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
+	query := `DELETE FROM notifications WHERE user_id = $1`
+	_, err := r.db.Pool.Exec(ctx, query, userID)
+	return err
+}
+
 func (r *NotificationRepository) MarkAsRead(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE notifications SET read_at = $2 WHERE id = $1`
 	_, err := r.db.Pool.Exec(ctx, query, id, time.Now())

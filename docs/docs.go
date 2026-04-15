@@ -4045,6 +4045,38 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete all notifications for the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Delete all notifications",
+                "responses": {
+                    "204": {
+                        "description": "All notifications deleted"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
             }
         },
         "/notifications/preferences": {
@@ -7828,6 +7860,10 @@ const docTemplate = `{
                 "is_following": {
                     "type": "boolean",
                     "example": true
+                },
+                "role": {
+                    "type": "string",
+                    "example": "user"
                 },
                 "stats": {
                     "$ref": "#/definitions/handlers.UserStats"

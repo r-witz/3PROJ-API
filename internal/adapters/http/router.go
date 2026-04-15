@@ -322,6 +322,7 @@ func (r *Router) setupNotificationRoutes(rg *gin.RouterGroup) {
 		notifications.PUT("/read", r.notificationHandler.MarkAllAsRead)
 		notifications.GET("/preferences", r.notificationHandler.GetPreferences)
 		notifications.PATCH("/preferences", r.notificationHandler.UpdatePreferences)
+		notifications.DELETE("", r.notificationHandler.DeleteAll)
 		notifications.PUT("/:notificationId/read", r.notificationHandler.MarkAsRead)
 		notifications.DELETE("/:notificationId", r.notificationHandler.Delete)
 	}

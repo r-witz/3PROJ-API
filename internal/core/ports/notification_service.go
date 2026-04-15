@@ -32,6 +32,7 @@ type NotificationService interface {
 	MarkAsRead(ctx context.Context, notificationID uuid.UUID, userID uuid.UUID) error
 	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
 	Delete(ctx context.Context, notificationID uuid.UUID, userID uuid.UUID) error
+	DeleteAll(ctx context.Context, userID uuid.UUID) error
 	GetPreferences(ctx context.Context, userID uuid.UUID) (*domain.NotificationPreferences, error)
 	UpdatePreferences(ctx context.Context, userID uuid.UUID, input UpdateNotificationPreferencesInput) (*domain.NotificationPreferences, error)
 }
