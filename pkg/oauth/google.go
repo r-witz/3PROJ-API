@@ -9,6 +9,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 var (
@@ -146,9 +151,16 @@ func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	}, nil
 }
 
+func transliterateToASCII(s string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	result, _, _ := transform.String(t, s)
+	return result
+}
+
 func generateUsernameFromName(name, email string) string {
 	if name != "" {
 		username := strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+		username = transliterateToASCII(username)
 		var cleaned strings.Builder
 		for _, r := range username {
 			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
