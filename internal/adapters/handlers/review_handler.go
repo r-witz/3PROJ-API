@@ -366,6 +366,13 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 		return
 	}
 
+	middleware.QueueActivity(c, middleware.ActivityEvent{
+		Action:   middleware.ActivityCreate,
+		Type:     domain.ActivityTypeReviewUpdated,
+		UserID:   userID,
+		ReviewID: &reviewID,
+	})
+
 	language := middleware.GetLocale(c)
 	movie := h.fetchMovieSummary(c.Request.Context(), result.Review.TMDBID, language)
 

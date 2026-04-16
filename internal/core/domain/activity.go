@@ -10,6 +10,7 @@ type ActivityType string
 
 const (
 	ActivityTypeReviewCreated       ActivityType = "review_created"
+	ActivityTypeReviewUpdated       ActivityType = "review_updated"
 	ActivityTypeCollectionCreated   ActivityType = "collection_created"
 	ActivityTypeCollectionItemAdded ActivityType = "collection_item_added"
 	ActivityTypeReviewLiked         ActivityType = "review_liked"
@@ -22,6 +23,7 @@ const (
 
 var ValidActivityTypes = map[ActivityType]bool{
 	ActivityTypeReviewCreated:       true,
+	ActivityTypeReviewUpdated:       true,
 	ActivityTypeCollectionCreated:   true,
 	ActivityTypeCollectionItemAdded: true,
 	ActivityTypeReviewLiked:         true,

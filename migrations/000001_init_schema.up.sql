@@ -7,7 +7,7 @@ CREATE TYPE collection_visibility AS ENUM ('public', 'private');
 CREATE TYPE notification_type AS ENUM ('like_review', 'like_comment', 'new_comment', 'new_follow', 'system');
 CREATE TYPE report_reason AS ENUM ('spam', 'harassment', 'spoiler', 'inappropriate', 'other');
 CREATE TYPE report_status_type AS ENUM ('pending', 'resolved', 'dismissed');
-CREATE TYPE activity_type AS ENUM ('review_created', 'collection_created', 'collection_item_added', 'review_liked', 'comment_liked', 'user_followed', 'user_unfollowed', 'watchlist_item_added', 'comment_created');
+CREATE TYPE activity_type AS ENUM ('review_created', 'review_updated', 'collection_created', 'collection_item_added', 'review_liked', 'comment_liked', 'user_followed', 'user_unfollowed', 'watchlist_item_added', 'comment_created');
 
 -- USERS TABLE
 CREATE TABLE users (
@@ -182,7 +182,7 @@ CREATE TABLE activities (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     CONSTRAINT activity_data_integrity CHECK (
-        (review_id IS NOT NULL) = (type IN ('review_created', 'review_liked'))
+        (review_id IS NOT NULL) = (type IN ('review_created', 'review_updated', 'review_liked'))
         AND (collection_id IS NOT NULL) = (type IN ('collection_created', 'collection_item_added', 'watchlist_item_added'))
         AND (comment_id IS NOT NULL) = (type IN ('comment_liked', 'comment_created'))
         AND (tmdb_id IS NOT NULL) = (type IN ('collection_item_added', 'watchlist_item_added'))

@@ -79,7 +79,7 @@ func parseActivityTypes(c *gin.Context) []domain.ActivityType {
 // @Param        userId path string true "User ID" format(uuid)
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Param        types query string false "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created"
+// @Param        types query string false "Comma-separated activity types to filter. Available types: review_created, review_updated, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created"
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ActivityResponse} "List of activities"
 // @Failure      400 {object} response.Response "Invalid user ID"
@@ -137,7 +137,7 @@ func (h *ActivityHandler) GetByUserID(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Param        types query string false "Comma-separated activity types to filter. Available types: review_created, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created"
+// @Param        types query string false "Comma-separated activity types to filter. Available types: review_created, review_updated, collection_created, collection_item_added, review_liked, comment_liked, user_followed, user_unfollowed, watchlist_item_added, comment_created"
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Success      200 {object} response.PaginatedResponse{data=[]ActivityResponse} "List of activities"
 // @Failure      401 {object} response.Response "Unauthorized"
