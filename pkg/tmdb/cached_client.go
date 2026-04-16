@@ -194,7 +194,9 @@ func (c *CachedClient) GetPersonMovieCredits(ctx context.Context, personID int, 
 }
 
 func (c *CachedClient) SearchMovies(ctx context.Context, params SearchMoviesParams) (*SearchMoviesResponse, error) {
-	key := fmt.Sprintf("tmdb:search_movies:%s:%d:%s", params.Query, params.Page, params.Language)
+	key := fmt.Sprintf("tmdb:search_movies:%s:%d:%s:%d:%d:%s:%t",
+		params.Query, params.Page, params.Language,
+		params.PrimaryReleaseYear, params.Year, params.Region, params.IncludeAdult)
 	var cached SearchMoviesResponse
 	if cacheGet(ctx, c, key, &cached) {
 		return &cached, nil

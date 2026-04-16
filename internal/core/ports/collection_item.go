@@ -16,4 +16,5 @@ type CollectionItemRepository interface {
 	CountByCollectionIDs(ctx context.Context, collectionIDs []uuid.UUID) (map[uuid.UUID]int, error)
 	GetByCollectionIDAndTMDBID(ctx context.Context, collectionID uuid.UUID, tmdbID int) (*domain.CollectionItem, error)
 	Delete(ctx context.Context, collectionID uuid.UUID, tmdbID int) error
+	UpdateRuntime(ctx context.Context, collectionID uuid.UUID, tmdbID int, runtime int16) error
 }

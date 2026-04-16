@@ -128,3 +128,9 @@ func (r *CollectionItemRepository) Delete(ctx context.Context, collectionID uuid
 	_, err := r.db.Pool.Exec(ctx, query, collectionID, tmdbID)
 	return err
 }
+
+func (r *CollectionItemRepository) UpdateRuntime(ctx context.Context, collectionID uuid.UUID, tmdbID int, runtime int16) error {
+	query := `UPDATE collection_items SET runtime = $1 WHERE collection_id = $2 AND tmdb_id = $3`
+	_, err := r.db.Pool.Exec(ctx, query, runtime, collectionID, tmdbID)
+	return err
+}

@@ -76,6 +76,11 @@ type resolvedFilm struct {
 	runtime int16
 }
 
+type backfillItem struct {
+	collectionID uuid.UUID
+	tmdbID       int
+}
+
 func filmKey(name string, year int) string {
 	return strings.ToLower(name) + "|" + strconv.Itoa(year)
 }
@@ -145,13 +150,19 @@ func (s *importService) GetImportStatus(userID uuid.UUID) *ports.ImportProgress 
 	return nil
 }
 
-// setProgress stores progress and pushes it to the user via WebSocket.
+// setProgress stores progress in memory (for polling) and pushes it via WebSocket.
 func (s *importService) setProgress(userID uuid.UUID, p *ports.ImportProgress) {
 	s.progress.Store(userID, p)
 	s.hub.SendToUser(userID, ws.Event{
 		Type: ws.EventImportProgress,
 		Data: p,
 	})
+}
+
+// setProgressQuiet stores progress in memory for polling but does NOT push via WebSocket.
+// Use this for high-frequency incremental updates to avoid spamming the client.
+func (s *importService) setProgressQuiet(userID uuid.UUID, p *ports.ImportProgress) {
+	s.progress.Store(userID, p)
 }
 
 func (s *importService) processImport(
@@ -167,14 +178,22 @@ func (s *importService) processImport(
 
 	total := len(uniqueFilms)
 
-	// Phase 1: Resolve all films to TMDB IDs and fetch runtimes
+	// Phase 1: Resolve all films to TMDB IDs (runtime is backfilled later)
+	// Throttle WebSocket events to ~1% increments to avoid spamming the client.
+	// In-memory progress is always up to date for polling via GET /status.
+	wsInterval := max(total/100, 1)
 	resolved, failed := s.resolveFilms(ctx, uniqueFilms, func(count int) {
-		s.setProgress(userID, &ports.ImportProgress{
+		p := &ports.ImportProgress{
 			Status:   ports.ImportStatusProcessing,
 			Phase:    "resolving",
 			Total:    total,
 			Resolved: count,
-		})
+		}
+		if count%wsInterval == 0 || count == total {
+			s.setProgress(userID, p)
+		} else {
+			s.setProgressQuiet(userID, p)
+		}
 	})
 
 	s.setProgress(userID, &ports.ImportProgress{
@@ -316,7 +335,7 @@ func (s *importService) processImport(
 		result.Failed = []ports.ImportFailure{}
 	}
 
-	// Mark as completed
+	// Mark as completed — user sees their films immediately
 	s.setProgress(userID, &ports.ImportProgress{
 		Status:   ports.ImportStatusCompleted,
 		Phase:    "done",
@@ -324,6 +343,32 @@ func (s *importService) processImport(
 		Resolved: len(resolved),
 		Result:   result,
 	})
+
+	// Phase 3: Backfill runtimes at lower priority so interactive users aren't impacted.
+	// Collect all (collectionID, tmdbID) pairs that need runtime.
+	seen := make(map[int]bool)
+	var backfillItems []backfillItem
+
+	for _, w := range watched {
+		key := filmKey(w.Name, w.Year)
+		film, ok := resolved[key]
+		if !ok || seen[film.tmdbID] {
+			continue
+		}
+		seen[film.tmdbID] = true
+		backfillItems = append(backfillItems, backfillItem{collectionID: watchedCol.ID, tmdbID: film.tmdbID})
+	}
+	for _, w := range watchlist {
+		key := filmKey(w.Name, w.Year)
+		film, ok := resolved[key]
+		if !ok || seen[film.tmdbID] {
+			continue
+		}
+		seen[film.tmdbID] = true
+		backfillItems = append(backfillItems, backfillItem{collectionID: toWatchCol.ID, tmdbID: film.tmdbID})
+	}
+
+	s.backfillRuntimes(ctx, userID, backfillItems)
 }
 
 // addCollectionItem adds a film to a collection directly.
@@ -348,7 +393,45 @@ func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid
 	return true
 }
 
-// resolveFilms resolves film names to TMDB IDs and fetches runtimes concurrently.
+// backfillRuntimes fetches movie details and updates runtimes at lower concurrency.
+// This runs after the import is already marked "completed" so the user isn't waiting.
+func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, items []backfillItem) {
+	if len(items) == 0 {
+		return
+	}
+
+	s.setProgress(userID, &ports.ImportProgress{
+		Status: ports.ImportStatusCompleted,
+		Phase:  "enriching",
+	})
+
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5) // Lower concurrency to leave headroom for interactive users
+
+	for _, item := range items {
+		wg.Add(1)
+		go func(it backfillItem) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			details, err := s.tmdbClient.GetMovieDetails(ctx, it.tmdbID, "en-US")
+			if err != nil || details == nil || details.Runtime == nil {
+				return
+			}
+
+			runtime := int16(*details.Runtime)
+			if runtime > 0 {
+				_ = s.collectionItemRepo.UpdateRuntime(ctx, it.collectionID, it.tmdbID, runtime)
+			}
+		}(item)
+	}
+
+	wg.Wait()
+}
+
+// resolveFilms resolves film names to TMDB IDs concurrently using scored matching.
+// Runtime is NOT fetched here — it is backfilled in a separate lower-priority phase.
 func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry, onProgress func(int)) (map[string]resolvedFilm, []ports.ImportFailure) {
 	resolved := make(map[string]resolvedFilm)
 	var failed []ports.ImportFailure
@@ -364,13 +447,8 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			// Search with title + primary_release_year, trust TMDB's relevance ranking
-			resp, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
-				Query:              film.Name,
-				PrimaryReleaseYear: film.Year,
-				Language:           "en-US",
-			})
-			if err != nil || resp == nil || len(resp.Results) == 0 {
+			tmdbID, ok := s.searchAndMatch(ctx, film.Name, film.Year)
+			if !ok {
 				mu.Lock()
 				failed = append(failed, ports.ImportFailure{
 					Name:   film.Name,
@@ -383,17 +461,8 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 				return
 			}
 
-			tmdbID := resp.Results[0].ID
-
-			// Fetch runtime from movie details
-			var runtime int16
-			details, err := s.tmdbClient.GetMovieDetails(ctx, tmdbID, "en-US")
-			if err == nil && details != nil && details.Runtime != nil {
-				runtime = int16(*details.Runtime)
-			}
-
 			mu.Lock()
-			resolved[key] = resolvedFilm{tmdbID: tmdbID, runtime: runtime}
+			resolved[key] = resolvedFilm{tmdbID: tmdbID, runtime: 0}
 			mu.Unlock()
 
 			newCount := int(count.Add(1))
@@ -403,6 +472,37 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 
 	wg.Wait()
 	return resolved, failed
+}
+
+// searchAndMatch searches TMDB for a film using scored matching with year fallback.
+// Returns the best matching TMDB ID and true, or 0 and false if no good match.
+func (s *importService) searchAndMatch(ctx context.Context, title string, year int) (int, bool) {
+	// First attempt: search with title + primary_release_year
+	resp, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
+		Query:              title,
+		PrimaryReleaseYear: year,
+		Language:           "en-US",
+	})
+	if err == nil && resp != nil && len(resp.Results) > 0 {
+		match, score := bestMatch(title, year, resp.Results)
+		if score >= matchThreshold {
+			return match.ID, true
+		}
+	}
+
+	// Fallback: search without year filter for year-mismatch cases
+	resp, err = s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
+		Query:    title,
+		Language: "en-US",
+	})
+	if err == nil && resp != nil && len(resp.Results) > 0 {
+		match, score := bestMatch(title, year, resp.Results)
+		if score >= matchThreshold {
+			return match.ID, true
+		}
+	}
+
+	return 0, false
 }
 
 // CSV parsing helpers
