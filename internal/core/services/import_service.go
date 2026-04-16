@@ -549,6 +549,19 @@ func readCSV(f *zip.File) ([][]string, error) {
 	return reader.ReadAll()
 }
 
+// validLetterboxdHeader checks that the CSV header contains the expected Letterboxd columns.
+func validLetterboxdHeader(header []string, expected []string) bool {
+	if len(header) < len(expected) {
+		return false
+	}
+	for i, col := range expected {
+		if !strings.EqualFold(strings.TrimSpace(header[i]), col) {
+			return false
+		}
+	}
+	return true
+}
+
 func parseWatched(archive *zip.Reader) []watchedEntry {
 	f := findFileInZip(archive, "watched.csv")
 	if f == nil {
@@ -557,6 +570,10 @@ func parseWatched(archive *zip.Reader) []watchedEntry {
 
 	records, err := readCSV(f)
 	if err != nil || len(records) < 2 {
+		return nil
+	}
+
+	if !validLetterboxdHeader(records[0], []string{"Date", "Name", "Year", "Letterboxd URI"}) {
 		return nil
 	}
 
@@ -585,6 +602,10 @@ func parseRatings(archive *zip.Reader) []ratingEntry {
 
 	records, err := readCSV(f)
 	if err != nil || len(records) < 2 {
+		return nil
+	}
+
+	if !validLetterboxdHeader(records[0], []string{"Date", "Name", "Year", "Letterboxd URI", "Rating"}) {
 		return nil
 	}
 
@@ -621,6 +642,10 @@ func parseReviews(archive *zip.Reader) []reviewEntry {
 		return nil
 	}
 
+	if !validLetterboxdHeader(records[0], []string{"Date", "Name", "Year", "Letterboxd URI", "Rating", "Rewatch", "Review"}) {
+		return nil
+	}
+
 	var entries []reviewEntry
 	for _, row := range records[1:] {
 		if len(row) < 7 {
@@ -653,6 +678,10 @@ func parseWatchlist(archive *zip.Reader) []watchlistEntry {
 
 	records, err := readCSV(f)
 	if err != nil || len(records) < 2 {
+		return nil
+	}
+
+	if !validLetterboxdHeader(records[0], []string{"Date", "Name", "Year", "Letterboxd URI"}) {
 		return nil
 	}
 
