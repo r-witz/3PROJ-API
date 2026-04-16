@@ -125,6 +125,7 @@ var errorMappings = map[error]ErrorMapping{
 	// Import errors
 	domain.ErrInvalidImportFile:  {http.StatusBadRequest, "INVALID_IMPORT_FILE", "Invalid import file"},
 	domain.ErrImportFileTooLarge: {http.StatusBadRequest, "IMPORT_FILE_TOO_LARGE", "Import file exceeds maximum size"},
+	domain.ErrImportFileEmpty:    {http.StatusBadRequest, "IMPORT_FILE_EMPTY", "Zip file contains no Letterboxd data (expected watched.csv, ratings.csv, reviews.csv, or watchlist.csv)"},
 
 	// Email verification errors
 	domain.ErrEmailAlreadyVerified:      {http.StatusConflict, "EMAIL_ALREADY_VERIFIED", "Email is already verified"},

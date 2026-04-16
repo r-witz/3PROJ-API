@@ -2494,7 +2494,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid file",
+                        "description": "Invalid file or zip contains no Letterboxd data",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

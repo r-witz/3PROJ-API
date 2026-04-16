@@ -35,7 +35,7 @@ type ImportLetterboxdResponse = ports.ImportProgress
 // @Security     BearerAuth
 // @Param        file formData file true "Letterboxd export zip file"
 // @Success      202 {object} response.Response{data=ImportLetterboxdResponse} "Import started"
-// @Failure      400 {object} response.Response "Invalid file"
+// @Failure      400 {object} response.Response "Invalid file or zip contains no Letterboxd data"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /import/letterboxd [post]

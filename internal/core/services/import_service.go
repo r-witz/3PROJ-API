@@ -130,6 +130,10 @@ func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.U
 		}
 	}
 
+	if len(uniqueFilms) == 0 {
+		return nil, domain.ErrImportFileEmpty
+	}
+
 	progress := &ports.ImportProgress{
 		Status: ports.ImportStatusProcessing,
 		Phase:  "resolving",

@@ -126,8 +126,9 @@ var (
 )
 
 var (
-	ErrInvalidImportFile  = errors.New("invalid import file")
-	ErrImportFileTooLarge = errors.New("import file too large")
+	ErrInvalidImportFile    = errors.New("invalid import file")
+	ErrImportFileTooLarge   = errors.New("import file too large")
+	ErrImportFileEmpty      = errors.New("zip file contains no Letterboxd data")
 )
 
 var (
