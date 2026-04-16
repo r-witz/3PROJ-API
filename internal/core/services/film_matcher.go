@@ -57,6 +57,12 @@ func scoreTitleMatch(query, title, originalTitle string) int {
 		return 85
 	}
 
+	// Check if one is a prefix of the other (handles subtitle truncation,
+	// e.g. "Wake Up Dead Man" vs "Wake Up Dead Man: A Knives Out Mystery")
+	if isPrefixMatch(qStripped, tStripped) || isPrefixMatch(qStripped, otStripped) {
+		return 70
+	}
+
 	// Check if one contains the other with high length ratio
 	if containsWithHighRatio(qStripped, tStripped) || containsWithHighRatio(qStripped, otStripped) {
 		return 60
@@ -122,6 +128,30 @@ func stripPunctuation(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// isPrefixMatch checks if one string is a word-boundary prefix of the other.
+// Handles subtitle truncation (e.g. "Wake Up Dead Man" is a prefix of
+// "Wake Up Dead Man A Knives Out Mystery" after punctuation stripping).
+func isPrefixMatch(a, b string) bool {
+	if len(a) == 0 || len(b) == 0 {
+		return false
+	}
+
+	shorter, longer := a, b
+	if len(a) > len(b) {
+		shorter, longer = b, a
+	}
+
+	if !strings.HasPrefix(longer, shorter) {
+		return false
+	}
+
+	// Ensure the prefix ends at a word boundary (next char must be a space)
+	if len(longer) > len(shorter) {
+		return longer[len(shorter)] == ' '
+	}
+	return true
 }
 
 // containsWithHighRatio checks if one string contains the other
