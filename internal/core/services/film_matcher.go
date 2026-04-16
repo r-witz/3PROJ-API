@@ -130,9 +130,12 @@ func stripPunctuation(s string) string {
 	return b.String()
 }
 
-// isPrefixMatch checks if one string is a word-boundary prefix of the other.
+// isPrefixMatch checks if one string is a word-boundary prefix of the other
+// AND covers a significant portion of the full title (ratio > 0.4).
 // Handles subtitle truncation (e.g. "Wake Up Dead Man" is a prefix of
-// "Wake Up Dead Man A Knives Out Mystery" after punctuation stripping).
+// "Wake Up Dead Man A Knives Out Mystery" — ratio 0.45, passes).
+// Rejects short-word false positives (e.g. "Dolly" prefix of
+// "Dolly Parton LAmérique réconciliée" — ratio 0.16, rejected).
 func isPrefixMatch(a, b string) bool {
 	if len(a) == 0 || len(b) == 0 {
 		return false
@@ -148,10 +151,13 @@ func isPrefixMatch(a, b string) bool {
 	}
 
 	// Ensure the prefix ends at a word boundary (next char must be a space)
-	if len(longer) > len(shorter) {
-		return longer[len(shorter)] == ' '
+	if len(longer) > len(shorter) && longer[len(shorter)] != ' ' {
+		return false
 	}
-	return true
+
+	// Require the prefix to cover a meaningful portion of the full title
+	ratio := float64(len(shorter)) / float64(len(longer))
+	return ratio > 0.4
 }
 
 // containsWithHighRatio checks if one string contains the other
