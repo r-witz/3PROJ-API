@@ -32,6 +32,7 @@ type MovieSearchResult struct {
 	Date            string   `json:"date"`
 	TMDBRating      *float64 `json:"tmdb_rating"`
 	DuskforgeRating *float64 `json:"duskforge_rating"`
+	UserRating      *float64 `json:"user_rating"`
 }
 
 type SearchMoviesResult struct {

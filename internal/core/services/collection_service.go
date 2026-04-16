@@ -432,11 +432,21 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		ratings = make(map[int]float64)
 	}
 
+	userRatings, err := s.reviewRepo.GetRatingsByUserIDAndTMDBIDs(ctx, userID, tmdbIDs)
+	if err != nil {
+		userRatings = make(map[int]float64)
+	}
+
 	result := make([]ports.MovieSearchResult, len(items))
 	for i, item := range items {
 		var duskforgeRating *float64
 		if r, ok := ratings[item.TMDBID]; ok {
 			duskforgeRating = &r
+		}
+
+		var userRating *float64
+		if r, ok := userRatings[item.TMDBID]; ok {
+			userRating = &r
 		}
 
 		result[i] = ports.MovieSearchResult{
@@ -446,6 +456,7 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 			Date:            movieInfos[i].date,
 			TMDBRating:      movieInfos[i].tmdbRating,
 			DuskforgeRating: duskforgeRating,
+			UserRating:      userRating,
 		}
 	}
 

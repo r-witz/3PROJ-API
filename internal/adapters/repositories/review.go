@@ -247,6 +247,34 @@ func (r *ReviewRepository) GetAverageRatingsByTMDBIDs(ctx context.Context, tmdbI
 	return result, rows.Err()
 }
 
+func (r *ReviewRepository) GetRatingsByUserIDAndTMDBIDs(ctx context.Context, userID uuid.UUID, tmdbIDs []int) (map[int]float64, error) {
+	if len(tmdbIDs) == 0 {
+		return make(map[int]float64), nil
+	}
+
+	query := `
+		SELECT tmdb_id, rating
+		FROM reviews
+		WHERE user_id = $1 AND tmdb_id = ANY($2)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, tmdbIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int]float64)
+	for rows.Next() {
+		var tmdbID int
+		var rating float64
+		if err := rows.Scan(&tmdbID, &rating); err != nil {
+			return nil, err
+		}
+		result[tmdbID] = rating
+	}
+	return result, rows.Err()
+}
+
 func (r *ReviewRepository) GetRatingStatsByTMDBIDs(ctx context.Context, tmdbIDs []int) (map[int]ports.RatingStats, error) {
 	if len(tmdbIDs) == 0 {
 		return make(map[int]ports.RatingStats), nil

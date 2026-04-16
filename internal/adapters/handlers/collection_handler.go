@@ -437,7 +437,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Success      200 {object} response.PaginatedResponse "List of items"
+// @Success      200 {object} response.PaginatedResponse{data=[]CollectionItemResponse} "List of items with movie details and ratings"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Collection not found or owner banned"
@@ -566,6 +566,16 @@ func toCollectionResponse(cwp ports.CollectionWithPresence) CollectionResponse {
 	}
 }
 
+
+type CollectionItemResponse struct {
+	ID              int      `json:"id" example:"550"`
+	Poster          *string  `json:"poster,omitempty" example:"/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"`
+	Name            string   `json:"name" example:"Fight Club"`
+	Date            string   `json:"date" example:"1999-10-15"`
+	TMDBRating      *float64 `json:"tmdb_rating,omitempty" example:"4.3"`
+	DuskforgeRating *float64 `json:"duskforge_rating,omitempty" example:"4.5"`
+	UserRating      *float64 `json:"user_rating,omitempty" example:"4.0"`
+}
 
 type SimpleCollectionItemResponse struct {
 	CollectionID string `json:"collection_id" example:"550e8400-e29b-41d4-a716-446655440000"`
