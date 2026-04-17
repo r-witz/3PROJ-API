@@ -55,10 +55,11 @@ type evalContext struct {
 	statsRepo       ports.StatsRepository
 	achievementRepo ports.AchievementRepository
 
-	stats         *ports.UserStats
-	statsLoaded   bool
-	commentsCount *int
-	customColls   *int
+	stats          *ports.UserStats
+	statsLoaded    bool
+	commentsCount  *int
+	customColls    *int
+	writtenReviews *int
 }
 
 func newEvalContext(ctx context.Context, userID uuid.UUID, statsRepo ports.StatsRepository, achievementRepo ports.AchievementRepository) *evalContext {
@@ -109,11 +110,14 @@ func evaluateCriterion(e *evalContext, raw json.RawMessage) (int, int, bool, err
 		if err != nil {
 			return 0, 0, false, err
 		}
-		stats, err := e.getStats()
-		if err != nil {
-			return 0, 0, false, err
+		if e.writtenReviews == nil {
+			n, err := e.achievementRepo.CountWrittenReviewsByUser(e.ctx, e.userID)
+			if err != nil {
+				return 0, 0, false, err
+			}
+			e.writtenReviews = &n
 		}
-		return stats.ReviewCount, target, stats.ReviewCount >= target, nil
+		return *e.writtenReviews, target, *e.writtenReviews >= target, nil
 
 	case criterionWatchedCount:
 		target, err := parseThreshold(spec.Params)

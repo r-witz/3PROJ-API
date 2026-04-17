@@ -238,6 +238,15 @@ func (r *AchievementRepository) CountCommentsByUser(ctx context.Context, userID 
 	return count, err
 }
 
+func (r *AchievementRepository) CountWrittenReviewsByUser(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM reviews WHERE user_id = $1 AND content IS NOT NULL AND btrim(content) <> ''`,
+		userID,
+	).Scan(&count)
+	return count, err
+}
+
 func (r *AchievementRepository) CountReviewsByUserWithRating(ctx context.Context, userID uuid.UUID, rating float64) (int, error) {
 	var count int
 	err := r.db.Pool.QueryRow(ctx,
