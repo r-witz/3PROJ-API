@@ -40,8 +40,10 @@ type Router struct {
 	importHandler        *handlers.ImportHandler
 	notificationHandler  *handlers.NotificationHandler
 	exportHandler        *handlers.ExportHandler
+	achievementHandler   *handlers.AchievementHandler
 	userService          ports.UserService
 	activityRepo         ports.ActivityRepository
+	achievementService   ports.AchievementService
 	banCache             ports.BanCache
 }
 
@@ -65,8 +67,10 @@ func NewRouter(
 	importHandler *handlers.ImportHandler,
 	notificationHandler *handlers.NotificationHandler,
 	exportHandler *handlers.ExportHandler,
+	achievementHandler *handlers.AchievementHandler,
 	userService ports.UserService,
 	activityRepo ports.ActivityRepository,
+	achievementService ports.AchievementService,
 	banCache ports.BanCache,
 ) *Router {
 	return &Router{
@@ -90,15 +94,17 @@ func NewRouter(
 		importHandler:       importHandler,
 		notificationHandler: notificationHandler,
 		exportHandler:       exportHandler,
+		achievementHandler:  achievementHandler,
 		userService:         userService,
 		activityRepo:        activityRepo,
+		achievementService:  achievementService,
 		banCache:            banCache,
 	}
 }
 
 func (r *Router) Setup() *gin.Engine {
 	r.engine.Use(middleware.CORS(r.config.CORSAllowedOrigins))
-	r.engine.Use(middleware.ActivityLogger(r.activityRepo))
+	r.engine.Use(middleware.ActivityLogger(r.activityRepo, r.achievementService))
 
 	r.engine.GET("/health", r.healthCheck)
 	r.engine.GET("/", r.root)
@@ -119,6 +125,7 @@ func (r *Router) Setup() *gin.Engine {
 		r.setupAdminRoutes(v1)
 		r.setupImportRoutes(v1)
 		r.setupNotificationRoutes(v1)
+		r.setupAchievementRoutes(v1)
 		v1.GET("/ws", r.wsHandler.Connect)
 	}
 
@@ -179,7 +186,9 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.followHandler.GetFollowing)
 		users.POST("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.blockHandler.BlockUser)
 		users.DELETE("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.blockHandler.UnblockUser)
+		users.GET("/me/achievements/recent", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.achievementHandler.RecentForMe)
 		users.GET("/:userId/activities", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.activityHandler.GetByUserID)
+		users.GET("/:userId/achievements", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.achievementHandler.ListForUser)
 
 		collections := users.Group("/:userId/collections")
 		{
@@ -294,6 +303,10 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 			adminOrSuper.GET("/reports/:reportId", r.adminHandler.GetReport)
 			adminOrSuper.PATCH("/reports/:reportId", r.adminHandler.ResolveReport)
 			adminOrSuper.DELETE("/reports/:reportId", r.adminHandler.DeleteReport)
+
+			adminOrSuper.POST("/achievements", r.achievementHandler.Create)
+			adminOrSuper.PATCH("/achievements/:id", r.achievementHandler.Update)
+			adminOrSuper.DELETE("/achievements/:id", r.achievementHandler.Delete)
 		}
 
 		superOnly := admin.Group("")
@@ -310,6 +323,15 @@ func (r *Router) setupImportRoutes(rg *gin.RouterGroup) {
 	{
 		importGroup.POST("/letterboxd", r.importHandler.ImportLetterboxd)
 		importGroup.GET("/letterboxd/status", r.importHandler.GetImportStatus)
+	}
+}
+
+func (r *Router) setupAchievementRoutes(rg *gin.RouterGroup) {
+	achievements := rg.Group("/achievements")
+	achievements.Use(middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache))
+	{
+		achievements.GET("", r.achievementHandler.List)
+		achievements.GET("/:id", r.achievementHandler.GetByID)
 	}
 }
 

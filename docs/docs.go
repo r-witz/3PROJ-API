@@ -24,6 +24,138 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/achievements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "List every active achievement in the catalog. When the request is authenticated (BearerAuth is optional here), each entry also carries the caller's ` + "`" + `unlocked` + "`" + ` flag, ` + "`" + `unlocked_at` + "`" + ` timestamp, and ` + "`" + `progress` + "`" + ` object toward the criterion. Secret achievements are hidden from unauthenticated callers and from authenticated callers who have not yet unlocked them. Results are ordered by ` + "`" + `sort_order` + "`" + ` then by creation time, and can be filtered to a single category.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "achievements"
+                ],
+                "summary": "List achievements",
+                "parameters": [
+                    {
+                        "enum": [
+                            "reviewing",
+                            "watching",
+                            "social",
+                            "collecting",
+                            "discovery"
+                        ],
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Achievement catalog with per-caller progress",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.AchievementResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid category value",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/achievements/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch a single achievement. When authenticated, the response carries the caller's unlock state and progress toward the criterion. Returns 404 if the achievement is inactive, missing, or secret and not yet unlocked by the caller.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "achievements"
+                ],
+                "summary": "Get achievement by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Achievement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Achievement detail",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.AchievementResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid achievement ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Achievement not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/actors/search": {
             "get": {
                 "description": "Search for actors by name. Use this endpoint when users are looking for a specific actor/person.",
@@ -70,19 +202,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Search results",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Query parameter is required",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -120,25 +252,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Actor details",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid actor ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Actor not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -207,25 +339,255 @@ const docTemplate = `{
                     "200": {
                         "description": "Actor filmography",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid actor ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Actor not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/achievements": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new achievement in the catalog. Requires ` + "`" + `admin` + "`" + ` or ` + "`" + `superadmin` + "`" + ` role. The ` + "`" + `criterion` + "`" + ` field is a JSON object of shape ` + "`" + `{\"kind\":\"\u003ckind\u003e\",\"params\":{...}}` + "`" + `. Supported kinds: ` + "`" + `review_count` + "`" + `, ` + "`" + `rating_given` + "`" + `, ` + "`" + `watched_count` + "`" + `, ` + "`" + `watched_runtime` + "`" + `, ` + "`" + `likes_received` + "`" + `, ` + "`" + `followers_count` + "`" + `, ` + "`" + `comments_authored` + "`" + `, ` + "`" + `custom_collections` + "`" + `. Threshold-style kinds take ` + "`" + `{\"threshold\":N}` + "`" + `; ` + "`" + `watched_runtime` + "`" + ` takes ` + "`" + `{\"minutes\":N}` + "`" + `; ` + "`" + `rating_given` + "`" + ` takes ` + "`" + `{\"rating\":R,\"threshold\":N}` + "`" + `. Admin-created achievements are always stored with ` + "`" + `system=false` + "`" + ` and can be edited or deleted later.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create an achievement (admin)",
+                "parameters": [
+                    {
+                        "description": "Achievement definition",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateAchievementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Achievement created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.AchievementResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input (missing/invalid field or malformed criterion)",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient role (admin required)",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Achievement code already exists",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/achievements/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Hard-delete an admin-created achievement. Cascades to ` + "`" + `user_achievements` + "`" + `, so every user who had unlocked this badge will lose it. Requires ` + "`" + `admin` + "`" + ` or ` + "`" + `superadmin` + "`" + ` role. Attempting to delete a system (seeded) achievement returns 403 ` + "`" + `ACHIEVEMENT_SYSTEM_LOCKED` + "`" + `.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete an achievement (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Achievement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Achievement deleted"
+                    },
+                    "400": {
+                        "description": "Invalid achievement ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient role OR achievement is system-locked",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Achievement not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Partially update an admin-created achievement. Only supplied fields change. Requires ` + "`" + `admin` + "`" + ` or ` + "`" + `superadmin` + "`" + ` role. The ` + "`" + `code` + "`" + ` field is immutable. Attempting to modify a system (seeded) achievement returns 403 ` + "`" + `ACHIEVEMENT_SYSTEM_LOCKED` + "`" + `.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update an achievement (admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Achievement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial fields to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateAchievementRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated achievement",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/handlers.AchievementResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input (bad ID, invalid tier/category, malformed criterion)",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient role OR achievement is system-locked",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Achievement not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -263,31 +625,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid comment ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -334,7 +696,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -342,7 +704,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ReportResponse"
+                                                "$ref": "#/definitions/handlers.ReportResponse"
                                             }
                                         }
                                     }
@@ -353,25 +715,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid parameters",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -408,13 +770,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReportResponse"
+                                            "$ref": "#/definitions/handlers.ReportResponse"
                                         }
                                     }
                                 }
@@ -424,31 +786,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid report ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Report not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -484,31 +846,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid report ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Report not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -545,7 +907,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.ResolveReportRequest"
+                            "$ref": "#/definitions/handlers.ResolveReportRequest"
                         }
                     }
                 ],
@@ -555,13 +917,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReportResponse"
+                                            "$ref": "#/definitions/handlers.ReportResponse"
                                         }
                                     }
                                 }
@@ -571,37 +933,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid input",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Report not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Report already resolved",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -639,31 +1001,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -701,37 +1063,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID or cannot ban self",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Cannot ban admin or insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "User already banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -767,37 +1129,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "User is not banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -836,7 +1198,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.SetUserRoleRequest"
+                            "$ref": "#/definitions/handlers.SetUserRoleRequest"
                         }
                     }
                 ],
@@ -847,31 +1209,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid input or cannot change own role",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Insufficient permissions",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -902,7 +1264,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.ConfirmEmailChangeRequest"
+                            "$ref": "#/definitions/handlers.ConfirmEmailChangeRequest"
                         }
                     }
                 ],
@@ -910,31 +1272,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -965,7 +1327,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.RequestEmailChangeRequest"
+                            "$ref": "#/definitions/handlers.RequestEmailChangeRequest"
                         }
                     }
                 ],
@@ -973,37 +1335,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1029,7 +1391,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.LoginRequest"
+                            "$ref": "#/definitions/handlers.LoginRequest"
                         }
                     }
                 ],
@@ -1039,13 +1401,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.TokensResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -1055,25 +1417,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1099,7 +1461,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.LogoutRequest"
+                            "$ref": "#/definitions/handlers.LogoutRequest"
                         }
                     }
                 ],
@@ -1107,19 +1469,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1149,13 +1511,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthRedirectResponse"
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
                                         }
                                     }
                                 }
@@ -1165,13 +1527,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid redirect_uri",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1216,13 +1578,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthTokensResponse"
+                                            "$ref": "#/definitions/handlers.OAuthTokensResponse"
                                         }
                                     }
                                 }
@@ -1235,31 +1597,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User account is banned (or redirects with #error=USER_BANNED)",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "OAuth account already linked to another user (link mode)",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1294,13 +1656,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthRedirectResponse"
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
                                         }
                                     }
                                 }
@@ -1310,19 +1672,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid redirect_uri",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "User not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1347,31 +1709,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1401,13 +1763,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthRedirectResponse"
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
                                         }
                                     }
                                 }
@@ -1417,13 +1779,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid redirect_uri",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1468,13 +1830,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthTokensResponse"
+                                            "$ref": "#/definitions/handlers.OAuthTokensResponse"
                                         }
                                     }
                                 }
@@ -1487,31 +1849,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User account is banned (or redirects with #error=USER_BANNED)",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "OAuth account already linked to another user (link mode)",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1546,13 +1908,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.OAuthRedirectResponse"
+                                            "$ref": "#/definitions/handlers.OAuthRedirectResponse"
                                         }
                                     }
                                 }
@@ -1562,19 +1924,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid redirect_uri",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "User not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1599,31 +1961,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1650,13 +2012,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/duskforge-api_internal_core_ports.LinkedProvidersResult"
+                                            "$ref": "#/definitions/ports.LinkedProvidersResult"
                                         }
                                     }
                                 }
@@ -1666,13 +2028,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1698,7 +2060,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.ResetPasswordRequest"
+                            "$ref": "#/definitions/handlers.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -1706,19 +2068,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1744,7 +2106,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.PasswordResetRequestBody"
+                            "$ref": "#/definitions/handlers.PasswordResetRequestBody"
                         }
                     }
                 ],
@@ -1752,25 +2114,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1796,7 +2158,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.RefreshRequest"
+                            "$ref": "#/definitions/handlers.RefreshRequest"
                         }
                     }
                 ],
@@ -1806,13 +2168,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.TokensResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -1822,19 +2184,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1867,7 +2229,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.RegisterRequest"
+                            "$ref": "#/definitions/handlers.RegisterRequest"
                         }
                     }
                 ],
@@ -1877,13 +2239,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.TokensResponse"
+                                            "$ref": "#/definitions/handlers.TokensResponse"
                                         }
                                     }
                                 }
@@ -1893,19 +2255,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1931,7 +2293,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.VerifyEmailRequest"
+                            "$ref": "#/definitions/handlers.VerifyEmailRequest"
                         }
                     }
                 ],
@@ -1939,25 +2301,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -1983,7 +2345,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.SendVerificationCodeRequest"
+                            "$ref": "#/definitions/handlers.SendVerificationCodeRequest"
                         }
                     }
                 ],
@@ -1991,31 +2353,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "429": {
                         "description": "Too Many Requests",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2052,13 +2414,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CommentResponse"
+                                            "$ref": "#/definitions/handlers.CommentResponse"
                                         }
                                     }
                                 }
@@ -2068,25 +2430,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid comment ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2122,31 +2484,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid comment ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2183,7 +2545,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateCommentRequest"
+                            "$ref": "#/definitions/handlers.UpdateCommentRequest"
                         }
                     }
                 ],
@@ -2193,13 +2555,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CommentResponse"
+                                            "$ref": "#/definitions/handlers.CommentResponse"
                                         }
                                     }
                                 }
@@ -2209,31 +2571,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2271,37 +2633,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid comment ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Already liked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2337,31 +2699,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid comment ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Comment not found or not liked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2416,7 +2778,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -2424,7 +2786,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ActivityResponse"
+                                                "$ref": "#/definitions/handlers.ActivityResponse"
                                             }
                                         }
                                     }
@@ -2435,13 +2797,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2480,13 +2842,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ImportLetterboxdResponse"
+                                            "$ref": "#/definitions/handlers.ImportLetterboxdResponse"
                                         }
                                     }
                                 }
@@ -2496,19 +2858,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid file or zip contains no Letterboxd data",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2535,13 +2897,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ImportLetterboxdResponse"
+                                            "$ref": "#/definitions/handlers.ImportLetterboxdResponse"
                                         }
                                     }
                                 }
@@ -2551,13 +2913,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "No import found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2607,7 +2969,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -2615,7 +2977,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ConversationListResponse"
+                                                "$ref": "#/definitions/handlers.ConversationListResponse"
                                             }
                                         }
                                     }
@@ -2626,13 +2988,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2670,31 +3032,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid message ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden - not the sender",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Message not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2731,7 +3093,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateMessageRequest"
+                            "$ref": "#/definitions/handlers.UpdateMessageRequest"
                         }
                     }
                 ],
@@ -2741,13 +3103,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.MessageResponse"
+                                            "$ref": "#/definitions/handlers.MessageResponse"
                                         }
                                     }
                                 }
@@ -2757,31 +3119,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden - not the sender",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Message not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2820,7 +3182,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.AddReactionRequest"
+                            "$ref": "#/definitions/handlers.AddReactionRequest"
                         }
                     }
                 ],
@@ -2828,43 +3190,43 @@ const docTemplate = `{
                     "201": {
                         "description": "Reaction added",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request or too many reaction types (max 5)",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Not a participant or user blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Message not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Reaction already exists",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2901,7 +3263,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.RemoveReactionRequest"
+                            "$ref": "#/definitions/handlers.RemoveReactionRequest"
                         }
                     }
                 ],
@@ -2912,25 +3274,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Reaction not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2981,7 +3343,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -2989,7 +3351,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.MessageResponse"
+                                                "$ref": "#/definitions/handlers.MessageResponse"
                                             }
                                         }
                                     }
@@ -3000,19 +3362,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3062,13 +3424,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.MessageResponse"
+                                            "$ref": "#/definitions/handlers.MessageResponse"
                                         }
                                     }
                                 }
@@ -3078,31 +3440,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request or cannot message self",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Not mutual follow or user blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3140,25 +3502,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conversation already closed",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3194,25 +3556,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Conversation is not closed",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3250,19 +3612,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3358,13 +3720,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Discover results",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3395,13 +3757,13 @@ const docTemplate = `{
                     "200": {
                         "description": "List of genres",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3446,13 +3808,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Popular movies",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3510,19 +3872,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Search results",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Query parameter is required",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3567,13 +3929,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Upcoming movies",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                            "$ref": "#/definitions/response.PaginatedResponse"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3611,25 +3973,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Movie details",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid movie ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Movie not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3667,25 +4029,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Cast and crew",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid movie ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Movie not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3717,25 +4079,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Release dates by region",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid movie ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Movie not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3806,7 +4168,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -3814,7 +4176,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ReviewResponse"
+                                                "$ref": "#/definitions/handlers.ReviewResponse"
                                             }
                                         }
                                     }
@@ -3825,13 +4187,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid movie ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3867,7 +4229,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.CreateReviewRequest"
+                            "$ref": "#/definitions/handlers.CreateReviewRequest"
                         }
                     },
                     {
@@ -3883,13 +4245,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReviewResponse"
+                                            "$ref": "#/definitions/handlers.ReviewResponse"
                                         }
                                     }
                                 }
@@ -3899,25 +4261,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Review already exists for this movie",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3955,25 +4317,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Trailer embed URL",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid movie ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Movie not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "502": {
                         "description": "External service error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -3986,7 +4348,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the authenticated user's notifications with pagination",
+                "description": "Get the authenticated user's notifications with pagination. Notification ` + "`" + `type` + "`" + ` is one of ` + "`" + `like_review` + "`" + `, ` + "`" + `like_comment` + "`" + `, ` + "`" + `new_comment` + "`" + `, ` + "`" + `new_follow` + "`" + `, ` + "`" + `achievement_unlocked` + "`" + `, or ` + "`" + `system` + "`" + `. For ` + "`" + `achievement_unlocked` + "`" + ` notifications, ` + "`" + `achievement_id` + "`" + ` points to the unlocked badge and ` + "`" + `actor_id` + "`" + ` is null (the achievement is self-sourced).",
                 "produces": [
                     "application/json"
                 ],
@@ -4016,7 +4378,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -4024,7 +4386,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.NotificationResponse"
+                                                "$ref": "#/definitions/handlers.NotificationResponse"
                                             }
                                         }
                                     }
@@ -4035,13 +4397,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4067,13 +4429,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4100,13 +4462,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.NotificationPreferencesResponse"
+                                            "$ref": "#/definitions/handlers.NotificationPreferencesResponse"
                                         }
                                     }
                                 }
@@ -4116,13 +4478,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4133,7 +4495,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update the authenticated user's notification preferences. Only provided fields are updated.",
+                "description": "Update the authenticated user's notification preferences. Only provided fields are updated. The ` + "`" + `achievement_unlocked` + "`" + ` toggle controls whether badge unlocks produce a notification (unlock rows in ` + "`" + `user_achievements` + "`" + ` are still written either way).",
                 "consumes": [
                     "application/json"
                 ],
@@ -4151,7 +4513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateNotificationPreferencesRequest"
+                            "$ref": "#/definitions/handlers.UpdateNotificationPreferencesRequest"
                         }
                     }
                 ],
@@ -4161,13 +4523,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.NotificationPreferencesResponse"
+                                            "$ref": "#/definitions/handlers.NotificationPreferencesResponse"
                                         }
                                     }
                                 }
@@ -4177,19 +4539,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4217,13 +4579,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4250,13 +4612,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UnreadCountResponse"
+                                            "$ref": "#/definitions/handlers.UnreadCountResponse"
                                         }
                                     }
                                 }
@@ -4266,13 +4628,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4310,31 +4672,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid notification ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Notification not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4372,31 +4734,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid notification ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Notification not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4427,7 +4789,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.CreateReportRequest"
+                            "$ref": "#/definitions/handlers.CreateReportRequest"
                         }
                     }
                 ],
@@ -4437,13 +4799,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReportResponse"
+                                            "$ref": "#/definitions/handlers.ReportResponse"
                                         }
                                     }
                                 }
@@ -4453,25 +4815,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid input",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Target not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4514,13 +4876,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReviewResponse"
+                                            "$ref": "#/definitions/handlers.ReviewResponse"
                                         }
                                     }
                                 }
@@ -4530,25 +4892,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found or author banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4584,31 +4946,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4645,7 +5007,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateReviewRequest"
+                            "$ref": "#/definitions/handlers.UpdateReviewRequest"
                         }
                     },
                     {
@@ -4661,13 +5023,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.ReviewResponse"
+                                            "$ref": "#/definitions/handlers.ReviewResponse"
                                         }
                                     }
                                 }
@@ -4677,31 +5039,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4752,7 +5114,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -4760,7 +5122,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.CommentResponse"
+                                                "$ref": "#/definitions/handlers.CommentResponse"
                                             }
                                         }
                                     }
@@ -4771,13 +5133,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4814,7 +5176,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.CreateCommentRequest"
+                            "$ref": "#/definitions/handlers.CreateCommentRequest"
                         }
                     }
                 ],
@@ -4824,13 +5186,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CommentResponse"
+                                            "$ref": "#/definitions/handlers.CommentResponse"
                                         }
                                     }
                                 }
@@ -4840,31 +5202,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4902,37 +5264,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Already liked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -4968,31 +5330,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid review ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Review not found or not liked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5022,13 +5384,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UserResponse"
+                                            "$ref": "#/definitions/handlers.UserResponse"
                                         }
                                     }
                                 }
@@ -5038,19 +5400,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5079,25 +5441,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Super-admin account cannot be deleted",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5126,7 +5488,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateUserRequest"
+                            "$ref": "#/definitions/handlers.UpdateUserRequest"
                         }
                     }
                 ],
@@ -5136,13 +5498,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UserResponse"
+                                            "$ref": "#/definitions/handlers.UserResponse"
                                         }
                                     }
                                 }
@@ -5152,25 +5514,88 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Username already taken",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/achievements/recent": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the caller's most recently unlocked achievements, ordered by unlock timestamp descending. Intended for a home-screen \"recent wins\" widget. Invalid or out-of-range ` + "`" + `limit` + "`" + ` values fall back to the default of 5.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "achievements"
+                ],
+                "summary": "Recent achievement unlocks for the current user",
+                "parameters": [
+                    {
+                        "maximum": 20,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 5,
+                        "description": "Number of unlocks to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recent unlocks",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.AchievementResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5209,13 +5634,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UserResponse"
+                                            "$ref": "#/definitions/handlers.UserResponse"
                                         }
                                     }
                                 }
@@ -5225,19 +5650,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid file or file too large",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5262,13 +5687,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UserResponse"
+                                            "$ref": "#/definitions/handlers.UserResponse"
                                         }
                                     }
                                 }
@@ -5278,13 +5703,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5327,7 +5752,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -5335,7 +5760,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.BlockedUserResponse"
+                                                "$ref": "#/definitions/handlers.BlockedUserResponse"
                                             }
                                         }
                                     }
@@ -5346,13 +5771,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5383,13 +5808,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5420,7 +5845,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.ChangePasswordRequest"
+                            "$ref": "#/definitions/handlers.ChangePasswordRequest"
                         }
                     }
                 ],
@@ -5428,25 +5853,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Password changed successfully",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request body or password too short/long",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized or incorrect current password",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5510,7 +5935,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -5518,7 +5943,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.AdminSearchUserResponse"
+                                                "$ref": "#/definitions/handlers.AdminSearchUserResponse"
                                             }
                                         }
                                     }
@@ -5529,13 +5954,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid query parameters",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5575,13 +6000,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.PublicUserResponse"
+                                            "$ref": "#/definitions/handlers.PublicUserResponse"
                                         }
                                     }
                                 }
@@ -5591,25 +6016,87 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found or banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{userId}/achievements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns every achievement this user has unlocked, ordered by most-recent unlock first. Intended for public profile pages. Each entry has ` + "`" + `unlocked=true` + "`" + ` and a non-null ` + "`" + `unlocked_at` + "`" + `; ` + "`" + `progress` + "`" + ` is omitted because it's irrelevant once unlocked.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List a user's unlocked achievements",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unlocked achievements for the user",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/handlers.AchievementResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5672,7 +6159,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -5680,7 +6167,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ActivityResponse"
+                                                "$ref": "#/definitions/handlers.ActivityResponse"
                                             }
                                         }
                                     }
@@ -5691,25 +6178,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found or banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5747,31 +6234,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID or cannot block self",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Already blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5807,25 +6294,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User is not blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5881,7 +6368,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
@@ -5889,7 +6376,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.CollectionResponse"
+                                                "$ref": "#/definitions/handlers.CollectionResponse"
                                             }
                                         }
                                     }
@@ -5900,19 +6387,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID or TMDB ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5949,7 +6436,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.CreateCollectionRequest"
+                            "$ref": "#/definitions/handlers.CreateCollectionRequest"
                         }
                     }
                 ],
@@ -5959,13 +6446,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CollectionResponse"
+                                            "$ref": "#/definitions/handlers.CollectionResponse"
                                         }
                                     }
                                 }
@@ -5975,31 +6462,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Collection with this name already exists",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6046,13 +6533,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CollectionResponse"
+                                            "$ref": "#/definitions/handlers.CollectionResponse"
                                         }
                                     }
                                 }
@@ -6062,25 +6549,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection not found or owner banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6126,31 +6613,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6194,7 +6681,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.UpdateCollectionRequest"
+                            "$ref": "#/definitions/handlers.UpdateCollectionRequest"
                         }
                     }
                 ],
@@ -6204,13 +6691,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.CollectionResponse"
+                                            "$ref": "#/definitions/handlers.CollectionResponse"
                                         }
                                     }
                                 }
@@ -6220,37 +6707,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Collection with this name already exists",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6317,7 +6804,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -6325,7 +6812,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.CollectionItemResponse"
+                                                "$ref": "#/definitions/handlers.CollectionItemResponse"
                                             }
                                         }
                                     }
@@ -6336,25 +6823,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection not found or owner banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6398,7 +6885,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_adapters_handlers.AddItemRequest"
+                            "$ref": "#/definitions/handlers.AddItemRequest"
                         }
                     }
                 ],
@@ -6406,43 +6893,43 @@ const docTemplate = `{
                     "201": {
                         "description": "Item added",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "400": {
                         "description": "Invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Item already in collection",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6497,31 +6984,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID or TMDB ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Collection or item not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6559,37 +7046,37 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID or cannot follow self",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "409": {
                         "description": "Already following",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6625,25 +7112,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "Not following this user",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6700,7 +7187,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -6708,7 +7195,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.FollowUserResponse"
+                                                "$ref": "#/definitions/handlers.FollowUserResponse"
                                             }
                                         }
                                     }
@@ -6719,13 +7206,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6761,25 +7248,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User is not following you",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6836,7 +7323,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -6844,7 +7331,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.FollowUserResponse"
+                                                "$ref": "#/definitions/handlers.FollowUserResponse"
                                             }
                                         }
                                     }
@@ -6855,13 +7342,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6939,7 +7426,7 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse"
+                                    "$ref": "#/definitions/response.PaginatedResponse"
                                 },
                                 {
                                     "type": "object",
@@ -6947,7 +7434,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/internal_adapters_handlers.ReviewResponse"
+                                                "$ref": "#/definitions/handlers.ReviewResponse"
                                             }
                                         }
                                     }
@@ -6958,25 +7445,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found or banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -6989,7 +7476,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.",
+                "description": "Get detailed statistics for a user profile including review stats, collection stats, watch time, social stats, and achievement count. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user. The ` + "`" + `achievements.unlocked_count` + "`" + ` field lets profile headers show badge counts without a second request.",
                 "produces": [
                     "application/json"
                 ],
@@ -7013,13 +7500,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                                    "$ref": "#/definitions/response.Response"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_adapters_handlers.UserStatsResponse"
+                                            "$ref": "#/definitions/handlers.UserStatsResponse"
                                         }
                                     }
                                 }
@@ -7029,25 +7516,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid user ID",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "403": {
                         "description": "User blocked",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "404": {
                         "description": "User not found or banned",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/duskforge-api_internal_adapters_response.Response"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -7087,57 +7574,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "duskforge-api_internal_adapters_response.ErrorInfo": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string"
-                },
-                "details": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "duskforge-api_internal_adapters_response.PaginatedResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "pagination": {
-                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.Pagination"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "duskforge-api_internal_adapters_response.Pagination": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "duskforge-api_internal_adapters_response.Response": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "error": {
-                    "$ref": "#/definitions/duskforge-api_internal_adapters_response.ErrorInfo"
-                },
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "duskforge-api_internal_core_domain.ReportReason": {
+        "domain.ReportReason": {
             "type": "string",
             "enum": [
                 "spam",
@@ -7154,7 +7591,7 @@ const docTemplate = `{
                 "ReportReasonOther"
             ]
         },
-        "duskforge-api_internal_core_domain.ReportStatus": {
+        "domain.ReportStatus": {
             "type": "string",
             "enum": [
                 "pending",
@@ -7167,7 +7604,7 @@ const docTemplate = `{
                 "ReportStatusDismissed"
             ]
         },
-        "duskforge-api_internal_core_domain.UserRole": {
+        "domain.UserRole": {
             "type": "string",
             "enum": [
                 "user",
@@ -7180,86 +7617,102 @@ const docTemplate = `{
                 "UserRoleSuperAdmin"
             ]
         },
-        "duskforge-api_internal_core_ports.ImportFailure": {
+        "handlers.AchievementProgressResponse": {
             "type": "object",
             "properties": {
+                "current": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "target": {
+                    "type": "integer",
+                    "example": 25
+                }
+            }
+        },
+        "handlers.AchievementResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "enum": [
+                        "reviewing",
+                        "watching",
+                        "social",
+                        "collecting",
+                        "discovery"
+                    ],
+                    "example": "reviewing"
+                },
+                "code": {
+                    "type": "string",
+                    "example": "first_review"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Write your first review."
+                },
+                "icon_url": {
+                    "type": "string",
+                    "example": "https://cdn.duskforge.io/achievements/first_review.png"
+                },
+                "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "018f1234-1234-7abc-8def-123456789abc"
+                },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "First Impressions"
                 },
-                "reason": {
-                    "type": "string"
+                "progress": {
+                    "$ref": "#/definitions/handlers.AchievementProgressResponse"
                 },
-                "year": {
-                    "type": "integer"
+                "secret": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "system": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "tier": {
+                    "type": "string",
+                    "enum": [
+                        "bronze",
+                        "silver",
+                        "gold",
+                        "platinum"
+                    ],
+                    "example": "bronze"
+                },
+                "unlocked": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "unlocked_at": {
+                    "type": "string",
+                    "example": "2026-04-17T10:00:00Z"
                 }
             }
         },
-        "duskforge-api_internal_core_ports.ImportResult": {
+        "handlers.AchievementStatsResponse": {
             "type": "object",
             "properties": {
-                "failed": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportFailure"
-                    }
-                },
-                "ratings": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportSectionResult"
-                },
-                "reviews": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportSectionResult"
-                },
-                "watched": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportSectionResult"
-                },
-                "watchlist": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportSectionResult"
+                "unlocked_count": {
+                    "type": "integer",
+                    "example": 12
                 }
             }
         },
-        "duskforge-api_internal_core_ports.ImportSectionResult": {
-            "type": "object",
-            "properties": {
-                "imported": {
-                    "type": "integer"
-                },
-                "skipped": {
-                    "type": "integer"
-                }
-            }
-        },
-        "duskforge-api_internal_core_ports.ImportStatus": {
-            "type": "string",
-            "enum": [
-                "processing",
-                "completed",
-                "failed"
-            ],
-            "x-enum-varnames": [
-                "ImportStatusProcessing",
-                "ImportStatusCompleted",
-                "ImportStatusFailed"
-            ]
-        },
-        "duskforge-api_internal_core_ports.LinkedProvidersResult": {
-            "type": "object",
-            "properties": {
-                "github": {
-                    "type": "boolean"
-                },
-                "google": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_adapters_handlers.ActivityResponse": {
+        "handlers.ActivityResponse": {
             "type": "object",
             "properties": {
                 "collection": {
-                    "$ref": "#/definitions/internal_adapters_handlers.CollectionSummary"
+                    "$ref": "#/definitions/handlers.CollectionSummary"
                 },
                 "comment": {
-                    "$ref": "#/definitions/internal_adapters_handlers.CommentSummary"
+                    "$ref": "#/definitions/handlers.CommentSummary"
                 },
                 "created_at": {
                     "type": "string",
@@ -7270,24 +7723,24 @@ const docTemplate = `{
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "movie": {
-                    "$ref": "#/definitions/internal_adapters_handlers.MovieSummaryResponse"
+                    "$ref": "#/definitions/handlers.MovieSummaryResponse"
                 },
                 "review": {
-                    "$ref": "#/definitions/internal_adapters_handlers.ReviewSummary"
+                    "$ref": "#/definitions/handlers.ReviewSummary"
                 },
                 "target_user": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserSummary"
+                    "$ref": "#/definitions/handlers.UserSummary"
                 },
                 "type": {
                     "type": "string",
                     "example": "review_created"
                 },
                 "user": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserSummary"
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
-        "internal_adapters_handlers.AddItemRequest": {
+        "handlers.AddItemRequest": {
             "type": "object",
             "required": [
                 "tmdb_id"
@@ -7299,7 +7752,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.AddReactionRequest": {
+        "handlers.AddReactionRequest": {
             "type": "object",
             "required": [
                 "emoji"
@@ -7313,7 +7766,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.AdminSearchUserResponse": {
+        "handlers.AdminSearchUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -7350,7 +7803,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.AttachmentResponse": {
+        "handlers.AttachmentResponse": {
             "type": "object",
             "properties": {
                 "content_type": {
@@ -7379,7 +7832,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.BlockedUserResponse": {
+        "handlers.BlockedUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -7400,7 +7853,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ChangePasswordRequest": {
+        "handlers.ChangePasswordRequest": {
             "type": "object",
             "required": [
                 "new_password"
@@ -7418,7 +7871,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CollectionItemResponse": {
+        "handlers.CollectionItemResponse": {
             "type": "object",
             "properties": {
                 "date": {
@@ -7451,7 +7904,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CollectionResponse": {
+        "handlers.CollectionResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -7500,7 +7953,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CollectionStatsResponse": {
+        "handlers.CollectionStatsResponse": {
             "type": "object",
             "properties": {
                 "total_collections": {
@@ -7513,7 +7966,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CollectionSummary": {
+        "handlers.CollectionSummary": {
             "type": "object",
             "properties": {
                 "id": {
@@ -7530,7 +7983,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CommentResponse": {
+        "handlers.CommentResponse": {
             "type": "object",
             "properties": {
                 "contains_spoilers": {
@@ -7566,11 +8019,11 @@ const docTemplate = `{
                     "example": "2024-01-15T10:30:00Z"
                 },
                 "user": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserSummary"
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
-        "internal_adapters_handlers.CommentSummary": {
+        "handlers.CommentSummary": {
             "type": "object",
             "properties": {
                 "content": {
@@ -7583,7 +8036,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ConfirmEmailChangeRequest": {
+        "handlers.ConfirmEmailChangeRequest": {
             "type": "object",
             "required": [
                 "code"
@@ -7595,22 +8048,25 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ConversationListResponse": {
+        "handlers.ConversationListResponse": {
             "type": "object",
             "properties": {
                 "last_message": {
-                    "$ref": "#/definitions/internal_adapters_handlers.LastMessagePreview"
+                    "$ref": "#/definitions/handlers.LastMessagePreview"
                 },
                 "unread_count": {
                     "type": "integer",
                     "example": 3
                 },
                 "user": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserSummary"
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
-        "internal_adapters_handlers.CreateCollectionRequest": {
+        "handlers.CreateAchievementRequest": {
+            "type": "object"
+        },
+        "handlers.CreateCollectionRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -7637,7 +8093,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CreateCommentRequest": {
+        "handlers.CreateCommentRequest": {
             "type": "object",
             "required": [
                 "content"
@@ -7653,7 +8109,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CreateReportRequest": {
+        "handlers.CreateReportRequest": {
             "type": "object",
             "required": [
                 "reason"
@@ -7673,7 +8129,7 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/duskforge-api_internal_core_domain.ReportReason"
+                            "$ref": "#/definitions/domain.ReportReason"
                         }
                     ],
                     "example": "spam"
@@ -7692,7 +8148,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.CreateReviewRequest": {
+        "handlers.CreateReviewRequest": {
             "type": "object",
             "required": [
                 "rating"
@@ -7712,7 +8168,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.FollowUserResponse": {
+        "handlers.FollowUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -7737,7 +8193,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ImportLetterboxdResponse": {
+        "handlers.ImportLetterboxdResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -7750,17 +8206,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "result": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportResult"
+                    "$ref": "#/definitions/ports.ImportResult"
                 },
                 "status": {
-                    "$ref": "#/definitions/duskforge-api_internal_core_ports.ImportStatus"
+                    "$ref": "#/definitions/ports.ImportStatus"
                 },
                 "total": {
                     "type": "integer"
                 }
             }
         },
-        "internal_adapters_handlers.LastMessagePreview": {
+        "handlers.LastMessagePreview": {
             "type": "object",
             "properties": {
                 "content": {
@@ -7777,7 +8233,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.LoginRequest": {
+        "handlers.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -7794,7 +8250,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.LogoutRequest": {
+        "handlers.LogoutRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -7806,13 +8262,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.MessageResponse": {
+        "handlers.MessageResponse": {
             "type": "object",
             "properties": {
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_adapters_handlers.AttachmentResponse"
+                        "$ref": "#/definitions/handlers.AttachmentResponse"
                     }
                 },
                 "content": {
@@ -7830,7 +8286,7 @@ const docTemplate = `{
                 "reactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_adapters_handlers.ReactionGroupResponse"
+                        "$ref": "#/definitions/handlers.ReactionGroupResponse"
                     }
                 },
                 "read_at": {
@@ -7851,7 +8307,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.MovieSummaryResponse": {
+        "handlers.MovieSummaryResponse": {
             "type": "object",
             "properties": {
                 "date": {
@@ -7880,9 +8336,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.NotificationPreferencesResponse": {
+        "handlers.NotificationPreferencesResponse": {
             "type": "object",
             "properties": {
+                "achievement_unlocked": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "like_comment": {
                     "type": "boolean",
                     "example": true
@@ -7909,9 +8369,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.NotificationResponse": {
+        "handlers.NotificationResponse": {
             "type": "object",
             "properties": {
+                "achievement_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440005"
+                },
                 "actor_id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440002"
@@ -7950,7 +8414,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.OAuthRedirectResponse": {
+        "handlers.OAuthRedirectResponse": {
             "type": "object",
             "properties": {
                 "authorization_url": {
@@ -7963,7 +8427,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.OAuthTokensResponse": {
+        "handlers.OAuthTokensResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -7988,7 +8452,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.PasswordResetRequestBody": {
+        "handlers.PasswordResetRequestBody": {
             "type": "object",
             "required": [
                 "email"
@@ -8000,7 +8464,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.PublicUserResponse": {
+        "handlers.PublicUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -8036,7 +8500,7 @@ const docTemplate = `{
                     "example": "user"
                 },
                 "stats": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserStats"
+                    "$ref": "#/definitions/handlers.UserStats"
                 },
                 "username": {
                     "type": "string",
@@ -8048,7 +8512,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ReactionGroupResponse": {
+        "handlers.ReactionGroupResponse": {
             "type": "object",
             "properties": {
                 "count": {
@@ -8067,7 +8531,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.RefreshRequest": {
+        "handlers.RefreshRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -8079,7 +8543,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.RegisterRequest": {
+        "handlers.RegisterRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -8105,7 +8569,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.RemoveReactionRequest": {
+        "handlers.RemoveReactionRequest": {
             "type": "object",
             "required": [
                 "emoji"
@@ -8119,7 +8583,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ReportResponse": {
+        "handlers.ReportResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -8165,7 +8629,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.RequestEmailChangeRequest": {
+        "handlers.RequestEmailChangeRequest": {
             "type": "object",
             "required": [
                 "new_email"
@@ -8177,7 +8641,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ResetPasswordRequest": {
+        "handlers.ResetPasswordRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -8201,7 +8665,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ResolveReportRequest": {
+        "handlers.ResolveReportRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -8214,14 +8678,14 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/duskforge-api_internal_core_domain.ReportStatus"
+                            "$ref": "#/definitions/domain.ReportStatus"
                         }
                     ],
                     "example": "resolved"
                 }
             }
         },
-        "internal_adapters_handlers.ReviewResponse": {
+        "handlers.ReviewResponse": {
             "type": "object",
             "properties": {
                 "comment_count": {
@@ -8253,7 +8717,7 @@ const docTemplate = `{
                     "example": false
                 },
                 "movie": {
-                    "$ref": "#/definitions/internal_adapters_handlers.MovieSummaryResponse"
+                    "$ref": "#/definitions/handlers.MovieSummaryResponse"
                 },
                 "rating": {
                     "type": "number",
@@ -8264,11 +8728,11 @@ const docTemplate = `{
                     "example": "2024-01-15T10:30:00Z"
                 },
                 "user": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserSummary"
+                    "$ref": "#/definitions/handlers.UserSummary"
                 }
             }
         },
-        "internal_adapters_handlers.ReviewStatsResponse": {
+        "handlers.ReviewStatsResponse": {
             "type": "object",
             "properties": {
                 "average_rating": {
@@ -8295,7 +8759,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.ReviewSummary": {
+        "handlers.ReviewSummary": {
             "type": "object",
             "properties": {
                 "content": {
@@ -8316,7 +8780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.SearchUserResponse": {
+        "handlers.SearchUserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -8337,7 +8801,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.SendVerificationCodeRequest": {
+        "handlers.SendVerificationCodeRequest": {
             "type": "object",
             "required": [
                 "email"
@@ -8349,7 +8813,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.SetUserRoleRequest": {
+        "handlers.SetUserRoleRequest": {
             "type": "object",
             "required": [
                 "role"
@@ -8363,14 +8827,14 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/duskforge-api_internal_core_domain.UserRole"
+                            "$ref": "#/definitions/domain.UserRole"
                         }
                     ],
                     "example": "admin"
                 }
             }
         },
-        "internal_adapters_handlers.SocialStatsResponse": {
+        "handlers.SocialStatsResponse": {
             "type": "object",
             "properties": {
                 "followers_count": {
@@ -8383,7 +8847,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.TokensResponse": {
+        "handlers.TokensResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -8404,7 +8868,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UnreadCountResponse": {
+        "handlers.UnreadCountResponse": {
             "type": "object",
             "properties": {
                 "unread_count": {
@@ -8413,7 +8877,10 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateCollectionRequest": {
+        "handlers.UpdateAchievementRequest": {
+            "type": "object"
+        },
+        "handlers.UpdateCollectionRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -8437,7 +8904,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateCommentRequest": {
+        "handlers.UpdateCommentRequest": {
             "type": "object",
             "properties": {
                 "contains_spoilers": {
@@ -8450,7 +8917,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateMessageRequest": {
+        "handlers.UpdateMessageRequest": {
             "type": "object",
             "required": [
                 "content"
@@ -8464,9 +8931,13 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateNotificationPreferencesRequest": {
+        "handlers.UpdateNotificationPreferencesRequest": {
             "type": "object",
             "properties": {
+                "achievement_unlocked": {
+                    "type": "boolean",
+                    "example": true
+                },
                 "like_comment": {
                     "type": "boolean",
                     "example": true
@@ -8489,7 +8960,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdatePreferencesRequest": {
+        "handlers.UpdatePreferencesRequest": {
             "type": "object",
             "properties": {
                 "locale": {
@@ -8512,7 +8983,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateReviewRequest": {
+        "handlers.UpdateReviewRequest": {
             "type": "object",
             "properties": {
                 "contains_spoilers": {
@@ -8529,7 +9000,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UpdateUserRequest": {
+        "handlers.UpdateUserRequest": {
             "type": "object",
             "properties": {
                 "bio": {
@@ -8538,7 +9009,7 @@ const docTemplate = `{
                     "example": "Updated bio"
                 },
                 "preferences": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UpdatePreferencesRequest"
+                    "$ref": "#/definitions/handlers.UpdatePreferencesRequest"
                 },
                 "username": {
                     "type": "string",
@@ -8552,7 +9023,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UserPreferences": {
+        "handlers.UserPreferences": {
             "type": "object",
             "properties": {
                 "locale": {
@@ -8565,7 +9036,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UserResponse": {
+        "handlers.UserResponse": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -8593,14 +9064,14 @@ const docTemplate = `{
                     "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "preferences": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserPreferences"
+                    "$ref": "#/definitions/handlers.UserPreferences"
                 },
                 "role": {
                     "type": "string",
                     "example": "user"
                 },
                 "stats": {
-                    "$ref": "#/definitions/internal_adapters_handlers.UserStats"
+                    "$ref": "#/definitions/handlers.UserStats"
                 },
                 "updated_at": {
                     "type": "string",
@@ -8616,7 +9087,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UserStats": {
+        "handlers.UserStats": {
             "type": "object",
             "properties": {
                 "followers_count": {
@@ -8629,24 +9100,27 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.UserStatsResponse": {
+        "handlers.UserStatsResponse": {
             "type": "object",
             "properties": {
+                "achievements": {
+                    "$ref": "#/definitions/handlers.AchievementStatsResponse"
+                },
                 "collections": {
-                    "$ref": "#/definitions/internal_adapters_handlers.CollectionStatsResponse"
+                    "$ref": "#/definitions/handlers.CollectionStatsResponse"
                 },
                 "reviews": {
-                    "$ref": "#/definitions/internal_adapters_handlers.ReviewStatsResponse"
+                    "$ref": "#/definitions/handlers.ReviewStatsResponse"
                 },
                 "social": {
-                    "$ref": "#/definitions/internal_adapters_handlers.SocialStatsResponse"
+                    "$ref": "#/definitions/handlers.SocialStatsResponse"
                 },
                 "watched": {
-                    "$ref": "#/definitions/internal_adapters_handlers.WatchedStatsResponse"
+                    "$ref": "#/definitions/handlers.WatchedStatsResponse"
                 }
             }
         },
-        "internal_adapters_handlers.UserSummary": {
+        "handlers.UserSummary": {
             "type": "object",
             "properties": {
                 "avatar_url": {
@@ -8663,7 +9137,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.VerifyEmailRequest": {
+        "handlers.VerifyEmailRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -8680,7 +9154,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_adapters_handlers.WatchedStatsResponse": {
+        "handlers.WatchedStatsResponse": {
             "type": "object",
             "properties": {
                 "runtime_display": {
@@ -8694,6 +9168,128 @@ const docTemplate = `{
                 "total_runtime": {
                     "type": "integer",
                     "example": 21600
+                }
+            }
+        },
+        "ports.ImportFailure": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ports.ImportResult": {
+            "type": "object",
+            "properties": {
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ports.ImportFailure"
+                    }
+                },
+                "ratings": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "reviews": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watched": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                },
+                "watchlist": {
+                    "$ref": "#/definitions/ports.ImportSectionResult"
+                }
+            }
+        },
+        "ports.ImportSectionResult": {
+            "type": "object",
+            "properties": {
+                "imported": {
+                    "type": "integer"
+                },
+                "skipped": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ports.ImportStatus": {
+            "type": "string",
+            "enum": [
+                "processing",
+                "completed",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "ImportStatusProcessing",
+                "ImportStatusCompleted",
+                "ImportStatusFailed"
+            ]
+        },
+        "ports.LinkedProvidersResult": {
+            "type": "object",
+            "properties": {
+                "github": {
+                    "type": "boolean"
+                },
+                "google": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.ErrorInfo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "pagination": {
+                    "$ref": "#/definitions/response.Pagination"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.Pagination": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "$ref": "#/definitions/response.ErrorInfo"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         }

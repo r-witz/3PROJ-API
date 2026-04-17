@@ -9,20 +9,22 @@ import (
 )
 
 type NotifyInput struct {
-	UserID    uuid.UUID
-	ActorID   uuid.UUID
-	Type      domain.NotificationType
-	ReviewID  *uuid.UUID
-	CommentID *uuid.UUID
-	Message   *string
+	UserID        uuid.UUID
+	ActorID       uuid.UUID
+	Type          domain.NotificationType
+	ReviewID      *uuid.UUID
+	CommentID     *uuid.UUID
+	AchievementID *uuid.UUID
+	Message       *string
 }
 
 type UpdateNotificationPreferencesInput struct {
-	LikeReview  *bool
-	LikeComment *bool
-	NewComment  *bool
-	NewFollow   *bool
-	System      *bool
+	LikeReview          *bool
+	LikeComment         *bool
+	NewComment          *bool
+	NewFollow           *bool
+	System              *bool
+	AchievementUnlocked *bool
 }
 
 type NotificationService interface {

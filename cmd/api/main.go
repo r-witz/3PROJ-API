@@ -109,6 +109,7 @@ func main() {
 	notifRepo := repositories.NewNotificationRepository(db)
 	notifPrefRepo := repositories.NewNotificationPreferencesRepository(db)
 	exportRepo := repositories.NewExportRepository(db)
+	achievementRepo := repositories.NewAchievementRepository(db)
 
 	minioStorage, err := storage.NewMinioStorage(
 		cfg.MinioEndpoint,
@@ -202,6 +203,9 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
+	achievementService := services.NewAchievementService(achievementRepo, statsRepo, notifService, hub)
+	achievementHandler := handlers.NewAchievementHandler(achievementService)
+
 	reviewHandler := handlers.NewReviewHandler(reviewService, movieService, userService, blockService, banCache, notifService, hub)
 	commentHandler := handlers.NewCommentHandler(commentService, userService, blockService, banCache, notifService, hub, reviewService)
 	followHandler := handlers.NewFollowHandler(followService, blockService, hub, banCache, notifService)
@@ -238,8 +242,10 @@ func main() {
 		importHandler,
 		notificationHandler,
 		exportHandler,
+		achievementHandler,
 		userService,
 		activityRepo,
+		achievementService,
 		banCache,
 	)
 

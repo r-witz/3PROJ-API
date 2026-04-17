@@ -136,6 +136,15 @@ var (
 )
 
 var (
+	ErrAchievementNotFound         = errors.New("achievement not found")
+	ErrAchievementCodeExists       = errors.New("achievement code already exists")
+	ErrAchievementInvalidCriterion = errors.New("invalid achievement criterion")
+	ErrAchievementInvalidTier      = errors.New("invalid achievement tier")
+	ErrAchievementInvalidCategory  = errors.New("invalid achievement category")
+	ErrAchievementSystemLocked     = errors.New("system achievements cannot be modified or deleted")
+)
+
+var (
 	ErrEmailAlreadyVerified      = errors.New("email is already verified")
 	ErrVerificationCodeInvalid   = errors.New("invalid or expired verification code")
 	ErrVerificationCodeRateLimit = errors.New("too many code requests, please wait")

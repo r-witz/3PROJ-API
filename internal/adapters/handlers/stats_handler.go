@@ -47,15 +47,20 @@ type SocialStatsResponse struct {
 	FollowingCount int `json:"following_count" example:"75"`
 }
 
+type AchievementStatsResponse struct {
+	UnlockedCount int `json:"unlocked_count" example:"12"`
+}
+
 type UserStatsResponse struct {
-	Reviews     ReviewStatsResponse     `json:"reviews"`
-	Collections CollectionStatsResponse `json:"collections"`
-	Watched     WatchedStatsResponse    `json:"watched"`
-	Social      SocialStatsResponse     `json:"social"`
+	Reviews      ReviewStatsResponse      `json:"reviews"`
+	Collections  CollectionStatsResponse  `json:"collections"`
+	Watched      WatchedStatsResponse     `json:"watched"`
+	Social       SocialStatsResponse      `json:"social"`
+	Achievements AchievementStatsResponse `json:"achievements"`
 }
 
 // @Summary      Get user statistics
-// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, and social stats. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user.
+// @Description  Get detailed statistics for a user profile including review stats, collection stats, watch time, social stats, and achievement count. Follower and following counts always exclude banned users. Returns 404 if the user is banned (non-admin callers). Returns 403 if there is a block between the authenticated user and the target user. The `achievements.unlocked_count` field lets profile headers show badge counts without a second request.
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
@@ -120,6 +125,9 @@ func (h *StatsHandler) GetUserStats(c *gin.Context) {
 		Social: SocialStatsResponse{
 			FollowersCount: stats.FollowersCount,
 			FollowingCount: stats.FollowingCount,
+		},
+		Achievements: AchievementStatsResponse{
+			UnlockedCount: stats.AchievementCount,
 		},
 	})
 }

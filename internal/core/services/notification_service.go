@@ -26,7 +26,11 @@ func NewNotificationService(
 }
 
 func (s *notificationService) Notify(ctx context.Context, input ports.NotifyInput) (*domain.Notification, error) {
-	if input.ActorID == input.UserID {
+	// System and achievement notifications are self-sourced; for peer-triggered
+	// types we skip notifying the actor about themselves.
+	peerTriggered := input.Type != domain.NotificationTypeSystem &&
+		input.Type != domain.NotificationTypeAchievementUnlocked
+	if peerTriggered && input.ActorID == input.UserID {
 		return nil, nil
 	}
 
@@ -43,19 +47,20 @@ func (s *notificationService) Notify(ctx context.Context, input ports.NotifyInpu
 	}
 
 	var actorID *uuid.UUID
-	if input.Type != domain.NotificationTypeSystem {
+	if peerTriggered {
 		actorID = &input.ActorID
 	}
 
 	notification := &domain.Notification{
-		ID:        uuid.New(),
-		UserID:    input.UserID,
-		ActorID:   actorID,
-		Type:      input.Type,
-		ReviewID:  input.ReviewID,
-		CommentID: input.CommentID,
-		Message:   input.Message,
-		CreatedAt: time.Now(),
+		ID:            uuid.New(),
+		UserID:        input.UserID,
+		ActorID:       actorID,
+		Type:          input.Type,
+		ReviewID:      input.ReviewID,
+		CommentID:     input.CommentID,
+		AchievementID: input.AchievementID,
+		Message:       input.Message,
+		CreatedAt:     time.Now(),
 	}
 
 	if err := s.notifRepo.Create(ctx, notification); err != nil {
@@ -168,6 +173,9 @@ func (s *notificationService) UpdatePreferences(ctx context.Context, userID uuid
 	}
 	if input.System != nil {
 		prefs.System = *input.System
+	}
+	if input.AchievementUnlocked != nil {
+		prefs.AchievementUnlocked = *input.AchievementUnlocked
 	}
 
 	prefs.UpdatedAt = time.Now()

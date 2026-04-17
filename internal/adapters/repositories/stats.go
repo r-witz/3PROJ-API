@@ -126,5 +126,12 @@ func (r *StatsRepository) GetUserStats(ctx context.Context, userID uuid.UUID) (*
 		return nil, err
 	}
 
+	err = r.db.Pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM user_achievements WHERE user_id = $1
+	`, userID).Scan(&stats.AchievementCount)
+	if err != nil {
+		return nil, err
+	}
+
 	return stats, nil
 }

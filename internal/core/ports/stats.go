@@ -18,6 +18,7 @@ type UserStats struct {
 	WatchedRuntime   int
 	FollowersCount   int
 	FollowingCount   int
+	AchievementCount int
 }
 
 type StatsRepository interface {

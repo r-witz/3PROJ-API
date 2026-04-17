@@ -19,32 +19,35 @@ func NewNotificationHandler(notifService ports.NotificationService) *Notificatio
 }
 
 type NotificationResponse struct {
-	ID        string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	UserID    string  `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440001"`
-	ActorID   *string `json:"actor_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
-	Type      string  `json:"type" example:"new_follow"`
-	ReviewID  *string `json:"review_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
-	CommentID *string `json:"comment_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440004"`
-	Message   *string `json:"message,omitempty" example:"Welcome to Duskforge!"`
-	ReadAt    *string `json:"read_at,omitempty" example:"2024-01-15T10:30:00Z"`
-	CreatedAt string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	ID            string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	UserID        string  `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440001"`
+	ActorID       *string `json:"actor_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
+	Type          string  `json:"type" example:"new_follow"`
+	ReviewID      *string `json:"review_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
+	CommentID     *string `json:"comment_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440004"`
+	AchievementID *string `json:"achievement_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440005"`
+	Message       *string `json:"message,omitempty" example:"Welcome to Duskforge!"`
+	ReadAt        *string `json:"read_at,omitempty" example:"2024-01-15T10:30:00Z"`
+	CreatedAt     string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
 }
 
 type NotificationPreferencesResponse struct {
-	LikeReview  bool   `json:"like_review" example:"true"`
-	LikeComment bool   `json:"like_comment" example:"true"`
-	NewComment  bool   `json:"new_comment" example:"true"`
-	NewFollow   bool   `json:"new_follow" example:"true"`
-	System      bool   `json:"system" example:"true"`
-	UpdatedAt   string `json:"updated_at" example:"2024-01-15T10:30:00Z"`
+	LikeReview          bool   `json:"like_review" example:"true"`
+	LikeComment         bool   `json:"like_comment" example:"true"`
+	NewComment          bool   `json:"new_comment" example:"true"`
+	NewFollow           bool   `json:"new_follow" example:"true"`
+	System              bool   `json:"system" example:"true"`
+	AchievementUnlocked bool   `json:"achievement_unlocked" example:"true"`
+	UpdatedAt           string `json:"updated_at" example:"2024-01-15T10:30:00Z"`
 }
 
 type UpdateNotificationPreferencesRequest struct {
-	LikeReview  *bool `json:"like_review" example:"true"`
-	LikeComment *bool `json:"like_comment" example:"true"`
-	NewComment  *bool `json:"new_comment" example:"true"`
-	NewFollow   *bool `json:"new_follow" example:"false"`
-	System      *bool `json:"system" example:"true"`
+	LikeReview          *bool `json:"like_review" example:"true"`
+	LikeComment         *bool `json:"like_comment" example:"true"`
+	NewComment          *bool `json:"new_comment" example:"true"`
+	NewFollow           *bool `json:"new_follow" example:"false"`
+	System              *bool `json:"system" example:"true"`
+	AchievementUnlocked *bool `json:"achievement_unlocked" example:"true"`
 }
 
 type UnreadCountResponse struct {
@@ -52,7 +55,7 @@ type UnreadCountResponse struct {
 }
 
 // @Summary      Get notifications
-// @Description  Get the authenticated user's notifications with pagination
+// @Description  Get the authenticated user's notifications with pagination. Notification `type` is one of `like_review`, `like_comment`, `new_comment`, `new_follow`, `achievement_unlocked`, or `system`. For `achievement_unlocked` notifications, `achievement_id` points to the unlocked badge and `actor_id` is null (the achievement is self-sourced).
 // @Tags         notifications
 // @Produce      json
 // @Security     BearerAuth
@@ -256,7 +259,7 @@ func (h *NotificationHandler) GetPreferences(c *gin.Context) {
 }
 
 // @Summary      Update notification preferences
-// @Description  Update the authenticated user's notification preferences. Only provided fields are updated.
+// @Description  Update the authenticated user's notification preferences. Only provided fields are updated. The `achievement_unlocked` toggle controls whether badge unlocks produce a notification (unlock rows in `user_achievements` are still written either way).
 // @Tags         notifications
 // @Accept       json
 // @Produce      json
@@ -281,11 +284,12 @@ func (h *NotificationHandler) UpdatePreferences(c *gin.Context) {
 	}
 
 	prefs, err := h.notifService.UpdatePreferences(c.Request.Context(), userID, ports.UpdateNotificationPreferencesInput{
-		LikeReview:  req.LikeReview,
-		LikeComment: req.LikeComment,
-		NewComment:  req.NewComment,
-		NewFollow:   req.NewFollow,
-		System:      req.System,
+		LikeReview:          req.LikeReview,
+		LikeComment:         req.LikeComment,
+		NewComment:          req.NewComment,
+		NewFollow:           req.NewFollow,
+		System:              req.System,
+		AchievementUnlocked: req.AchievementUnlocked,
 	})
 	if err != nil {
 		response.HandleError(c, err)
@@ -314,6 +318,10 @@ func toNotificationResponse(n *domain.Notification) NotificationResponse {
 		s := n.CommentID.String()
 		resp.CommentID = &s
 	}
+	if n.AchievementID != nil {
+		s := n.AchievementID.String()
+		resp.AchievementID = &s
+	}
 	if n.Message != nil {
 		resp.Message = n.Message
 	}
@@ -326,11 +334,12 @@ func toNotificationResponse(n *domain.Notification) NotificationResponse {
 
 func toNotificationPreferencesResponse(p *domain.NotificationPreferences) NotificationPreferencesResponse {
 	return NotificationPreferencesResponse{
-		LikeReview:  p.LikeReview,
-		LikeComment: p.LikeComment,
-		NewComment:  p.NewComment,
-		NewFollow:   p.NewFollow,
-		System:      p.System,
-		UpdatedAt:   p.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		LikeReview:          p.LikeReview,
+		LikeComment:         p.LikeComment,
+		NewComment:          p.NewComment,
+		NewFollow:           p.NewFollow,
+		System:              p.System,
+		AchievementUnlocked: p.AchievementUnlocked,
+		UpdatedAt:           p.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }

@@ -22,20 +22,20 @@ func NewNotificationRepository(db *database.DB) *NotificationRepository {
 
 func (r *NotificationRepository) Create(ctx context.Context, notification *domain.Notification) error {
 	query := `
-		INSERT INTO notifications (id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO notifications (id, user_id, actor_id, type, review_id, comment_id, achievement_id, message, read_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	_, err := r.db.Pool.Exec(ctx, query,
 		notification.ID, notification.UserID, notification.ActorID, notification.Type,
-		notification.ReviewID, notification.CommentID, notification.Message,
-		notification.ReadAt, notification.CreatedAt,
+		notification.ReviewID, notification.CommentID, notification.AchievementID,
+		notification.Message, notification.ReadAt, notification.CreatedAt,
 	)
 	return err
 }
 
 func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Notification, error) {
 	query := `
-		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at
+		SELECT id, user_id, actor_id, type, review_id, comment_id, achievement_id, message, read_at, created_at
 		FROM notifications WHERE id = $1
 	`
 	notification := &domain.Notification{}
@@ -52,7 +52,7 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*do
 
 func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Notification, error) {
 	query := `
-		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at
+		SELECT id, user_id, actor_id, type, review_id, comment_id, achievement_id, message, read_at, created_at
 		FROM notifications WHERE user_id = $1 ORDER BY created_at DESC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID)
@@ -66,8 +66,8 @@ func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UU
 		notification := &domain.Notification{}
 		if err := rows.Scan(
 			&notification.ID, &notification.UserID, &notification.ActorID, &notification.Type,
-			&notification.ReviewID, &notification.CommentID, &notification.Message,
-			&notification.ReadAt, &notification.CreatedAt,
+			&notification.ReviewID, &notification.CommentID, &notification.AchievementID,
+			&notification.Message, &notification.ReadAt, &notification.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (r *NotificationRepository) GetByUserID(ctx context.Context, userID uuid.UU
 
 func (r *NotificationRepository) GetByUserIDPaginated(ctx context.Context, userID uuid.UUID, offset, limit int) ([]*domain.Notification, error) {
 	query := `
-		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at
+		SELECT id, user_id, actor_id, type, review_id, comment_id, achievement_id, message, read_at, created_at
 		FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID, limit, offset)
@@ -92,8 +92,8 @@ func (r *NotificationRepository) GetByUserIDPaginated(ctx context.Context, userI
 		notification := &domain.Notification{}
 		if err := rows.Scan(
 			&notification.ID, &notification.UserID, &notification.ActorID, &notification.Type,
-			&notification.ReviewID, &notification.CommentID, &notification.Message,
-			&notification.ReadAt, &notification.CreatedAt,
+			&notification.ReviewID, &notification.CommentID, &notification.AchievementID,
+			&notification.Message, &notification.ReadAt, &notification.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (r *NotificationRepository) CountUnreadByUserID(ctx context.Context, userID
 
 func (r *NotificationRepository) GetUnreadByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.Notification, error) {
 	query := `
-		SELECT id, user_id, actor_id, type, review_id, comment_id, message, read_at, created_at
+		SELECT id, user_id, actor_id, type, review_id, comment_id, achievement_id, message, read_at, created_at
 		FROM notifications WHERE user_id = $1 AND read_at IS NULL ORDER BY created_at DESC
 	`
 	rows, err := r.db.Pool.Query(ctx, query, userID)
@@ -132,8 +132,8 @@ func (r *NotificationRepository) GetUnreadByUserID(ctx context.Context, userID u
 		notification := &domain.Notification{}
 		if err := rows.Scan(
 			&notification.ID, &notification.UserID, &notification.ActorID, &notification.Type,
-			&notification.ReviewID, &notification.CommentID, &notification.Message,
-			&notification.ReadAt, &notification.CreatedAt,
+			&notification.ReviewID, &notification.CommentID, &notification.AchievementID,
+			&notification.Message, &notification.ReadAt, &notification.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
