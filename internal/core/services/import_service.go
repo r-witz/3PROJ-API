@@ -27,6 +27,7 @@ type importService struct {
 	reviewRepo         ports.ReviewRepository
 	tmdbClient         ports.TMDBClient
 	hub                *ws.Hub
+	achievementSvc     ports.AchievementService
 
 	// In-memory progress tracking per user
 	progress sync.Map // map[uuid.UUID]*ports.ImportProgress
@@ -38,6 +39,7 @@ func NewImportService(
 	reviewRepo ports.ReviewRepository,
 	tmdbClient ports.TMDBClient,
 	hub *ws.Hub,
+	achievementSvc ports.AchievementService,
 ) ports.ImportService {
 	return &importService{
 		collectionRepo:     collectionRepo,
@@ -45,6 +47,7 @@ func NewImportService(
 		reviewRepo:         reviewRepo,
 		tmdbClient:         tmdbClient,
 		hub:                hub,
+		achievementSvc:     achievementSvc,
 	}
 }
 
@@ -337,6 +340,14 @@ func (s *importService) processImport(
 
 	if result.Failed == nil {
 		result.Failed = []ports.ImportFailure{}
+	}
+
+	// Bulk writes here bypassed the ActivityLogger middleware, so achievement
+	// evaluation never fired per item. Run a single sweep across all
+	// categories now that the data is in — newly-eligible badges unlock and
+	// the user gets notifications before they see "done".
+	if s.achievementSvc != nil {
+		_, _ = s.achievementSvc.EvaluateAllForUser(ctx, userID)
 	}
 
 	// Mark as completed — user sees their films immediately

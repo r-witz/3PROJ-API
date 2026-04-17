@@ -65,4 +65,9 @@ type AchievementService interface {
 
 	// Evaluation — called from activity middleware post-handler.
 	EvaluateForEvent(ctx context.Context, userID uuid.UUID, category domain.AchievementCategory) ([]*domain.Achievement, error)
+
+	// EvaluateAllForUser runs evaluation across every category. Use this from
+	// flows that bypass the activity middleware (bulk imports, admin backfills)
+	// so any newly-eligible badges unlock.
+	EvaluateAllForUser(ctx context.Context, userID uuid.UUID) ([]*domain.Achievement, error)
 }

@@ -300,6 +300,25 @@ func (s *achievementService) hydrateUnlocks(ctx context.Context, unlocks []*doma
 
 // --- Evaluation ---
 
+func (s *achievementService) EvaluateAllForUser(ctx context.Context, userID uuid.UUID) ([]*domain.Achievement, error) {
+	categories := []domain.AchievementCategory{
+		domain.AchievementCategoryReviewing,
+		domain.AchievementCategoryWatching,
+		domain.AchievementCategorySocial,
+		domain.AchievementCategoryCollecting,
+		domain.AchievementCategoryDiscovery,
+	}
+	var all []*domain.Achievement
+	for _, cat := range categories {
+		unlocked, err := s.EvaluateForEvent(ctx, userID, cat)
+		if err != nil {
+			return all, err
+		}
+		all = append(all, unlocked...)
+	}
+	return all, nil
+}
+
 func (s *achievementService) EvaluateForEvent(ctx context.Context, userID uuid.UUID, category domain.AchievementCategory) ([]*domain.Achievement, error) {
 	candidates, err := s.achievementRepo.List(ctx, ports.AchievementListFilter{
 		OnlyActive: true,

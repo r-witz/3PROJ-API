@@ -211,7 +211,7 @@ func main() {
 	followHandler := handlers.NewFollowHandler(followService, blockService, hub, banCache, notifService)
 	messageHandler := handlers.NewMessageHandler(messageService, hub)
 	blockHandler := handlers.NewBlockHandler(blockService, hub)
-	importService := services.NewImportService(collectionRepo, collectionItemRepo, reviewRepo, cachedTMDB, hub)
+	importService := services.NewImportService(collectionRepo, collectionItemRepo, reviewRepo, cachedTMDB, hub, achievementService)
 
 	adminHandler := handlers.NewAdminHandler(adminService, reportService, messageRepo, hub)
 	importHandler := handlers.NewImportHandler(importService)
