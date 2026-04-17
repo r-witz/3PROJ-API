@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -360,7 +361,7 @@ func (s *collectionService) RemoveItem(ctx context.Context, userID uuid.UUID, sl
 	return nil
 }
 
-func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string) ([]ports.MovieSearchResult, int, error) {
+func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string, sortOpt ports.CollectionItemSort) ([]ports.MovieSearchResult, int, error) {
 	collection, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, slug)
 	if err != nil {
 		return nil, 0, domain.ErrInternal
@@ -373,9 +374,9 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		return nil, 0, domain.ErrCollectionNotFound
 	}
 
-	items, err := s.collectionItemRepo.GetByCollectionIDPaginated(ctx, collection.ID, offset, limit)
-	if err != nil {
-		return nil, 0, domain.ErrInternal
+	sortField := sortOpt.Field
+	if sortField == "" {
+		sortField = ports.CollectionItemSortByAddedAt
 	}
 
 	total, err := s.collectionItemRepo.CountByCollectionID(ctx, collection.ID)
@@ -383,8 +384,65 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		return nil, 0, domain.ErrInternal
 	}
 
+	// Fast path: default sort by added_at uses SQL-level pagination.
+	if sortField == ports.CollectionItemSortByAddedAt && !sortOpt.Asc {
+		items, err := s.collectionItemRepo.GetByCollectionIDPaginated(ctx, collection.ID, offset, limit)
+		if err != nil {
+			return nil, 0, domain.ErrInternal
+		}
+		result, err := s.buildCollectionItemResults(ctx, items, userID, requestingUserID, language)
+		if err != nil {
+			return nil, 0, err
+		}
+		return result, total, nil
+	}
+
+	items, err := s.collectionItemRepo.GetByCollectionID(ctx, collection.ID)
+	if err != nil {
+		return nil, 0, domain.ErrInternal
+	}
+
 	if len(items) == 0 {
 		return []ports.MovieSearchResult{}, total, nil
+	}
+
+	results, err := s.buildCollectionItemResults(ctx, items, userID, requestingUserID, language)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	viewerRatings := map[int]float64{}
+	if sortField == ports.CollectionItemSortByOurRating && requestingUserID != nil {
+		tmdbIDs := make([]int, len(items))
+		for i, item := range items {
+			tmdbIDs[i] = item.TMDBID
+		}
+		vr, err := s.reviewRepo.GetRatingsByUserIDAndTMDBIDs(ctx, *requestingUserID, tmdbIDs)
+		if err == nil {
+			viewerRatings = vr
+		}
+	}
+
+	addedAtByID := make(map[int]time.Time, len(items))
+	for _, item := range items {
+		addedAtByID[item.TMDBID] = item.AddedAt
+	}
+
+	sortCollectionItemResults(results, addedAtByID, viewerRatings, sortOpt)
+
+	if offset >= len(results) {
+		return []ports.MovieSearchResult{}, total, nil
+	}
+	end := offset + limit
+	if end > len(results) {
+		end = len(results)
+	}
+	return results[offset:end], total, nil
+}
+
+func (s *collectionService) buildCollectionItemResults(ctx context.Context, items []*domain.CollectionItem, userID uuid.UUID, requestingUserID *uuid.UUID, language string) ([]ports.MovieSearchResult, error) {
+	if len(items) == 0 {
+		return []ports.MovieSearchResult{}, nil
 	}
 
 	tmdbIDs := make([]int, len(items))
@@ -432,9 +490,9 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		ratings = make(map[int]float64)
 	}
 
-	userRatings, err := s.reviewRepo.GetRatingsByUserIDAndTMDBIDs(ctx, userID, tmdbIDs)
+	ownerRatings, err := s.reviewRepo.GetRatingsByUserIDAndTMDBIDs(ctx, userID, tmdbIDs)
 	if err != nil {
-		userRatings = make(map[int]float64)
+		ownerRatings = make(map[int]float64)
 	}
 
 	result := make([]ports.MovieSearchResult, len(items))
@@ -444,9 +502,9 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 			duskforgeRating = &r
 		}
 
-		var userRating *float64
-		if r, ok := userRatings[item.TMDBID]; ok {
-			userRating = &r
+		var ownerRating *float64
+		if r, ok := ownerRatings[item.TMDBID]; ok {
+			ownerRating = &r
 		}
 
 		result[i] = ports.MovieSearchResult{
@@ -456,11 +514,78 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 			Date:            movieInfos[i].date,
 			TMDBRating:      movieInfos[i].tmdbRating,
 			DuskforgeRating: duskforgeRating,
-			UserRating:      userRating,
+			UserRating:      ownerRating,
 		}
 	}
 
-	return result, total, nil
+	return result, nil
+}
+
+func sortCollectionItemResults(results []ports.MovieSearchResult, addedAtByID map[int]time.Time, viewerRatings map[int]float64, sortOpt ports.CollectionItemSort) {
+	viewerRatingPtr := func(id int) *float64 {
+		if r, ok := viewerRatings[id]; ok {
+			return &r
+		}
+		return nil
+	}
+
+	sort.SliceStable(results, func(i, j int) bool {
+		switch sortOpt.Field {
+		case ports.CollectionItemSortByReleaseDate:
+			return cmpString(results[i].Date, results[j].Date, sortOpt.Asc)
+		case ports.CollectionItemSortByIMDBRating:
+			return cmpFloatPtr(results[i].TMDBRating, results[j].TMDBRating, sortOpt.Asc)
+		case ports.CollectionItemSortByDuskforgeRating:
+			return cmpFloatPtr(results[i].DuskforgeRating, results[j].DuskforgeRating, sortOpt.Asc)
+		case ports.CollectionItemSortByCollectionRating:
+			return cmpFloatPtr(results[i].UserRating, results[j].UserRating, sortOpt.Asc)
+		case ports.CollectionItemSortByOurRating:
+			return cmpFloatPtr(viewerRatingPtr(results[i].ID), viewerRatingPtr(results[j].ID), sortOpt.Asc)
+		default:
+			return cmpTime(addedAtByID[results[i].ID], addedAtByID[results[j].ID], sortOpt.Asc)
+		}
+	})
+}
+
+// cmpFloatPtr reports whether a should come before b. Nil values always sink to the bottom regardless of direction.
+func cmpFloatPtr(a, b *float64, asc bool) bool {
+	if a == nil && b == nil {
+		return false
+	}
+	if a == nil {
+		return false
+	}
+	if b == nil {
+		return true
+	}
+	if asc {
+		return *a < *b
+	}
+	return *a > *b
+}
+
+// cmpString orders empty strings last regardless of direction.
+func cmpString(a, b string, asc bool) bool {
+	if a == "" && b == "" {
+		return false
+	}
+	if a == "" {
+		return false
+	}
+	if b == "" {
+		return true
+	}
+	if asc {
+		return a < b
+	}
+	return a > b
+}
+
+func cmpTime(a, b time.Time, asc bool) bool {
+	if asc {
+		return a.Before(b)
+	}
+	return a.After(b)
 }
 
 func generateSlug(name string) string {

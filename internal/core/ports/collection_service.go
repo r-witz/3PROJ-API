@@ -20,6 +20,22 @@ type UpdateCollectionInput struct {
 	Visibility  *string `json:"visibility"`
 }
 
+type CollectionItemSortField string
+
+const (
+	CollectionItemSortByAddedAt          CollectionItemSortField = "added_at"
+	CollectionItemSortByReleaseDate      CollectionItemSortField = "release_date"
+	CollectionItemSortByIMDBRating       CollectionItemSortField = "imdb_rating"
+	CollectionItemSortByDuskforgeRating  CollectionItemSortField = "duskforge_rating"
+	CollectionItemSortByOurRating        CollectionItemSortField = "our_rating"
+	CollectionItemSortByCollectionRating CollectionItemSortField = "collection_rating"
+)
+
+type CollectionItemSort struct {
+	Field CollectionItemSortField
+	Asc   bool
+}
+
 type CollectionService interface {
 	CreateDefaultCollections(ctx context.Context, userID uuid.UUID) error
 	Create(ctx context.Context, userID uuid.UUID, input CreateCollectionInput) (*domain.Collection, error)
@@ -30,5 +46,5 @@ type CollectionService interface {
 	Delete(ctx context.Context, userID uuid.UUID, slug string) error
 	AddItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) (*domain.CollectionItem, error)
 	RemoveItem(ctx context.Context, userID uuid.UUID, slug string, tmdbID int) error
-	GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string) ([]MovieSearchResult, int, error)
+	GetItems(ctx context.Context, userID uuid.UUID, slug string, requestingUserID *uuid.UUID, offset, limit int, language string, sort CollectionItemSort) ([]MovieSearchResult, int, error)
 }

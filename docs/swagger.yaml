@@ -5243,6 +5243,12 @@ paths:
         in: query
         name: limit
         type: integer
+      - description: 'Sort field with optional +/- prefix (+ asc, - desc; default
+          -added_at). Allowed fields: added_at, release_date, imdb_rating, duskforge_rating,
+          our_rating, collection_rating'
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:

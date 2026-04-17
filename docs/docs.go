@@ -6796,6 +6796,12 @@ const docTemplate = `{
                         "description": "Limit for pagination",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort field with optional +/- prefix (+ asc, - desc; default -added_at). Allowed fields: added_at, release_date, imdb_rating, duskforge_rating, our_rating, collection_rating",
+                        "name": "sort",
+                        "in": "query"
                     }
                 ],
                 "responses": {

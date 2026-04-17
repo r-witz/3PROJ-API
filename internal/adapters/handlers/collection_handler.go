@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -437,6 +438,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
+// @Param        sort query string false "Sort field with optional +/- prefix (+ asc, - desc; default -added_at). Allowed fields: added_at, release_date, imdb_rating, duskforge_rating, our_rating, collection_rating"
 // @Success      200 {object} response.PaginatedResponse{data=[]CollectionItemResponse} "List of items with movie details and ratings"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -465,13 +467,23 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 	slug := c.Param("slug")
 	offset, limit := parsePagination(c)
 	language := middleware.GetLocale(c)
+	sortOpt, err := parseCollectionItemSort(c.Query("sort"))
+	if err != nil {
+		response.BadRequest(c, err.Error(), nil)
+		return
+	}
 
 	var requestingUserID *uuid.UUID
 	if uid, ok := middleware.GetUserID(c); ok {
 		requestingUserID = &uid
 	}
 
-	items, total, err := h.collectionService.GetItems(c.Request.Context(), userID, slug, requestingUserID, offset, limit, language)
+	if sortOpt.Field == ports.CollectionItemSortByOurRating && requestingUserID == nil {
+		response.BadRequest(c, "sort by our_rating requires authentication", nil)
+		return
+	}
+
+	items, total, err := h.collectionService.GetItems(c.Request.Context(), userID, slug, requestingUserID, offset, limit, language, sortOpt)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -589,4 +601,35 @@ func toSimpleCollectionItemResponse(item *domain.CollectionItem) SimpleCollectio
 		TMDBID:       item.TMDBID,
 		AddedAt:      item.AddedAt.Format(time.RFC3339),
 	}
+}
+
+func parseCollectionItemSort(s string) (ports.CollectionItemSort, error) {
+	if s == "" {
+		return ports.CollectionItemSort{Field: ports.CollectionItemSortByAddedAt, Asc: false}, nil
+	}
+
+	asc := false
+	field := s
+	switch s[0] {
+	case '+':
+		asc = true
+		field = s[1:]
+	case '-':
+		asc = false
+		field = s[1:]
+	default:
+		asc = true
+	}
+
+	switch ports.CollectionItemSortField(field) {
+	case ports.CollectionItemSortByAddedAt,
+		ports.CollectionItemSortByReleaseDate,
+		ports.CollectionItemSortByIMDBRating,
+		ports.CollectionItemSortByDuskforgeRating,
+		ports.CollectionItemSortByOurRating,
+		ports.CollectionItemSortByCollectionRating:
+		return ports.CollectionItemSort{Field: ports.CollectionItemSortField(field), Asc: asc}, nil
+	}
+
+	return ports.CollectionItemSort{}, fmt.Errorf("invalid sort field: %s", field)
 }
