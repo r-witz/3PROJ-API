@@ -25,7 +25,7 @@ type CollectionItemSortField string
 const (
 	CollectionItemSortByAddedAt          CollectionItemSortField = "added_at"
 	CollectionItemSortByReleaseDate      CollectionItemSortField = "release_date"
-	CollectionItemSortByIMDBRating       CollectionItemSortField = "imdb_rating"
+	CollectionItemSortByTMDBRating       CollectionItemSortField = "tmdb_rating"
 	CollectionItemSortByDuskforgeRating  CollectionItemSortField = "duskforge_rating"
 	CollectionItemSortByOurRating        CollectionItemSortField = "our_rating"
 	CollectionItemSortByCollectionRating CollectionItemSortField = "collection_rating"

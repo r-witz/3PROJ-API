@@ -438,7 +438,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 // @Param        Accept-Language header string false "Language code (e.g., en, fr)"
 // @Param        offset query int false "Offset for pagination" default(0)
 // @Param        limit query int false "Limit for pagination" default(20)
-// @Param        sort query string false "Sort field with optional +/- prefix (+ asc, - desc; default -added_at). Allowed fields: added_at, release_date, imdb_rating, duskforge_rating, our_rating, collection_rating"
+// @Param        sort query string false "Sort field with optional +/- prefix (+ asc, - desc; default -added_at). Allowed fields: added_at, release_date, tmdb_rating, duskforge_rating, our_rating, collection_rating"
 // @Success      200 {object} response.PaginatedResponse{data=[]CollectionItemResponse} "List of items with movie details and ratings"
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      403 {object} response.Response "User blocked"
@@ -624,7 +624,7 @@ func parseCollectionItemSort(s string) (ports.CollectionItemSort, error) {
 	switch ports.CollectionItemSortField(field) {
 	case ports.CollectionItemSortByAddedAt,
 		ports.CollectionItemSortByReleaseDate,
-		ports.CollectionItemSortByIMDBRating,
+		ports.CollectionItemSortByTMDBRating,
 		ports.CollectionItemSortByDuskforgeRating,
 		ports.CollectionItemSortByOurRating,
 		ports.CollectionItemSortByCollectionRating:

@@ -533,7 +533,7 @@ func sortCollectionItemResults(results []ports.MovieSearchResult, addedAtByID ma
 		switch sortOpt.Field {
 		case ports.CollectionItemSortByReleaseDate:
 			return cmpString(results[i].Date, results[j].Date, sortOpt.Asc)
-		case ports.CollectionItemSortByIMDBRating:
+		case ports.CollectionItemSortByTMDBRating:
 			return cmpFloatPtr(results[i].TMDBRating, results[j].TMDBRating, sortOpt.Asc)
 		case ports.CollectionItemSortByDuskforgeRating:
 			return cmpFloatPtr(results[i].DuskforgeRating, results[j].DuskforgeRating, sortOpt.Asc)
