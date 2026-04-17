@@ -597,6 +597,13 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440003
         type: string
       type:
+        enum:
+        - like_review
+        - like_comment
+        - new_comment
+        - new_follow
+        - system
+        - achievement_unlocked
         example: new_follow
         type: string
       user_id:

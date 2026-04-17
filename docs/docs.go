@@ -8412,6 +8412,14 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string",
+                    "enum": [
+                        "like_review",
+                        "like_comment",
+                        "new_comment",
+                        "new_follow",
+                        "system",
+                        "achievement_unlocked"
+                    ],
                     "example": "new_follow"
                 },
                 "user_id": {

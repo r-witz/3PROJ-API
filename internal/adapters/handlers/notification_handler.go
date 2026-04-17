@@ -22,7 +22,7 @@ type NotificationResponse struct {
 	ID            string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	UserID        string  `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440001"`
 	ActorID       *string `json:"actor_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
-	Type          string  `json:"type" example:"new_follow"`
+	Type          string  `json:"type" example:"new_follow" enums:"like_review,like_comment,new_comment,new_follow,system,achievement_unlocked"`
 	ReviewID      *string `json:"review_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440003"`
 	CommentID     *string `json:"comment_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440004"`
 	AchievementID *string `json:"achievement_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440005"`
