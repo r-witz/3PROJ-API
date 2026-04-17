@@ -41,8 +41,8 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id uuid.UUID) (*do
 	notification := &domain.Notification{}
 	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
 		&notification.ID, &notification.UserID, &notification.ActorID, &notification.Type,
-		&notification.ReviewID, &notification.CommentID, &notification.Message,
-		&notification.ReadAt, &notification.CreatedAt,
+		&notification.ReviewID, &notification.CommentID, &notification.AchievementID,
+		&notification.Message, &notification.ReadAt, &notification.CreatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

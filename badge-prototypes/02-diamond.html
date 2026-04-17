@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duskforge Badges — Diamond</title>
+<link rel="stylesheet" href="_styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Duskforge · Badge Shapes</h1>
+  <div class="title">Shape 2 — Diamond</div>
+  <div class="subtitle">Rotated square with softly rounded corners. Strong silhouette, geometric and modern. Tier color lives in a thin outer edge + inner glow so the shape stays clean.</div>
+  <nav>
+    <a href="index.html">Overview</a>
+    <a href="01-tile.html">1 · Tile</a>
+    <a href="02-diamond.html" class="active">2 · Diamond</a>
+    <a href="03-aperture.html">3 · Aperture</a>
+    <a href="04-ribbon.html">4 · Ribbon</a>
+  </nav>
+</header>
+
+<div class="note">Icon area is marked with a dashed outline. Icons come in the next pass — focus on the frame.</div>
+
+<div id="grid" class="grid"></div>
+
+<footer>15 shapes · 4 tiers · Rotated diamond frame</footer>
+
+<script src="_shared.js"></script>
+<script>
+function frame(b, t, s) {
+  const id = `dia-${b.code}`;
+  return `
+    <svg class="badge" width="130" height="130" viewBox="0 0 130 130">
+      <defs>
+        <linearGradient id="g-${id}" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="${t.light}" stop-opacity="0.28"/>
+          <stop offset="1" stop-color="${t.base}" stop-opacity="0.08"/>
+        </linearGradient>
+        <filter id="glow-${id}" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="4"/>
+        </filter>
+      </defs>
+
+      <g transform="translate(65 65) rotate(45)">
+        <!-- outer glow -->
+        <rect x="-42" y="-42" width="84" height="84" rx="14" fill="${t.base}" opacity="0.14" filter="url(#glow-${id})"/>
+
+        <!-- edge (tier-colored) -->
+        <rect x="-40" y="-40" width="80" height="80" rx="14" fill="${t.base}"/>
+
+        <!-- inner plate -->
+        <rect x="-37" y="-37" width="74" height="74" rx="12" fill="${s.card}"/>
+
+        <!-- tint overlay -->
+        <rect x="-37" y="-37" width="74" height="74" rx="12" fill="url(#g-${id})"/>
+
+        <!-- top-left specular highlight -->
+        <path d="M-37 -25 Q-37 -37 -25 -37 L5 -37 Q-25 -25 -25 5 Z" fill="#ffffff" opacity="0.05"/>
+      </g>
+
+      <!-- icon slot (placeholder, not rotated) -->
+      ${placeholderSlot(65, 65, 20, t.light, 0.45)}
+    </svg>
+  `;
+}
+renderGrid(frame);
+</script>
+</body>
+</html>

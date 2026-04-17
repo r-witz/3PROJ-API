@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duskforge Badges — Overview</title>
+<link rel="stylesheet" href="_styles.css">
+<style>
+.compare {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 20px;
+}
+
+.style-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 24px 24px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  display: block;
+}
+
+.style-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.4);
+  background: var(--bg-3);
+}
+
+.style-name {
+  font-size: 10px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.style-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.style-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 22px;
+  text-align: center;
+  min-height: 60px;
+}
+
+.style-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 140px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.view-link {
+  display: block;
+  text-align: center;
+  color: var(--indigo);
+  font-size: 13px;
+  font-weight: 600;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.palette {
+  max-width: 620px;
+  margin: 0 auto 40px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.swatch {
+  padding: 12px 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--bg);
+}
+.swatch .code {
+  display: block;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  opacity: 0.75;
+  margin-top: 4px;
+  letter-spacing: 0;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Duskforge · Badge Shapes</h1>
+  <div class="title">Pick a frame direction</div>
+  <div class="subtitle">Four shape studies aligned to the Duskforge FRONT aesthetic — dark cinematic surface, Inter, indigo / violet / amber tier palette, 8–18px radii, minimal ornamentation. Icons come next; focus on the silhouette.</div>
+</header>
+
+<div class="palette">
+  <div class="swatch" style="background:#c47e3a">Bronze<span class="code">#c47e3a</span></div>
+  <div class="swatch" style="background:#94a3b8">Silver<span class="code">#94a3b8</span></div>
+  <div class="swatch" style="background:#f59e0b">Gold<span class="code">#f59e0b</span></div>
+  <div class="swatch" style="background:#8b5cf6;color:#fff">Platinum<span class="code">#8b5cf6</span></div>
+</div>
+
+<div id="compare" class="compare"></div>
+
+<footer>Tap any card to see all 15 shapes in that frame · Tier accents borrowed from FRONT rating palette</footer>
+
+<script src="_shared.js"></script>
+<script>
+const PREVIEW_CODES = ["first_review", "cinephile", "movie_buff", "screen_sage"];
+
+const STYLES = [
+  {
+    href: "01-tile.html",
+    num: "Shape 1",
+    title: "Soft Tile",
+    desc: "Chamfered square with tier-tinted glow and a top highlight. Echoes the review-card corner radius.",
+    frame: (b, t, s) => {
+      const id = `i1-${b.code}`;
+      return `
+        <svg width="72" height="72" viewBox="0 0 120 120">
+          <defs>
+            <radialGradient id="${id}" cx="0.5" cy="0.35" r="0.75">
+              <stop offset="0" stop-color="${t.light}" stop-opacity="0.55"/>
+              <stop offset="0.6" stop-color="${t.base}" stop-opacity="0.25"/>
+              <stop offset="1" stop-color="${t.base}" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect x="8" y="8" width="104" height="104" rx="18" fill="${s.elev}" stroke="${t.base}" stroke-width="1" stroke-opacity="0.55"/>
+          <rect x="8" y="8" width="104" height="104" rx="18" fill="url(#${id})"/>
+          <circle cx="100" cy="20" r="3" fill="${t.base}"/>
+          ${placeholderSlot(60, 60, 18, t.light, 0.45)}
+        </svg>`;
+    }
+  },
+  {
+    href: "02-diamond.html",
+    num: "Shape 2",
+    title: "Diamond",
+    desc: "Rotated square with soft corners. Strong silhouette, geometric, modern. Tier lives in a thin edge.",
+    frame: (b, t, s) => {
+      const id = `i2-${b.code}`;
+      return `
+        <svg width="72" height="72" viewBox="0 0 130 130">
+          <defs>
+            <linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${t.light}" stop-opacity="0.28"/>
+              <stop offset="1" stop-color="${t.base}" stop-opacity="0.08"/>
+            </linearGradient>
+          </defs>
+          <g transform="translate(65 65) rotate(45)">
+            <rect x="-40" y="-40" width="80" height="80" rx="14" fill="${t.base}"/>
+            <rect x="-37" y="-37" width="74" height="74" rx="12" fill="${s.card}"/>
+            <rect x="-37" y="-37" width="74" height="74" rx="12" fill="url(#${id})"/>
+          </g>
+          ${placeholderSlot(65, 65, 16, t.light, 0.45)}
+        </svg>`;
+    }
+  },
+  {
+    href: "03-aperture.html",
+    num: "Shape 3",
+    title: "Aperture",
+    desc: "Concentric circles evoking a camera lens. Thematic for film without being literal.",
+    frame: (b, t, s) => {
+      const id = `i3-${b.code}`;
+      return `
+        <svg width="72" height="72" viewBox="0 0 130 130">
+          <defs>
+            <radialGradient id="${id}" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stop-color="${t.light}" stop-opacity="0.42"/>
+              <stop offset="1" stop-color="${t.base}" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="r-${id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="${t.light}"/>
+              <stop offset="1" stop-color="${t.dark}"/>
+            </linearGradient>
+          </defs>
+          <circle cx="65" cy="65" r="58" fill="url(#r-${id})"/>
+          <circle cx="65" cy="65" r="52" fill="${s.card}"/>
+          <circle cx="65" cy="65" r="46" fill="${s.bg}"/>
+          <circle cx="65" cy="65" r="46" fill="url(#${id})"/>
+          ${placeholderSlot(65, 65, 16, t.light, 0.45)}
+        </svg>`;
+    }
+  },
+  {
+    href: "04-ribbon.html",
+    num: "Shape 4",
+    title: "Ribbon",
+    desc: "Rounded rectangle with chevron-cut bottom, like a flat medal. Vertical posture reads as earned.",
+    frame: (b, t, s) => {
+      const id = `i4-${b.code}`;
+      return `
+        <svg width="60" height="78" viewBox="0 0 110 140">
+          <defs>
+            <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="${t.base}" stop-opacity="0.2"/>
+              <stop offset="1" stop-color="${t.base}" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M15 10 Q15 4 21 4 L89 4 Q95 4 95 10 L95 108 L55 128 L15 108 Z"
+                fill="${s.elev}" stroke="${t.base}" stroke-width="1" stroke-opacity="0.55"/>
+          <path d="M15 10 Q15 4 21 4 L89 4 Q95 4 95 10 L95 108 L55 128 L15 108 Z"
+                fill="url(#${id})"/>
+          <path d="M15 10 Q15 4 21 4 L89 4 Q95 4 95 10 L95 18 L15 18 Z" fill="${t.base}"/>
+          ${placeholderSlot(55, 64, 16, t.light, 0.45)}
+        </svg>`;
+    }
+  }
+];
+
+function renderCompare() {
+  const container = document.getElementById("compare");
+  container.innerHTML = STYLES.map(style => {
+    const previews = PREVIEW_CODES.map(code => {
+      const b = BADGES.find(x => x.code === code);
+      const t = TIER_COLORS[b.tier];
+      return style.frame(b, t, SURFACE);
+    }).join("");
+    return `
+      <a class="style-card" href="${style.href}">
+        <div class="style-name">${style.num}</div>
+        <div class="style-title">${style.title}</div>
+        <div class="style-desc">${style.desc}</div>
+        <div class="style-preview">${previews}</div>
+        <div class="view-link">View all 15 shapes →</div>
+      </a>
+    `;
+  }).join("");
+}
+
+renderCompare();
+</script>
+</body>
+</html>
