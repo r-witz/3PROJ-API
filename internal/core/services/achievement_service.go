@@ -250,6 +250,7 @@ func (s *achievementService) List(ctx context.Context, requesterID *uuid.UUID, c
 		item := &ports.AchievementWithProgress{
 			Achievement: representative.achievement,
 			Unlocked:    representativeOK,
+			Family:      key,
 		}
 		if representativeOK {
 			item.UnlockedAt = highestUnlockRec

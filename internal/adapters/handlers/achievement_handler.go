@@ -45,6 +45,7 @@ type AchievementResponse struct {
 	Category    string                       `json:"category" example:"reviewing" enums:"reviewing,watching,social,collecting,discovery"`
 	Tier        string                       `json:"tier" example:"bronze" enums:"bronze,silver,gold,platinum"`
 	IconURL     *string                      `json:"icon_url,omitempty" example:"https://cdn.duskforge.io/achievements/first_review.png"`
+	Family      string                       `json:"family,omitempty" example:"review_count"`
 	Secret      bool                         `json:"secret" example:"false"`
 	System      bool                         `json:"system" example:"true"`
 	Unlocked    bool                         `json:"unlocked" example:"true"`
@@ -85,6 +86,7 @@ type UpdateAchievementRequest struct {
 
 // @Summary      List achievements
 // @Description  Returns one entry per progression ladder (family) — not one per tier. A family groups every achievement that shares the same progression signal (e.g. all four `review_count` tiers roll up into a single entry). Each entry describes the caller's state on that ladder:
+// @Description  • `family` is a stable string identifier for the ladder (e.g. `review_count`, `watched_runtime`, `rating_given:5`) — use it to key rows in the UI, since `id` changes as the caller climbs tiers.
 // @Description  • The top-level achievement fields (`id`, `code`, `name`, `description`, `tier`, `icon_url`) describe the **highest tier the caller has unlocked** in that family. When nothing is unlocked yet, the bronze tier is returned.
 // @Description  • `unlocked` is `true` whenever the returned tier has been earned (every case except "nothing unlocked yet"). `unlocked_at` carries the timestamp of that unlock.
 // @Description  • `progress.target` is the threshold of the **next tier** to work toward. When the ladder is maxed out (platinum unlocked) `target` stays on the platinum threshold and `current == target`. When nothing is unlocked yet, `target` is the bronze threshold.
@@ -363,6 +365,7 @@ func toAchievementResponse(item *ports.AchievementWithProgress) AchievementRespo
 		Category:    string(a.Category),
 		Tier:        string(a.Tier),
 		IconURL:     a.IconURL,
+		Family:      item.Family,
 		Secret:      a.Secret,
 		System:      a.System,
 		Unlocked:    item.Unlocked,

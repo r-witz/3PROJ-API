@@ -44,6 +44,11 @@ type AchievementWithProgress struct {
 	Unlocked    bool
 	UnlockedAt  *domain.UserAchievement
 	Progress    AchievementProgress
+
+	// Family is a stable identifier for the progression ladder this entry
+	// belongs to. Set by List so frontends can key each row to its ladder;
+	// left empty on endpoints that return individual badges.
+	Family string
 }
 
 type UnlockedAchievement struct {
