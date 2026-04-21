@@ -207,6 +207,25 @@ func evaluateCriterion(e *evalContext, raw json.RawMessage) (int, int, bool, err
 	}
 }
 
+// familyKeyForCriterion derives a grouping key so every tier of the same
+// progression ladder rolls up into one entry. Criterion kind is usually
+// enough, but rating_given is keyed by rating too so admins can run
+// separate ladders per star value.
+func familyKeyForCriterion(raw json.RawMessage) (string, error) {
+	var spec criterionSpec
+	if err := json.Unmarshal(raw, &spec); err != nil {
+		return "", err
+	}
+	if spec.Kind == criterionRatingGiven {
+		var p ratingGivenParams
+		if err := json.Unmarshal(spec.Params, &p); err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s:%g", spec.Kind, p.Rating), nil
+	}
+	return string(spec.Kind), nil
+}
+
 func parseThreshold(raw json.RawMessage) (int, error) {
 	var p thresholdParams
 	if err := json.Unmarshal(raw, &p); err != nil {

@@ -31,6 +31,12 @@ type AchievementProgressResponse struct {
 // AchievementResponse is the canonical achievement payload returned everywhere
 // achievements are surfaced (list, detail, profile, recent unlocks). Progress
 // and unlock fields are populated only when the request is authenticated.
+//
+// On the catalog List endpoint each entry is a family roll-up: the object
+// describes the highest tier the caller has unlocked in that ladder (or the
+// bronze tier when nothing is unlocked yet), and `progress.target` is the
+// threshold of the next tier — or the current tier's threshold once the
+// ladder is maxed out.
 type AchievementResponse struct {
 	ID          string                       `json:"id" example:"018f1234-1234-7abc-8def-123456789abc" format:"uuid"`
 	Code        string                       `json:"code" example:"first_review"`
@@ -78,12 +84,17 @@ type UpdateAchievementRequest struct {
 }
 
 // @Summary      List achievements
-// @Description  List every active achievement in the catalog. When the request is authenticated (BearerAuth is optional here), each entry also carries the caller's `unlocked` flag, `unlocked_at` timestamp, and `progress` object toward the criterion. Secret achievements are hidden from unauthenticated callers and from authenticated callers who have not yet unlocked them. Results are ordered by `sort_order` then by creation time, and can be filtered to a single category.
+// @Description  Returns one entry per progression ladder (family) — not one per tier. A family groups every achievement that shares the same progression signal (e.g. all four `review_count` tiers roll up into a single entry). Each entry describes the caller's state on that ladder:
+// @Description  • The top-level achievement fields (`id`, `code`, `name`, `description`, `tier`, `icon_url`) describe the **highest tier the caller has unlocked** in that family. When nothing is unlocked yet, the bronze tier is returned.
+// @Description  • `unlocked` is `true` whenever the returned tier has been earned (every case except "nothing unlocked yet"). `unlocked_at` carries the timestamp of that unlock.
+// @Description  • `progress.target` is the threshold of the **next tier** to work toward. When the ladder is maxed out (platinum unlocked) `target` stays on the platinum threshold and `current == target`. When nothing is unlocked yet, `target` is the bronze threshold.
+// @Description  • `progress.current` is the caller's current value, capped at `target`. For unauthenticated callers `current` is 0.
+// @Description  Secret achievements are hidden from unauthenticated callers and from authenticated callers who have not yet unlocked them. Results are ordered by the family's first-tier `sort_order`, and can be filtered to a single category.
 // @Tags         achievements
 // @Produce      json
 // @Security     BearerAuth
 // @Param        category query string false "Filter by category" Enums(reviewing, watching, social, collecting, discovery)
-// @Success      200 {object} response.Response{data=[]AchievementResponse} "Achievement catalog with per-caller progress"
+// @Success      200 {object} response.Response{data=[]AchievementResponse} "Family roll-up with per-caller progress toward the next tier"
 // @Failure      400 {object} response.Response "Invalid category value"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /achievements [get]

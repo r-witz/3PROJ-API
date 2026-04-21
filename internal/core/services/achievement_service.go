@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"time"
 
 	"duskforge-api/internal/core/domain"
@@ -174,21 +175,88 @@ func (s *achievementService) List(ctx context.Context, requesterID *uuid.UUID, c
 		evalCtx = newEvalContext(ctx, *requesterID, s.statsRepo, s.achievementRepo)
 	}
 
-	out := make([]*ports.AchievementWithProgress, 0, len(all))
+	type familyMember struct {
+		achievement *domain.Achievement
+		target      int
+	}
+	families := map[string][]familyMember{}
+	familyOrder := []string{}
+	familyMinSort := map[string]int{}
+
 	for _, a := range all {
-		unlockRec, isUnlocked := unlockDates[a.ID]
-		if a.Secret && !isUnlocked {
+		if _, isUnlocked := unlockDates[a.ID]; a.Secret && !isUnlocked {
 			continue
+		}
+		key, err := familyKeyForCriterion(a.Criterion)
+		if err != nil {
+			continue
+		}
+		target, err := extractTarget(a.Criterion)
+		if err != nil {
+			continue
+		}
+		if _, ok := families[key]; !ok {
+			familyOrder = append(familyOrder, key)
+			familyMinSort[key] = a.SortOrder
+		} else if a.SortOrder < familyMinSort[key] {
+			familyMinSort[key] = a.SortOrder
+		}
+		families[key] = append(families[key], familyMember{achievement: a, target: target})
+	}
+
+	sort.SliceStable(familyOrder, func(i, j int) bool {
+		return familyMinSort[familyOrder[i]] < familyMinSort[familyOrder[j]]
+	})
+
+	out := make([]*ports.AchievementWithProgress, 0, len(familyOrder))
+	for _, key := range familyOrder {
+		members := families[key]
+		sort.SliceStable(members, func(i, j int) bool {
+			return members[i].target < members[j].target
+		})
+
+		highestIdx := -1
+		var highestUnlockRec *domain.UserAchievement
+		for i := range members {
+			if ua, ok := unlockDates[members[i].achievement.ID]; ok {
+				highestIdx = i
+				highestUnlockRec = ua
+			}
+		}
+
+		// Representative: the badge to display. It's the highest unlocked tier
+		// (so the caller sees what they've earned), or bronze when they have
+		// nothing yet. Progress target: the next tier's threshold, or the
+		// current tier's threshold when the ladder is maxed out.
+		var (
+			representative   familyMember
+			representativeOK bool
+			progressTarget   familyMember
+		)
+		switch {
+		case highestIdx < 0:
+			representative = members[0]
+			progressTarget = members[0]
+		case highestIdx+1 < len(members):
+			representative = members[highestIdx]
+			representativeOK = true
+			progressTarget = members[highestIdx+1]
+		default:
+			representative = members[highestIdx]
+			representativeOK = true
+			progressTarget = members[highestIdx]
 		}
 
 		item := &ports.AchievementWithProgress{
-			Achievement: a,
-			Unlocked:    isUnlocked,
-			UnlockedAt:  unlockRec,
+			Achievement: representative.achievement,
+			Unlocked:    representativeOK,
+		}
+		if representativeOK {
+			item.UnlockedAt = highestUnlockRec
 		}
 
 		if evalCtx != nil {
-			current, target, _, err := evaluateCriterion(evalCtx, a.Criterion)
+			current, target, _, err := evaluateCriterion(evalCtx, progressTarget.achievement.Criterion)
 			if err == nil {
 				if current > target {
 					current = target
@@ -196,10 +264,7 @@ func (s *achievementService) List(ctx context.Context, requesterID *uuid.UUID, c
 				item.Progress = ports.AchievementProgress{Current: current, Target: target}
 			}
 		} else {
-			// Unauthenticated: expose target only, via a lightweight parse.
-			if target, err := extractTarget(a.Criterion); err == nil {
-				item.Progress = ports.AchievementProgress{Target: target}
-			}
+			item.Progress = ports.AchievementProgress{Target: progressTarget.target}
 		}
 
 		out = append(out, item)
