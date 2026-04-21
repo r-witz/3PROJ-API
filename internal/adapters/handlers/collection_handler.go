@@ -406,7 +406,8 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 		return
 	}
 
-	if slug == "to-watch" {
+	switch slug {
+	case "to-watch":
 		middleware.QueueActivity(c, middleware.ActivityEvent{
 			Action:       middleware.ActivityCreate,
 			Type:         domain.ActivityTypeWatchlistItemAdded,
@@ -414,7 +415,19 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 			CollectionID: &item.CollectionID,
 			TMDBID:       &req.TMDBID,
 		})
-	} else if slug != "watched" {
+	case "watched":
+		// Watched is a system collection we deliberately keep off the activity
+		// feed; SuppressLog still fires the watching-category evaluation so
+		// watched_count / watched_runtime unlock.
+		middleware.QueueActivity(c, middleware.ActivityEvent{
+			Action:       middleware.ActivityCreate,
+			Type:         domain.ActivityTypeCollectionItemAdded,
+			UserID:       userID,
+			CollectionID: &item.CollectionID,
+			TMDBID:       &req.TMDBID,
+			SuppressLog:  true,
+		})
+	default:
 		middleware.QueueActivity(c, middleware.ActivityEvent{
 			Action:       middleware.ActivityCreate,
 			Type:         domain.ActivityTypeCollectionItemAdded,

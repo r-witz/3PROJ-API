@@ -32,6 +32,11 @@ type ActivityEvent struct {
 	CommentID    *uuid.UUID
 	TMDBID       *int
 	TargetUserID *uuid.UUID
+
+	// SuppressLog skips the activity-feed write but still fires achievement
+	// evaluation. Use for side-effect events we don't want users to see (e.g.
+	// adding to the "watched" system collection).
+	SuppressLog bool
 }
 
 // QueueActivity queues an activity event to be processed after the handler completes.
@@ -94,17 +99,19 @@ func ActivityLogger(activityRepo ports.ActivityRepository, achievementSvc ports.
 		for _, event := range queue {
 			switch event.Action {
 			case ActivityCreate:
-				_ = activityRepo.Create(ctx, &domain.Activity{
-					ID:           uuid.New(),
-					UserID:       event.UserID,
-					Type:         event.Type,
-					ReviewID:     event.ReviewID,
-					CollectionID: event.CollectionID,
-					CommentID:    event.CommentID,
-					TMDBID:       event.TMDBID,
-					TargetUserID: event.TargetUserID,
-					CreatedAt:    time.Now(),
-				})
+				if !event.SuppressLog {
+					_ = activityRepo.Create(ctx, &domain.Activity{
+						ID:           uuid.New(),
+						UserID:       event.UserID,
+						Type:         event.Type,
+						ReviewID:     event.ReviewID,
+						CollectionID: event.CollectionID,
+						CommentID:    event.CommentID,
+						TMDBID:       event.TMDBID,
+						TargetUserID: event.TargetUserID,
+						CreatedAt:    time.Now(),
+					})
+				}
 				if achievementSvc != nil {
 					if cat := categoryForActivityType(event.Type); cat != "" {
 						evalSet[userCat{event.UserID, cat}] = struct{}{}
