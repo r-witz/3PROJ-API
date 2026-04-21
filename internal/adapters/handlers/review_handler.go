@@ -452,28 +452,33 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 		return
 	}
 
-	middleware.QueueActivity(c, middleware.ActivityEvent{
+	event := middleware.ActivityEvent{
 		Action:   middleware.ActivityCreate,
 		Type:     domain.ActivityTypeReviewLiked,
 		UserID:   userID,
 		ReviewID: &reviewID,
-	})
+	}
 
 	reviewMeta, err := h.reviewService.GetByID(c.Request.Context(), reviewID, nil)
 	if err == nil && reviewMeta != nil {
+		authorID := reviewMeta.Review.UserID
+		event.TargetUserID = &authorID
+
 		notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
-			UserID:   reviewMeta.Review.UserID,
+			UserID:   authorID,
 			ActorID:  userID,
 			Type:     domain.NotificationTypeLikeReview,
 			ReviewID: &reviewID,
 		})
 		if notif != nil {
-			h.hub.SendToUser(reviewMeta.Review.UserID, ws.Event{
+			h.hub.SendToUser(authorID, ws.Event{
 				Type: ws.EventNotificationNew,
 				Data: notif,
 			})
 		}
 	}
+
+	middleware.QueueActivity(c, event)
 
 	c.Status(204)
 }

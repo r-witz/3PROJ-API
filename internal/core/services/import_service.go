@@ -443,6 +443,14 @@ func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, 
 	}
 
 	wg.Wait()
+
+	// Runtime-based criteria (watched_runtime) saw 0 minutes during the first
+	// evaluation pass because rows were inserted with runtime=0. Now that real
+	// runtimes are populated, re-evaluate the watching category so those badges
+	// finally unlock.
+	if s.achievementSvc != nil {
+		_, _ = s.achievementSvc.EvaluateForEvent(ctx, userID, domain.AchievementCategoryWatching)
+	}
 }
 
 // resolveFilms resolves film names to TMDB IDs concurrently using scored matching.

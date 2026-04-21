@@ -341,28 +341,33 @@ func (h *CommentHandler) Like(c *gin.Context) {
 		return
 	}
 
-	middleware.QueueActivity(c, middleware.ActivityEvent{
+	event := middleware.ActivityEvent{
 		Action:    middleware.ActivityCreate,
 		Type:      domain.ActivityTypeCommentLiked,
 		UserID:    userID,
 		CommentID: &commentID,
-	})
+	}
 
 	commentObj, err := h.commentService.GetByID(c.Request.Context(), commentID)
 	if err == nil && commentObj != nil {
+		authorID := commentObj.UserID
+		event.TargetUserID = &authorID
+
 		notif, _ := h.notifService.Notify(c.Request.Context(), ports.NotifyInput{
-			UserID:    commentObj.UserID,
+			UserID:    authorID,
 			ActorID:   userID,
 			Type:      domain.NotificationTypeLikeComment,
 			CommentID: &commentID,
 		})
 		if notif != nil {
-			h.hub.SendToUser(commentObj.UserID, ws.Event{
+			h.hub.SendToUser(authorID, ws.Event{
 				Type: ws.EventNotificationNew,
 				Data: notif,
 			})
 		}
 	}
+
+	middleware.QueueActivity(c, event)
 
 	c.Status(204)
 }
