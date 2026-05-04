@@ -160,14 +160,15 @@ func (h *AchievementHandler) GetByID(c *gin.Context) {
 	response.Success(c, toAchievementResponse(item))
 }
 
-// @Summary      List a user's unlocked achievements
-// @Description  Returns every achievement this user has unlocked, ordered by most-recent unlock first. Intended for public profile pages. Each entry has `unlocked=true` and a non-null `unlocked_at`; `progress` is omitted because it's irrelevant once unlocked.
+// @Summary      List a user's achievements
+// @Description  Returns the family roll-up for the given user — same shape as `GET /achievements`, but with unlock state and progress evaluated against the target user instead of the caller. Intended for public profile pages so visitors can see another user's badges and progression toward the next tier. Secret achievements the target user has not unlocked are hidden.
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
 // @Param        userId path string true "User ID" format(uuid)
-// @Success      200 {object} response.Response{data=[]AchievementResponse} "Unlocked achievements for the user"
-// @Failure      400 {object} response.Response "Invalid user ID"
+// @Param        category query string false "Filter by category" Enums(reviewing, watching, social, collecting, discovery)
+// @Success      200 {object} response.Response{data=[]AchievementResponse} "Family roll-up with the target user's progress"
+// @Failure      400 {object} response.Response "Invalid user ID or category"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /users/{userId}/achievements [get]
 func (h *AchievementHandler) ListForUser(c *gin.Context) {
@@ -177,7 +178,17 @@ func (h *AchievementHandler) ListForUser(c *gin.Context) {
 		return
 	}
 
-	items, err := h.achievementSvc.ListUnlockedByUser(c.Request.Context(), userID)
+	var catPtr *domain.AchievementCategory
+	if raw := c.Query("category"); raw != "" {
+		cat := domain.AchievementCategory(raw)
+		if !domain.ValidAchievementCategories[cat] {
+			response.BadRequest(c, "Invalid category", nil)
+			return
+		}
+		catPtr = &cat
+	}
+
+	items, err := h.achievementSvc.List(c.Request.Context(), &userID, catPtr)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -185,7 +196,7 @@ func (h *AchievementHandler) ListForUser(c *gin.Context) {
 
 	resp := make([]AchievementResponse, 0, len(items))
 	for _, item := range items {
-		resp = append(resp, toAchievementResponseUnlocked(item))
+		resp = append(resp, toAchievementResponse(item))
 	}
 	response.Success(c, resp)
 }
