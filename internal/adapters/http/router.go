@@ -303,10 +303,6 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 			adminOrSuper.GET("/reports/:reportId", r.adminHandler.GetReport)
 			adminOrSuper.PATCH("/reports/:reportId", r.adminHandler.ResolveReport)
 			adminOrSuper.DELETE("/reports/:reportId", r.adminHandler.DeleteReport)
-
-			adminOrSuper.POST("/achievements", r.achievementHandler.Create)
-			adminOrSuper.PATCH("/achievements/:id", r.achievementHandler.Update)
-			adminOrSuper.DELETE("/achievements/:id", r.achievementHandler.Delete)
 		}
 
 		superOnly := admin.Group("")

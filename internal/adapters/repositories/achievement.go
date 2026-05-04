@@ -31,66 +31,10 @@ func scanAchievement(row pgx.Row, a *domain.Achievement) error {
 	)
 }
 
-func (r *AchievementRepository) Create(ctx context.Context, a *domain.Achievement) error {
-	query := `
-		INSERT INTO achievements (id, code, name, description, category, tier, icon_url, criterion, secret, active, system, sort_order, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-	`
-	_, err := r.db.Pool.Exec(ctx, query,
-		a.ID, a.Code, a.Name, a.Description, a.Category, a.Tier,
-		a.IconURL, a.Criterion, a.Secret, a.Active, a.System,
-		a.SortOrder, a.CreatedAt, a.UpdatedAt,
-	)
-	return err
-}
-
-func (r *AchievementRepository) Update(ctx context.Context, a *domain.Achievement) error {
-	query := `
-		UPDATE achievements SET
-			name = $2,
-			description = $3,
-			category = $4,
-			tier = $5,
-			icon_url = $6,
-			criterion = $7,
-			secret = $8,
-			active = $9,
-			sort_order = $10,
-			updated_at = $11
-		WHERE id = $1
-	`
-	_, err := r.db.Pool.Exec(ctx, query,
-		a.ID, a.Name, a.Description, a.Category, a.Tier,
-		a.IconURL, a.Criterion, a.Secret, a.Active, a.SortOrder,
-		a.UpdatedAt,
-	)
-	return err
-}
-
-func (r *AchievementRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.Pool.Exec(ctx, `DELETE FROM achievements WHERE id = $1`, id)
-	return err
-}
-
 func (r *AchievementRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Achievement, error) {
 	a := &domain.Achievement{}
 	err := scanAchievement(
 		r.db.Pool.QueryRow(ctx, `SELECT `+achievementColumns+` FROM achievements WHERE id = $1`, id),
-		a,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return a, nil
-}
-
-func (r *AchievementRepository) GetByCode(ctx context.Context, code string) (*domain.Achievement, error) {
-	a := &domain.Achievement{}
-	err := scanAchievement(
-		r.db.Pool.QueryRow(ctx, `SELECT `+achievementColumns+` FROM achievements WHERE code = $1`, code),
 		a,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {

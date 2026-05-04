@@ -136,12 +136,7 @@ var (
 )
 
 var (
-	ErrAchievementNotFound         = errors.New("achievement not found")
-	ErrAchievementCodeExists       = errors.New("achievement code already exists")
-	ErrAchievementInvalidCriterion = errors.New("invalid achievement criterion")
-	ErrAchievementInvalidTier      = errors.New("invalid achievement tier")
-	ErrAchievementInvalidCategory  = errors.New("invalid achievement category")
-	ErrAchievementSystemLocked     = errors.New("system achievements cannot be modified or deleted")
+	ErrAchievementNotFound = errors.New("achievement not found")
 )
 
 var (

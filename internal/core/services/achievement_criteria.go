@@ -234,36 +234,3 @@ func parseThreshold(raw json.RawMessage) (int, error) {
 	return p.Threshold, nil
 }
 
-func validateCriterion(raw json.RawMessage) error {
-	var spec criterionSpec
-	if err := json.Unmarshal(raw, &spec); err != nil {
-		return err
-	}
-	switch spec.Kind {
-	case criterionReviewCount, criterionWatchedCount, criterionLikesReceived,
-		criterionFollowersCount, criterionCommentsAuthored, criterionCustomCollections:
-		var p thresholdParams
-		if err := json.Unmarshal(spec.Params, &p); err != nil || p.Threshold <= 0 {
-			return fmt.Errorf("threshold must be a positive integer")
-		}
-	case criterionWatchedRuntime:
-		var p runtimeParams
-		if err := json.Unmarshal(spec.Params, &p); err != nil || p.Minutes <= 0 {
-			return fmt.Errorf("minutes must be a positive integer")
-		}
-	case criterionRatingGiven:
-		var p ratingGivenParams
-		if err := json.Unmarshal(spec.Params, &p); err != nil {
-			return err
-		}
-		if p.Rating < 0.5 || p.Rating > 5.0 || p.Rating*2 != float64(int(p.Rating*2)) {
-			return fmt.Errorf("rating must be a 0.5 increment between 0.5 and 5.0")
-		}
-		if p.Threshold <= 0 {
-			return fmt.Errorf("threshold must be a positive integer")
-		}
-	default:
-		return fmt.Errorf("unknown criterion kind: %s", spec.Kind)
-	}
-	return nil
-}

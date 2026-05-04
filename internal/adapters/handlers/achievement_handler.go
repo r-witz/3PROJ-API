@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"duskforge-api/internal/adapters/middleware"
@@ -51,37 +50,6 @@ type AchievementResponse struct {
 	Unlocked    bool                         `json:"unlocked" example:"true"`
 	UnlockedAt  *string                      `json:"unlocked_at,omitempty" example:"2026-04-17T10:00:00Z"`
 	Progress    *AchievementProgressResponse `json:"progress,omitempty"`
-}
-
-// CreateAchievementRequest is the admin payload for POST /admin/achievements.
-// The `system` flag cannot be set by clients — server always stores false —
-// so only seeded migrations can flag an achievement as built-in.
-type CreateAchievementRequest struct {
-	Code        string          `json:"code" binding:"required" example:"weekend_binger" extensions:"x-order=1"`
-	Name        string          `json:"name" binding:"required" example:"Weekend Binger"`
-	Description string          `json:"description" binding:"required" example:"Watch 5 films in a single weekend."`
-	Category    string          `json:"category" binding:"required" example:"watching" enums:"reviewing,watching,social,collecting,discovery"`
-	Tier        string          `json:"tier" binding:"required" example:"silver" enums:"bronze,silver,gold,platinum"`
-	IconURL     *string         `json:"icon_url" example:"https://cdn.duskforge.io/achievements/weekend_binger.png"`
-	Criterion   json.RawMessage `json:"criterion" binding:"required" swaggertype:"object" example:"{\"kind\":\"watched_count\",\"params\":{\"threshold\":5}}"`
-	Secret      bool            `json:"secret" example:"false"`
-	Active      *bool           `json:"active" example:"true"`
-	SortOrder   int             `json:"sort_order" example:"500"`
-}
-
-// UpdateAchievementRequest is the admin payload for PATCH /admin/achievements/:id.
-// All fields are optional; only supplied fields change. System achievements
-// (the 15 seeded badges) reject any update with 403 ACHIEVEMENT_SYSTEM_LOCKED.
-type UpdateAchievementRequest struct {
-	Name        *string         `json:"name" example:"Weekend Binger"`
-	Description *string         `json:"description" example:"Watch 5 films in a single weekend."`
-	Category    *string         `json:"category" example:"watching" enums:"reviewing,watching,social,collecting,discovery"`
-	Tier        *string         `json:"tier" example:"gold" enums:"bronze,silver,gold,platinum"`
-	IconURL     *string         `json:"icon_url" example:"https://cdn.duskforge.io/achievements/weekend_binger.png"`
-	Criterion   json.RawMessage `json:"criterion" swaggertype:"object" example:"{\"kind\":\"watched_count\",\"params\":{\"threshold\":10}}"`
-	Secret      *bool           `json:"secret" example:"false"`
-	Active      *bool           `json:"active" example:"true"`
-	SortOrder   *int            `json:"sort_order" example:"500"`
 }
 
 // @Summary      List achievements
@@ -236,134 +204,6 @@ func (h *AchievementHandler) RecentForMe(c *gin.Context) {
 		resp = append(resp, toAchievementResponseUnlocked(item))
 	}
 	response.Success(c, resp)
-}
-
-// @Summary      Create an achievement (admin)
-// @Description  Create a new achievement in the catalog. Requires `admin` or `superadmin` role. The `criterion` field is a JSON object of shape `{"kind":"<kind>","params":{...}}`. Supported kinds: `review_count`, `rating_given`, `watched_count`, `watched_runtime`, `likes_received`, `followers_count`, `comments_authored`, `custom_collections`. Threshold-style kinds take `{"threshold":N}`; `watched_runtime` takes `{"minutes":N}`; `rating_given` takes `{"rating":R,"threshold":N}`. Admin-created achievements are always stored with `system=false` and can be edited or deleted later.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        body body CreateAchievementRequest true "Achievement definition"
-// @Success      201 {object} response.Response{data=AchievementResponse} "Achievement created"
-// @Failure      400 {object} response.Response "Invalid input (missing/invalid field or malformed criterion)"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient role (admin required)"
-// @Failure      409 {object} response.Response "Achievement code already exists"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/achievements [post]
-func (h *AchievementHandler) Create(c *gin.Context) {
-	var req CreateAchievementRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request body", err.Error())
-		return
-	}
-
-	active := true
-	if req.Active != nil {
-		active = *req.Active
-	}
-
-	input := ports.CreateAchievementInput{
-		Code:        req.Code,
-		Name:        req.Name,
-		Description: req.Description,
-		Category:    domain.AchievementCategory(req.Category),
-		Tier:        domain.AchievementTier(req.Tier),
-		IconURL:     req.IconURL,
-		Criterion:   req.Criterion,
-		Secret:      req.Secret,
-		Active:      active,
-		SortOrder:   req.SortOrder,
-	}
-
-	a, err := h.achievementSvc.Create(c.Request.Context(), input)
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	response.Created(c, toAchievementResponse(&ports.AchievementWithProgress{Achievement: a}))
-}
-
-// @Summary      Update an achievement (admin)
-// @Description  Partially update an admin-created achievement. Only supplied fields change. Requires `admin` or `superadmin` role. The `code` field is immutable. Attempting to modify a system (seeded) achievement returns 403 `ACHIEVEMENT_SYSTEM_LOCKED`.
-// @Tags         admin
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id path string true "Achievement ID" format(uuid)
-// @Param        body body UpdateAchievementRequest true "Partial fields to update"
-// @Success      200 {object} response.Response{data=AchievementResponse} "Updated achievement"
-// @Failure      400 {object} response.Response "Invalid input (bad ID, invalid tier/category, malformed criterion)"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient role OR achievement is system-locked"
-// @Failure      404 {object} response.Response "Achievement not found"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/achievements/{id} [patch]
-func (h *AchievementHandler) Update(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		response.BadRequest(c, "Invalid achievement ID", nil)
-		return
-	}
-
-	var req UpdateAchievementRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, "Invalid request body", err.Error())
-		return
-	}
-
-	input := ports.UpdateAchievementInput{
-		Name:        req.Name,
-		Description: req.Description,
-		IconURL:     req.IconURL,
-		Criterion:   req.Criterion,
-		Secret:      req.Secret,
-		Active:      req.Active,
-		SortOrder:   req.SortOrder,
-	}
-	if req.Category != nil {
-		cat := domain.AchievementCategory(*req.Category)
-		input.Category = &cat
-	}
-	if req.Tier != nil {
-		tier := domain.AchievementTier(*req.Tier)
-		input.Tier = &tier
-	}
-
-	a, err := h.achievementSvc.Update(c.Request.Context(), id, input)
-	if err != nil {
-		response.HandleError(c, err)
-		return
-	}
-	response.Success(c, toAchievementResponse(&ports.AchievementWithProgress{Achievement: a}))
-}
-
-// @Summary      Delete an achievement (admin)
-// @Description  Hard-delete an admin-created achievement. Cascades to `user_achievements`, so every user who had unlocked this badge will lose it. Requires `admin` or `superadmin` role. Attempting to delete a system (seeded) achievement returns 403 `ACHIEVEMENT_SYSTEM_LOCKED`.
-// @Tags         admin
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id path string true "Achievement ID" format(uuid)
-// @Success      204 "Achievement deleted"
-// @Failure      400 {object} response.Response "Invalid achievement ID"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient role OR achievement is system-locked"
-// @Failure      404 {object} response.Response "Achievement not found"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/achievements/{id} [delete]
-func (h *AchievementHandler) Delete(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		response.BadRequest(c, "Invalid achievement ID", nil)
-		return
-	}
-	if err := h.achievementSvc.Delete(c.Request.Context(), id); err != nil {
-		response.HandleError(c, err)
-		return
-	}
-	c.Status(204)
 }
 
 func toAchievementResponse(item *ports.AchievementWithProgress) AchievementResponse {

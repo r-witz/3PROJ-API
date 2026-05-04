@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"sort"
-	"time"
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
@@ -34,118 +33,6 @@ func NewAchievementService(
 		notifService:    notifService,
 		hub:             hub,
 	}
-}
-
-// --- Catalog CRUD ---
-
-func (s *achievementService) Create(ctx context.Context, input ports.CreateAchievementInput) (*domain.Achievement, error) {
-	if err := validateCatalogInput(input.Code, input.Name, input.Description, input.Category, input.Tier, input.Criterion); err != nil {
-		return nil, err
-	}
-
-	existing, err := s.achievementRepo.GetByCode(ctx, input.Code)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-	if existing != nil {
-		return nil, domain.ErrAchievementCodeExists
-	}
-
-	now := time.Now()
-	a := &domain.Achievement{
-		ID:          uuid.New(),
-		Code:        input.Code,
-		Name:        input.Name,
-		Description: input.Description,
-		Category:    input.Category,
-		Tier:        input.Tier,
-		IconURL:     input.IconURL,
-		Criterion:   input.Criterion,
-		Secret:      input.Secret,
-		Active:      input.Active,
-		System:      false, // system flag is reserved for seeded rows.
-		SortOrder:   input.SortOrder,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	if err := s.achievementRepo.Create(ctx, a); err != nil {
-		return nil, domain.ErrInternal
-	}
-	return a, nil
-}
-
-func (s *achievementService) Update(ctx context.Context, id uuid.UUID, input ports.UpdateAchievementInput) (*domain.Achievement, error) {
-	a, err := s.achievementRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, domain.ErrInternal
-	}
-	if a == nil {
-		return nil, domain.ErrAchievementNotFound
-	}
-	if a.System {
-		return nil, domain.ErrAchievementSystemLocked
-	}
-
-	if input.Name != nil {
-		a.Name = *input.Name
-	}
-	if input.Description != nil {
-		a.Description = *input.Description
-	}
-	if input.Category != nil {
-		if !domain.ValidAchievementCategories[*input.Category] {
-			return nil, domain.ErrAchievementInvalidCategory
-		}
-		a.Category = *input.Category
-	}
-	if input.Tier != nil {
-		if !domain.ValidAchievementTiers[*input.Tier] {
-			return nil, domain.ErrAchievementInvalidTier
-		}
-		a.Tier = *input.Tier
-	}
-	if input.IconURL != nil {
-		a.IconURL = input.IconURL
-	}
-	if input.Criterion != nil {
-		if err := validateCriterion(input.Criterion); err != nil {
-			return nil, domain.ErrAchievementInvalidCriterion
-		}
-		a.Criterion = input.Criterion
-	}
-	if input.Secret != nil {
-		a.Secret = *input.Secret
-	}
-	if input.Active != nil {
-		a.Active = *input.Active
-	}
-	if input.SortOrder != nil {
-		a.SortOrder = *input.SortOrder
-	}
-	a.UpdatedAt = time.Now()
-
-	if err := s.achievementRepo.Update(ctx, a); err != nil {
-		return nil, domain.ErrInternal
-	}
-	return a, nil
-}
-
-func (s *achievementService) Delete(ctx context.Context, id uuid.UUID) error {
-	a, err := s.achievementRepo.GetByID(ctx, id)
-	if err != nil {
-		return domain.ErrInternal
-	}
-	if a == nil {
-		return domain.ErrAchievementNotFound
-	}
-	if a.System {
-		return domain.ErrAchievementSystemLocked
-	}
-	if err := s.achievementRepo.Delete(ctx, id); err != nil {
-		return domain.ErrInternal
-	}
-	return nil
 }
 
 // --- Read ---
@@ -466,22 +353,6 @@ func (s *achievementService) emitUnlockNotification(ctx context.Context, userID 
 }
 
 // --- Helpers ---
-
-func validateCatalogInput(code, name, description string, category domain.AchievementCategory, tier domain.AchievementTier, criterion json.RawMessage) error {
-	if code == "" || name == "" || description == "" {
-		return domain.ErrInvalidInput
-	}
-	if !domain.ValidAchievementCategories[category] {
-		return domain.ErrAchievementInvalidCategory
-	}
-	if !domain.ValidAchievementTiers[tier] {
-		return domain.ErrAchievementInvalidTier
-	}
-	if err := validateCriterion(criterion); err != nil {
-		return domain.ErrAchievementInvalidCriterion
-	}
-	return nil
-}
 
 func extractTarget(raw json.RawMessage) (int, error) {
 	var spec criterionSpec

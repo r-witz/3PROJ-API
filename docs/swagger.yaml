@@ -1,39 +1,6 @@
 basePath: /api/v1
 definitions:
-  duskforge-api_internal_adapters_response.ErrorInfo:
-    properties:
-      code:
-        type: string
-      details: {}
-      message:
-        type: string
-    type: object
-  duskforge-api_internal_adapters_response.PaginatedResponse:
-    properties:
-      data: {}
-      pagination:
-        $ref: '#/definitions/duskforge-api_internal_adapters_response.Pagination'
-      success:
-        type: boolean
-    type: object
-  duskforge-api_internal_adapters_response.Pagination:
-    properties:
-      limit:
-        type: integer
-      offset:
-        type: integer
-      total:
-        type: integer
-    type: object
-  duskforge-api_internal_adapters_response.Response:
-    properties:
-      data: {}
-      error:
-        $ref: '#/definitions/duskforge-api_internal_adapters_response.ErrorInfo'
-      success:
-        type: boolean
-    type: object
-  duskforge-api_internal_core_domain.ReportReason:
+  domain.ReportReason:
     enum:
     - spam
     - harassment
@@ -47,7 +14,7 @@ definitions:
     - ReportReasonSpoiler
     - ReportReasonInappropriate
     - ReportReasonOther
-  duskforge-api_internal_core_domain.ReportStatus:
+  domain.ReportStatus:
     enum:
     - pending
     - resolved
@@ -57,7 +24,7 @@ definitions:
     - ReportStatusPending
     - ReportStatusResolved
     - ReportStatusDismissed
-  duskforge-api_internal_core_domain.UserRole:
+  domain.UserRole:
     enum:
     - user
     - admin
@@ -67,55 +34,7 @@ definitions:
     - UserRoleUser
     - UserRoleAdmin
     - UserRoleSuperAdmin
-  duskforge-api_internal_core_ports.ImportFailure:
-    properties:
-      name:
-        type: string
-      reason:
-        type: string
-      year:
-        type: integer
-    type: object
-  duskforge-api_internal_core_ports.ImportResult:
-    properties:
-      failed:
-        items:
-          $ref: '#/definitions/duskforge-api_internal_core_ports.ImportFailure'
-        type: array
-      ratings:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportSectionResult'
-      reviews:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportSectionResult'
-      watched:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportSectionResult'
-      watchlist:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportSectionResult'
-    type: object
-  duskforge-api_internal_core_ports.ImportSectionResult:
-    properties:
-      imported:
-        type: integer
-      skipped:
-        type: integer
-    type: object
-  duskforge-api_internal_core_ports.ImportStatus:
-    enum:
-    - processing
-    - completed
-    - failed
-    type: string
-    x-enum-varnames:
-    - ImportStatusProcessing
-    - ImportStatusCompleted
-    - ImportStatusFailed
-  duskforge-api_internal_core_ports.LinkedProvidersResult:
-    properties:
-      github:
-        type: boolean
-      google:
-        type: boolean
-    type: object
-  internal_adapters_handlers.AchievementProgressResponse:
+  handlers.AchievementProgressResponse:
     properties:
       current:
         example: 3
@@ -124,7 +43,7 @@ definitions:
         example: 25
         type: integer
     type: object
-  internal_adapters_handlers.AchievementResponse:
+  handlers.AchievementResponse:
     properties:
       category:
         enum:
@@ -155,7 +74,7 @@ definitions:
         example: First Impressions
         type: string
       progress:
-        $ref: '#/definitions/internal_adapters_handlers.AchievementProgressResponse'
+        $ref: '#/definitions/handlers.AchievementProgressResponse'
       secret:
         example: false
         type: boolean
@@ -177,18 +96,18 @@ definitions:
         example: "2026-04-17T10:00:00Z"
         type: string
     type: object
-  internal_adapters_handlers.AchievementStatsResponse:
+  handlers.AchievementStatsResponse:
     properties:
       unlocked_count:
         example: 12
         type: integer
     type: object
-  internal_adapters_handlers.ActivityResponse:
+  handlers.ActivityResponse:
     properties:
       collection:
-        $ref: '#/definitions/internal_adapters_handlers.CollectionSummary'
+        $ref: '#/definitions/handlers.CollectionSummary'
       comment:
-        $ref: '#/definitions/internal_adapters_handlers.CommentSummary'
+        $ref: '#/definitions/handlers.CommentSummary'
       created_at:
         example: "2024-01-15T10:30:00Z"
         type: string
@@ -196,18 +115,18 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       movie:
-        $ref: '#/definitions/internal_adapters_handlers.MovieSummaryResponse'
+        $ref: '#/definitions/handlers.MovieSummaryResponse'
       review:
-        $ref: '#/definitions/internal_adapters_handlers.ReviewSummary'
+        $ref: '#/definitions/handlers.ReviewSummary'
       target_user:
-        $ref: '#/definitions/internal_adapters_handlers.UserSummary'
+        $ref: '#/definitions/handlers.UserSummary'
       type:
         example: review_created
         type: string
       user:
-        $ref: '#/definitions/internal_adapters_handlers.UserSummary'
+        $ref: '#/definitions/handlers.UserSummary'
     type: object
-  internal_adapters_handlers.AddItemRequest:
+  handlers.AddItemRequest:
     properties:
       tmdb_id:
         example: 550
@@ -215,7 +134,7 @@ definitions:
     required:
     - tmdb_id
     type: object
-  internal_adapters_handlers.AddReactionRequest:
+  handlers.AddReactionRequest:
     properties:
       emoji:
         example: "\U0001F44D"
@@ -225,7 +144,7 @@ definitions:
     required:
     - emoji
     type: object
-  internal_adapters_handlers.AdminSearchUserResponse:
+  handlers.AdminSearchUserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -252,7 +171,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  internal_adapters_handlers.AttachmentResponse:
+  handlers.AttachmentResponse:
     properties:
       content_type:
         example: image/jpeg
@@ -273,7 +192,7 @@ definitions:
         example: 0
         type: integer
     type: object
-  internal_adapters_handlers.BlockedUserResponse:
+  handlers.BlockedUserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -288,7 +207,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  internal_adapters_handlers.ChangePasswordRequest:
+  handlers.ChangePasswordRequest:
     properties:
       current_password:
         example: oldpassword123
@@ -301,7 +220,7 @@ definitions:
     required:
     - new_password
     type: object
-  internal_adapters_handlers.CollectionItemResponse:
+  handlers.CollectionItemResponse:
     properties:
       date:
         example: "1999-10-15"
@@ -325,7 +244,7 @@ definitions:
         example: 4
         type: number
     type: object
-  internal_adapters_handlers.CollectionResponse:
+  handlers.CollectionResponse:
     properties:
       created_at:
         example: "2024-01-15T10:30:00Z"
@@ -361,7 +280,7 @@ definitions:
         example: private
         type: string
     type: object
-  internal_adapters_handlers.CollectionStatsResponse:
+  handlers.CollectionStatsResponse:
     properties:
       total_collections:
         example: 5
@@ -370,7 +289,7 @@ definitions:
         example: 234
         type: integer
     type: object
-  internal_adapters_handlers.CollectionSummary:
+  handlers.CollectionSummary:
     properties:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
@@ -382,7 +301,7 @@ definitions:
         example: my-favorites
         type: string
     type: object
-  internal_adapters_handlers.CommentResponse:
+  handlers.CommentResponse:
     properties:
       contains_spoilers:
         example: false
@@ -409,9 +328,9 @@ definitions:
         example: "2024-01-15T10:30:00Z"
         type: string
       user:
-        $ref: '#/definitions/internal_adapters_handlers.UserSummary'
+        $ref: '#/definitions/handlers.UserSummary'
     type: object
-  internal_adapters_handlers.CommentSummary:
+  handlers.CommentSummary:
     properties:
       content:
         example: I agree!
@@ -420,7 +339,7 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
     type: object
-  internal_adapters_handlers.ConfirmEmailChangeRequest:
+  handlers.ConfirmEmailChangeRequest:
     properties:
       code:
         example: "123456"
@@ -428,19 +347,17 @@ definitions:
     required:
     - code
     type: object
-  internal_adapters_handlers.ConversationListResponse:
+  handlers.ConversationListResponse:
     properties:
       last_message:
-        $ref: '#/definitions/internal_adapters_handlers.LastMessagePreview'
+        $ref: '#/definitions/handlers.LastMessagePreview'
       unread_count:
         example: 3
         type: integer
       user:
-        $ref: '#/definitions/internal_adapters_handlers.UserSummary'
+        $ref: '#/definitions/handlers.UserSummary'
     type: object
-  internal_adapters_handlers.CreateAchievementRequest:
-    type: object
-  internal_adapters_handlers.CreateCollectionRequest:
+  handlers.CreateCollectionRequest:
     properties:
       description:
         example: A collection of my favorite movies
@@ -460,7 +377,7 @@ definitions:
     required:
     - name
     type: object
-  internal_adapters_handlers.CreateCommentRequest:
+  handlers.CreateCommentRequest:
     properties:
       contains_spoilers:
         example: false
@@ -471,14 +388,14 @@ definitions:
     required:
     - content
     type: object
-  internal_adapters_handlers.CreateReportRequest:
+  handlers.CreateReportRequest:
     properties:
       details:
         example: This review contains spam links
         type: string
       reason:
         allOf:
-        - $ref: '#/definitions/duskforge-api_internal_core_domain.ReportReason'
+        - $ref: '#/definitions/domain.ReportReason'
         enum:
         - spam
         - harassment
@@ -498,7 +415,7 @@ definitions:
     required:
     - reason
     type: object
-  internal_adapters_handlers.CreateReviewRequest:
+  handlers.CreateReviewRequest:
     properties:
       contains_spoilers:
         example: false
@@ -512,7 +429,7 @@ definitions:
     required:
     - rating
     type: object
-  internal_adapters_handlers.FollowUserResponse:
+  handlers.FollowUserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -530,7 +447,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  internal_adapters_handlers.ImportLetterboxdResponse:
+  handlers.ImportLetterboxdResponse:
     properties:
       error:
         type: string
@@ -539,13 +456,13 @@ definitions:
       resolved:
         type: integer
       result:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportResult'
+        $ref: '#/definitions/ports.ImportResult'
       status:
-        $ref: '#/definitions/duskforge-api_internal_core_ports.ImportStatus'
+        $ref: '#/definitions/ports.ImportStatus'
       total:
         type: integer
     type: object
-  internal_adapters_handlers.LastMessagePreview:
+  handlers.LastMessagePreview:
     properties:
       content:
         example: Hey, have you seen this movie?
@@ -557,7 +474,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  internal_adapters_handlers.LoginRequest:
+  handlers.LoginRequest:
     properties:
       email:
         example: user@example.com
@@ -569,7 +486,7 @@ definitions:
     - email
     - password
     type: object
-  internal_adapters_handlers.LogoutRequest:
+  handlers.LogoutRequest:
     properties:
       refresh_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -577,11 +494,11 @@ definitions:
     required:
     - refresh_token
     type: object
-  internal_adapters_handlers.MessageResponse:
+  handlers.MessageResponse:
     properties:
       attachments:
         items:
-          $ref: '#/definitions/internal_adapters_handlers.AttachmentResponse'
+          $ref: '#/definitions/handlers.AttachmentResponse'
         type: array
       content:
         example: Hey, have you seen this movie?
@@ -594,7 +511,7 @@ definitions:
         type: string
       reactions:
         items:
-          $ref: '#/definitions/internal_adapters_handlers.ReactionGroupResponse'
+          $ref: '#/definitions/handlers.ReactionGroupResponse'
         type: array
       read_at:
         example: "2024-01-15T10:30:00Z"
@@ -609,7 +526,7 @@ definitions:
         example: "2024-01-15T11:00:00Z"
         type: string
     type: object
-  internal_adapters_handlers.MovieSummaryResponse:
+  handlers.MovieSummaryResponse:
     properties:
       date:
         example: "1999-10-15"
@@ -630,7 +547,7 @@ definitions:
         example: 4.3
         type: number
     type: object
-  internal_adapters_handlers.NotificationPreferencesResponse:
+  handlers.NotificationPreferencesResponse:
     properties:
       achievement_unlocked:
         example: true
@@ -654,7 +571,7 @@ definitions:
         example: "2024-01-15T10:30:00Z"
         type: string
     type: object
-  internal_adapters_handlers.NotificationResponse:
+  handlers.NotificationResponse:
     properties:
       achievement_id:
         example: 550e8400-e29b-41d4-a716-446655440005
@@ -694,7 +611,7 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440001
         type: string
     type: object
-  internal_adapters_handlers.OAuthRedirectResponse:
+  handlers.OAuthRedirectResponse:
     properties:
       authorization_url:
         example: https://github.com/login/oauth/authorize?...
@@ -703,7 +620,7 @@ definitions:
         example: abc123...
         type: string
     type: object
-  internal_adapters_handlers.OAuthTokensResponse:
+  handlers.OAuthTokensResponse:
     properties:
       access_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -721,7 +638,7 @@ definitions:
         example: Bearer
         type: string
     type: object
-  internal_adapters_handlers.PasswordResetRequestBody:
+  handlers.PasswordResetRequestBody:
     properties:
       email:
         example: user@example.com
@@ -729,7 +646,7 @@ definitions:
     required:
     - email
     type: object
-  internal_adapters_handlers.PublicUserResponse:
+  handlers.PublicUserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -756,7 +673,7 @@ definitions:
         example: user
         type: string
       stats:
-        $ref: '#/definitions/internal_adapters_handlers.UserStats'
+        $ref: '#/definitions/handlers.UserStats'
       username:
         example: johndoe
         type: string
@@ -764,7 +681,7 @@ definitions:
         example: https://example.com
         type: string
     type: object
-  internal_adapters_handlers.ReactionGroupResponse:
+  handlers.ReactionGroupResponse:
     properties:
       count:
         example: 2
@@ -777,7 +694,7 @@ definitions:
           type: string
         type: array
     type: object
-  internal_adapters_handlers.RefreshRequest:
+  handlers.RefreshRequest:
     properties:
       refresh_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -785,7 +702,7 @@ definitions:
     required:
     - refresh_token
     type: object
-  internal_adapters_handlers.RegisterRequest:
+  handlers.RegisterRequest:
     properties:
       email:
         example: user@example.com
@@ -805,7 +722,7 @@ definitions:
     - password
     - username
     type: object
-  internal_adapters_handlers.RemoveReactionRequest:
+  handlers.RemoveReactionRequest:
     properties:
       emoji:
         example: "\U0001F44D"
@@ -815,7 +732,7 @@ definitions:
     required:
     - emoji
     type: object
-  internal_adapters_handlers.ReportResponse:
+  handlers.ReportResponse:
     properties:
       created_at:
         example: "2024-01-15T10:30:00Z"
@@ -848,7 +765,7 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440002
         type: string
     type: object
-  internal_adapters_handlers.RequestEmailChangeRequest:
+  handlers.RequestEmailChangeRequest:
     properties:
       new_email:
         example: newemail@example.com
@@ -856,7 +773,7 @@ definitions:
     required:
     - new_email
     type: object
-  internal_adapters_handlers.ResetPasswordRequest:
+  handlers.ResetPasswordRequest:
     properties:
       code:
         example: "123456"
@@ -874,11 +791,11 @@ definitions:
     - email
     - new_password
     type: object
-  internal_adapters_handlers.ResolveReportRequest:
+  handlers.ResolveReportRequest:
     properties:
       status:
         allOf:
-        - $ref: '#/definitions/duskforge-api_internal_core_domain.ReportStatus'
+        - $ref: '#/definitions/domain.ReportStatus'
         enum:
         - resolved
         - dismissed
@@ -886,7 +803,7 @@ definitions:
     required:
     - status
     type: object
-  internal_adapters_handlers.ReviewResponse:
+  handlers.ReviewResponse:
     properties:
       comment_count:
         example: 5
@@ -910,7 +827,7 @@ definitions:
         example: false
         type: boolean
       movie:
-        $ref: '#/definitions/internal_adapters_handlers.MovieSummaryResponse'
+        $ref: '#/definitions/handlers.MovieSummaryResponse'
       rating:
         example: 4.5
         type: number
@@ -918,9 +835,9 @@ definitions:
         example: "2024-01-15T10:30:00Z"
         type: string
       user:
-        $ref: '#/definitions/internal_adapters_handlers.UserSummary'
+        $ref: '#/definitions/handlers.UserSummary'
     type: object
-  internal_adapters_handlers.ReviewStatsResponse:
+  handlers.ReviewStatsResponse:
     properties:
       average_rating:
         example: 3.7
@@ -939,7 +856,7 @@ definitions:
         example: 42
         type: integer
     type: object
-  internal_adapters_handlers.ReviewSummary:
+  handlers.ReviewSummary:
     properties:
       content:
         example: Great movie!
@@ -954,7 +871,7 @@ definitions:
         example: 550
         type: integer
     type: object
-  internal_adapters_handlers.SearchUserResponse:
+  handlers.SearchUserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -969,7 +886,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  internal_adapters_handlers.SendVerificationCodeRequest:
+  handlers.SendVerificationCodeRequest:
     properties:
       email:
         example: user@example.com
@@ -977,11 +894,11 @@ definitions:
     required:
     - email
     type: object
-  internal_adapters_handlers.SetUserRoleRequest:
+  handlers.SetUserRoleRequest:
     properties:
       role:
         allOf:
-        - $ref: '#/definitions/duskforge-api_internal_core_domain.UserRole'
+        - $ref: '#/definitions/domain.UserRole'
         enum:
         - user
         - admin
@@ -990,7 +907,7 @@ definitions:
     required:
     - role
     type: object
-  internal_adapters_handlers.SocialStatsResponse:
+  handlers.SocialStatsResponse:
     properties:
       followers_count:
         example: 150
@@ -999,7 +916,7 @@ definitions:
         example: 75
         type: integer
     type: object
-  internal_adapters_handlers.TokensResponse:
+  handlers.TokensResponse:
     properties:
       access_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -1014,15 +931,13 @@ definitions:
         example: Bearer
         type: string
     type: object
-  internal_adapters_handlers.UnreadCountResponse:
+  handlers.UnreadCountResponse:
     properties:
       unread_count:
         example: 5
         type: integer
     type: object
-  internal_adapters_handlers.UpdateAchievementRequest:
-    type: object
-  internal_adapters_handlers.UpdateCollectionRequest:
+  handlers.UpdateCollectionRequest:
     properties:
       description:
         example: Updated description
@@ -1040,7 +955,7 @@ definitions:
         example: public
         type: string
     type: object
-  internal_adapters_handlers.UpdateCommentRequest:
+  handlers.UpdateCommentRequest:
     properties:
       contains_spoilers:
         example: true
@@ -1049,7 +964,7 @@ definitions:
         example: Updated comment
         type: string
     type: object
-  internal_adapters_handlers.UpdateMessageRequest:
+  handlers.UpdateMessageRequest:
     properties:
       content:
         example: Updated message content
@@ -1059,7 +974,7 @@ definitions:
     required:
     - content
     type: object
-  internal_adapters_handlers.UpdateNotificationPreferencesRequest:
+  handlers.UpdateNotificationPreferencesRequest:
     properties:
       achievement_unlocked:
         example: true
@@ -1080,7 +995,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  internal_adapters_handlers.UpdatePreferencesRequest:
+  handlers.UpdatePreferencesRequest:
     properties:
       locale:
         enum:
@@ -1097,7 +1012,7 @@ definitions:
         example: dark
         type: string
     type: object
-  internal_adapters_handlers.UpdateReviewRequest:
+  handlers.UpdateReviewRequest:
     properties:
       contains_spoilers:
         example: true
@@ -1109,14 +1024,14 @@ definitions:
         example: 4
         type: number
     type: object
-  internal_adapters_handlers.UpdateUserRequest:
+  handlers.UpdateUserRequest:
     properties:
       bio:
         example: Updated bio
         maxLength: 500
         type: string
       preferences:
-        $ref: '#/definitions/internal_adapters_handlers.UpdatePreferencesRequest'
+        $ref: '#/definitions/handlers.UpdatePreferencesRequest'
       username:
         example: newusername
         maxLength: 50
@@ -1126,7 +1041,7 @@ definitions:
         example: https://newwebsite.com
         type: string
     type: object
-  internal_adapters_handlers.UserPreferences:
+  handlers.UserPreferences:
     properties:
       locale:
         example: en
@@ -1135,7 +1050,7 @@ definitions:
         example: system
         type: string
     type: object
-  internal_adapters_handlers.UserResponse:
+  handlers.UserResponse:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -1156,12 +1071,12 @@ definitions:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       preferences:
-        $ref: '#/definitions/internal_adapters_handlers.UserPreferences'
+        $ref: '#/definitions/handlers.UserPreferences'
       role:
         example: user
         type: string
       stats:
-        $ref: '#/definitions/internal_adapters_handlers.UserStats'
+        $ref: '#/definitions/handlers.UserStats'
       updated_at:
         example: "2024-01-15T10:30:00Z"
         type: string
@@ -1172,7 +1087,7 @@ definitions:
         example: https://example.com
         type: string
     type: object
-  internal_adapters_handlers.UserStats:
+  handlers.UserStats:
     properties:
       followers_count:
         example: 150
@@ -1181,20 +1096,20 @@ definitions:
         example: 75
         type: integer
     type: object
-  internal_adapters_handlers.UserStatsResponse:
+  handlers.UserStatsResponse:
     properties:
       achievements:
-        $ref: '#/definitions/internal_adapters_handlers.AchievementStatsResponse'
+        $ref: '#/definitions/handlers.AchievementStatsResponse'
       collections:
-        $ref: '#/definitions/internal_adapters_handlers.CollectionStatsResponse'
+        $ref: '#/definitions/handlers.CollectionStatsResponse'
       reviews:
-        $ref: '#/definitions/internal_adapters_handlers.ReviewStatsResponse'
+        $ref: '#/definitions/handlers.ReviewStatsResponse'
       social:
-        $ref: '#/definitions/internal_adapters_handlers.SocialStatsResponse'
+        $ref: '#/definitions/handlers.SocialStatsResponse'
       watched:
-        $ref: '#/definitions/internal_adapters_handlers.WatchedStatsResponse'
+        $ref: '#/definitions/handlers.WatchedStatsResponse'
     type: object
-  internal_adapters_handlers.UserSummary:
+  handlers.UserSummary:
     properties:
       avatar_url:
         example: https://example.com/avatar.jpg
@@ -1206,7 +1121,7 @@ definitions:
         example: johndoe
         type: string
     type: object
-  internal_adapters_handlers.VerifyEmailRequest:
+  handlers.VerifyEmailRequest:
     properties:
       code:
         example: "123456"
@@ -1218,7 +1133,7 @@ definitions:
     - code
     - email
     type: object
-  internal_adapters_handlers.WatchedStatsResponse:
+  handlers.WatchedStatsResponse:
     properties:
       runtime_display:
         example: 15d 0h 0m
@@ -1229,6 +1144,87 @@ definitions:
       total_runtime:
         example: 21600
         type: integer
+    type: object
+  ports.ImportFailure:
+    properties:
+      name:
+        type: string
+      reason:
+        type: string
+      year:
+        type: integer
+    type: object
+  ports.ImportResult:
+    properties:
+      failed:
+        items:
+          $ref: '#/definitions/ports.ImportFailure'
+        type: array
+      ratings:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      reviews:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watched:
+        $ref: '#/definitions/ports.ImportSectionResult'
+      watchlist:
+        $ref: '#/definitions/ports.ImportSectionResult'
+    type: object
+  ports.ImportSectionResult:
+    properties:
+      imported:
+        type: integer
+      skipped:
+        type: integer
+    type: object
+  ports.ImportStatus:
+    enum:
+    - processing
+    - completed
+    - failed
+    type: string
+    x-enum-varnames:
+    - ImportStatusProcessing
+    - ImportStatusCompleted
+    - ImportStatusFailed
+  ports.LinkedProvidersResult:
+    properties:
+      github:
+        type: boolean
+      google:
+        type: boolean
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  response.PaginatedResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/response.Pagination'
+      success:
+        type: boolean
+    type: object
+  response.Pagination:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      success:
+        type: boolean
     type: object
 info:
   contact:
@@ -1271,21 +1267,21 @@ paths:
           description: Family roll-up with per-caller progress toward the next tier
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
+                    $ref: '#/definitions/handlers.AchievementResponse'
                   type: array
               type: object
         "400":
           description: Invalid category value
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: List achievements
@@ -1311,23 +1307,23 @@ paths:
           description: Achievement detail
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
+                  $ref: '#/definitions/handlers.AchievementResponse'
               type: object
         "400":
           description: Invalid achievement ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Achievement not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get achievement by ID
@@ -1354,19 +1350,19 @@ paths:
         "200":
           description: Actor details
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid actor ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Actor not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get actor details
       tags:
       - actors
@@ -1416,19 +1412,19 @@ paths:
         "200":
           description: Actor filmography
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "400":
           description: Invalid actor ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Actor not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get actor filmography
       tags:
       - actors
@@ -1464,172 +1460,18 @@ paths:
         "200":
           description: Search results
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "400":
           description: Query parameter is required
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Search actors by name
       tags:
       - actors
-  /admin/achievements:
-    post:
-      consumes:
-      - application/json
-      description: 'Create a new achievement in the catalog. Requires `admin` or `superadmin`
-        role. The `criterion` field is a JSON object of shape `{"kind":"<kind>","params":{...}}`.
-        Supported kinds: `review_count`, `rating_given`, `watched_count`, `watched_runtime`,
-        `likes_received`, `followers_count`, `comments_authored`, `custom_collections`.
-        Threshold-style kinds take `{"threshold":N}`; `watched_runtime` takes `{"minutes":N}`;
-        `rating_given` takes `{"rating":R,"threshold":N}`. Admin-created achievements
-        are always stored with `system=false` and can be edited or deleted later.'
-      parameters:
-      - description: Achievement definition
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/internal_adapters_handlers.CreateAchievementRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Achievement created
-          schema:
-            allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
-              type: object
-        "400":
-          description: Invalid input (missing/invalid field or malformed criterion)
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "403":
-          description: Insufficient role (admin required)
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "409":
-          description: Achievement code already exists
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-      security:
-      - BearerAuth: []
-      summary: Create an achievement (admin)
-      tags:
-      - admin
-  /admin/achievements/{id}:
-    delete:
-      description: Hard-delete an admin-created achievement. Cascades to `user_achievements`,
-        so every user who had unlocked this badge will lose it. Requires `admin` or
-        `superadmin` role. Attempting to delete a system (seeded) achievement returns
-        403 `ACHIEVEMENT_SYSTEM_LOCKED`.
-      parameters:
-      - description: Achievement ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Achievement deleted
-        "400":
-          description: Invalid achievement ID
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "403":
-          description: Insufficient role OR achievement is system-locked
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "404":
-          description: Achievement not found
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete an achievement (admin)
-      tags:
-      - admin
-    patch:
-      consumes:
-      - application/json
-      description: Partially update an admin-created achievement. Only supplied fields
-        change. Requires `admin` or `superadmin` role. The `code` field is immutable.
-        Attempting to modify a system (seeded) achievement returns 403 `ACHIEVEMENT_SYSTEM_LOCKED`.
-      parameters:
-      - description: Achievement ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Partial fields to update
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateAchievementRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Updated achievement
-          schema:
-            allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
-              type: object
-        "400":
-          description: Invalid input (bad ID, invalid tier/category, malformed criterion)
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "403":
-          description: Insufficient role OR achievement is system-locked
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "404":
-          description: Achievement not found
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
-      security:
-      - BearerAuth: []
-      summary: Update an achievement (admin)
-      tags:
-      - admin
   /admin/comments/{commentId}:
     delete:
       description: Delete any comment by its ID, regardless of ownership
@@ -1648,23 +1490,23 @@ paths:
         "400":
           description: Invalid comment ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a comment (admin)
@@ -1695,29 +1537,29 @@ paths:
           description: List of reports
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ReportResponse'
+                    $ref: '#/definitions/handlers.ReportResponse'
                   type: array
               type: object
         "400":
           description: Invalid parameters
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: List reports
@@ -1741,23 +1583,23 @@ paths:
         "400":
           description: Invalid report ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Report not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a report
@@ -1779,31 +1621,31 @@ paths:
           description: Report details
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReportResponse'
+                  $ref: '#/definitions/handlers.ReportResponse'
               type: object
         "400":
           description: Invalid report ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Report not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get a report
@@ -1825,7 +1667,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.ResolveReportRequest'
+          $ref: '#/definitions/handlers.ResolveReportRequest'
       produces:
       - application/json
       responses:
@@ -1833,35 +1675,35 @@ paths:
           description: Report updated
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReportResponse'
+                  $ref: '#/definitions/handlers.ReportResponse'
               type: object
         "400":
           description: Invalid input
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Report not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Report already resolved
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Resolve or dismiss a report
@@ -1885,23 +1727,23 @@ paths:
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a review (admin)
@@ -1925,27 +1767,27 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: User is not banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unban a user
@@ -1970,27 +1812,27 @@ paths:
         "400":
           description: Invalid user ID or cannot ban self
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Cannot ban admin or insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: User already banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Ban a user
@@ -2013,7 +1855,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.SetUserRoleRequest'
+          $ref: '#/definitions/handlers.SetUserRoleRequest'
       produces:
       - application/json
       responses:
@@ -2022,23 +1864,23 @@ paths:
         "400":
           description: Invalid input or cannot change own role
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Set user role
@@ -2056,30 +1898,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.ConfirmEmailChangeRequest'
+          $ref: '#/definitions/handlers.ConfirmEmailChangeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Confirm email change
@@ -2097,34 +1939,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.RequestEmailChangeRequest'
+          $ref: '#/definitions/handlers.RequestEmailChangeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Request email change
@@ -2142,7 +1984,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.LoginRequest'
+          $ref: '#/definitions/handlers.LoginRequest'
       produces:
       - application/json
       responses:
@@ -2150,27 +1992,27 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.TokensResponse'
+                  $ref: '#/definitions/handlers.TokensResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Login user
       tags:
       - auth
@@ -2185,22 +2027,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.LogoutRequest'
+          $ref: '#/definitions/handlers.LogoutRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Logout user
       tags:
       - auth
@@ -2222,19 +2064,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthRedirectResponse'
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
         "400":
           description: Invalid redirect_uri
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get GitHub OAuth URL
       tags:
       - oauth
@@ -2269,10 +2111,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthTokensResponse'
+                  $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
         "302":
           description: Redirects to frontend with tokens, link result, or error in
@@ -2280,23 +2122,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: 'User account is banned (or redirects with #error=USER_BANNED)'
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: OAuth account already linked to another user (link mode)
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: GitHub OAuth callback
       tags:
       - oauth
@@ -2319,23 +2161,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthRedirectResponse'
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
         "400":
           description: Invalid redirect_uri
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: User not authenticated
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Link GitHub account
@@ -2350,23 +2192,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unlink GitHub account
@@ -2390,19 +2232,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthRedirectResponse'
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
         "400":
           description: Invalid redirect_uri
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get Google OAuth URL
       tags:
       - oauth
@@ -2437,10 +2279,10 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthTokensResponse'
+                  $ref: '#/definitions/handlers.OAuthTokensResponse'
               type: object
         "302":
           description: Redirects to frontend with tokens, link result, or error in
@@ -2448,23 +2290,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: 'User account is banned (or redirects with #error=USER_BANNED)'
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: OAuth account already linked to another user (link mode)
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Google OAuth callback
       tags:
       - oauth
@@ -2487,23 +2329,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.OAuthRedirectResponse'
+                  $ref: '#/definitions/handlers.OAuthRedirectResponse'
               type: object
         "400":
           description: Invalid redirect_uri
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: User not authenticated
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Link Google account
@@ -2518,23 +2360,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unlink Google account
@@ -2550,19 +2392,19 @@ paths:
           description: Linked providers status
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/duskforge-api_internal_core_ports.LinkedProvidersResult'
+                  $ref: '#/definitions/ports.LinkedProvidersResult'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get linked OAuth providers
@@ -2579,22 +2421,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.ResetPasswordRequest'
+          $ref: '#/definitions/handlers.ResetPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Reset password
       tags:
       - auth
@@ -2609,26 +2451,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.PasswordResetRequestBody'
+          $ref: '#/definitions/handlers.PasswordResetRequestBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Request password reset
       tags:
       - auth
@@ -2643,7 +2485,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.RefreshRequest'
+          $ref: '#/definitions/handlers.RefreshRequest'
       produces:
       - application/json
       responses:
@@ -2651,23 +2493,23 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.TokensResponse'
+                  $ref: '#/definitions/handlers.TokensResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Refresh tokens
       tags:
       - auth
@@ -2690,7 +2532,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.RegisterRequest'
+          $ref: '#/definitions/handlers.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -2698,23 +2540,23 @@ paths:
           description: Created
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.TokensResponse'
+                  $ref: '#/definitions/handlers.TokensResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Register a new user
       tags:
       - auth
@@ -2729,26 +2571,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.VerifyEmailRequest'
+          $ref: '#/definitions/handlers.VerifyEmailRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Verify email
       tags:
       - auth
@@ -2764,30 +2606,30 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.SendVerificationCodeRequest'
+          $ref: '#/definitions/handlers.SendVerificationCodeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "429":
           description: Too Many Requests
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Send verification code
       tags:
       - auth
@@ -2809,23 +2651,23 @@ paths:
         "400":
           description: Invalid comment ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a comment
@@ -2850,27 +2692,27 @@ paths:
           description: Comment details
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CommentResponse'
+                  $ref: '#/definitions/handlers.CommentResponse'
               type: object
         "400":
           description: Invalid comment ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get a comment by ID
@@ -2892,7 +2734,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateCommentRequest'
+          $ref: '#/definitions/handlers.UpdateCommentRequest'
       produces:
       - application/json
       responses:
@@ -2900,31 +2742,31 @@ paths:
           description: Updated comment
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CommentResponse'
+                  $ref: '#/definitions/handlers.CommentResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update a comment
@@ -2949,23 +2791,23 @@ paths:
         "400":
           description: Invalid comment ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found or not liked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unlike a comment
@@ -2989,27 +2831,27 @@ paths:
         "400":
           description: Invalid comment ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Comment not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Already liked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Like a comment
@@ -3047,21 +2889,21 @@ paths:
           description: List of activities
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ActivityResponse'
+                    $ref: '#/definitions/handlers.ActivityResponse'
                   type: array
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get following feed
@@ -3088,23 +2930,23 @@ paths:
           description: Import started
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ImportLetterboxdResponse'
+                  $ref: '#/definitions/handlers.ImportLetterboxdResponse'
               type: object
         "400":
           description: Invalid file or zip contains no Letterboxd data
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Import Letterboxd data
@@ -3121,19 +2963,19 @@ paths:
           description: Import progress
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ImportLetterboxdResponse'
+                  $ref: '#/definitions/handlers.ImportLetterboxdResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: No import found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get Letterboxd import status
@@ -3166,21 +3008,21 @@ paths:
           description: List of conversations
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ConversationListResponse'
+                    $ref: '#/definitions/handlers.ConversationListResponse'
                   type: array
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get conversations
@@ -3204,23 +3046,23 @@ paths:
         "400":
           description: Invalid message ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden - not the sender
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Message not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a message
@@ -3242,7 +3084,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateMessageRequest'
+          $ref: '#/definitions/handlers.UpdateMessageRequest'
       produces:
       - application/json
       responses:
@@ -3250,31 +3092,31 @@ paths:
           description: Updated message
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.MessageResponse'
+                  $ref: '#/definitions/handlers.MessageResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden - not the sender
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Message not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update a message
@@ -3297,7 +3139,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.RemoveReactionRequest'
+          $ref: '#/definitions/handlers.RemoveReactionRequest'
       produces:
       - application/json
       responses:
@@ -3306,19 +3148,19 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Reaction not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Remove a reaction from a message
@@ -3342,38 +3184,38 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.AddReactionRequest'
+          $ref: '#/definitions/handlers.AddReactionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Reaction added
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid request or too many reaction types (max 5)
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Not a participant or user blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Message not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Reaction already exists
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Add a reaction to a message
@@ -3407,25 +3249,25 @@ paths:
           description: Conversation messages
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.MessageResponse'
+                    $ref: '#/definitions/handlers.MessageResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get conversation
@@ -3458,31 +3300,31 @@ paths:
           description: Message sent successfully
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.MessageResponse'
+                  $ref: '#/definitions/handlers.MessageResponse'
               type: object
         "400":
           description: Invalid request or cannot message self
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Not mutual follow or user blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Send a message
@@ -3507,19 +3349,19 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conversation is not closed
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Reopen a conversation
@@ -3544,19 +3386,19 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conversation already closed
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Close a conversation
@@ -3580,15 +3422,15 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Mark conversation as read
@@ -3615,19 +3457,19 @@ paths:
         "200":
           description: Movie details
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid movie ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Movie not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get movie details
       tags:
       - movies
@@ -3652,19 +3494,19 @@ paths:
         "200":
           description: Cast and crew
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid movie ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Movie not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get movie cast and crew
       tags:
       - movies
@@ -3685,19 +3527,19 @@ paths:
         "200":
           description: Release dates by region
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid movie ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Movie not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get movie release dates
       tags:
       - movies
@@ -3746,21 +3588,21 @@ paths:
           description: List of reviews
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ReviewResponse'
+                    $ref: '#/definitions/handlers.ReviewResponse'
                   type: array
               type: object
         "400":
           description: Invalid movie ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get reviews for a movie
@@ -3781,7 +3623,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.CreateReviewRequest'
+          $ref: '#/definitions/handlers.CreateReviewRequest'
       - description: Language code (e.g., en, fr)
         in: header
         name: Accept-Language
@@ -3793,27 +3635,27 @@ paths:
           description: Review created
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReviewResponse'
+                  $ref: '#/definitions/handlers.ReviewResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Review already exists for this movie
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Create a review
@@ -3840,19 +3682,19 @@ paths:
         "200":
           description: Trailer embed URL
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid movie ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Movie not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get movie trailer
       tags:
       - movies
@@ -3919,11 +3761,11 @@ paths:
         "200":
           description: Discover results
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Discover movies with filters
       tags:
       - movies
@@ -3943,11 +3785,11 @@ paths:
         "200":
           description: List of genres
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get all movie genres
       tags:
       - movies
@@ -3977,11 +3819,11 @@ paths:
         "200":
           description: Popular movies
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get popular movies
       tags:
       - movies
@@ -4021,15 +3863,15 @@ paths:
         "200":
           description: Search results
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "400":
           description: Query parameter is required
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Search movies by title
       tags:
       - movies
@@ -4059,11 +3901,11 @@ paths:
         "200":
           description: Upcoming movies
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            $ref: '#/definitions/response.PaginatedResponse'
         "502":
           description: External service error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Get upcoming movies
       tags:
       - movies
@@ -4078,11 +3920,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete all notifications
@@ -4112,21 +3954,21 @@ paths:
           description: List of notifications
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.NotificationResponse'
+                    $ref: '#/definitions/handlers.NotificationResponse'
                   type: array
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get notifications
@@ -4150,23 +3992,23 @@ paths:
         "400":
           description: Invalid notification ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Notification not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a notification
@@ -4190,23 +4032,23 @@ paths:
         "400":
           description: Invalid notification ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Notification not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Mark a notification as read
@@ -4222,19 +4064,19 @@ paths:
           description: Notification preferences
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.NotificationPreferencesResponse'
+                  $ref: '#/definitions/handlers.NotificationPreferencesResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get notification preferences
@@ -4253,7 +4095,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateNotificationPreferencesRequest'
+          $ref: '#/definitions/handlers.UpdateNotificationPreferencesRequest'
       produces:
       - application/json
       responses:
@@ -4261,23 +4103,23 @@ paths:
           description: Updated preferences
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.NotificationPreferencesResponse'
+                  $ref: '#/definitions/handlers.NotificationPreferencesResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update notification preferences
@@ -4294,11 +4136,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Mark all notifications as read
@@ -4314,19 +4156,19 @@ paths:
           description: Unread count
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UnreadCountResponse'
+                  $ref: '#/definitions/handlers.UnreadCountResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get unread notification count
@@ -4344,7 +4186,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.CreateReportRequest'
+          $ref: '#/definitions/handlers.CreateReportRequest'
       produces:
       - application/json
       responses:
@@ -4352,27 +4194,27 @@ paths:
           description: Report created
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReportResponse'
+                  $ref: '#/definitions/handlers.ReportResponse'
               type: object
         "400":
           description: Invalid input
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Target not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Submit a report
@@ -4396,23 +4238,23 @@ paths:
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a review
@@ -4440,27 +4282,27 @@ paths:
           description: Review details
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReviewResponse'
+                  $ref: '#/definitions/handlers.ReviewResponse'
               type: object
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found or author banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get a review by ID
@@ -4482,7 +4324,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateReviewRequest'
+          $ref: '#/definitions/handlers.UpdateReviewRequest'
       - description: Language code (e.g., en, fr)
         in: header
         name: Accept-Language
@@ -4494,31 +4336,31 @@ paths:
           description: Updated review
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.ReviewResponse'
+                  $ref: '#/definitions/handlers.ReviewResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update a review
@@ -4553,21 +4395,21 @@ paths:
           description: List of comments
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.CommentResponse'
+                    $ref: '#/definitions/handlers.CommentResponse'
                   type: array
               type: object
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get comments for a review
@@ -4590,7 +4432,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.CreateCommentRequest'
+          $ref: '#/definitions/handlers.CreateCommentRequest'
       produces:
       - application/json
       responses:
@@ -4598,31 +4440,31 @@ paths:
           description: Comment created
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CommentResponse'
+                  $ref: '#/definitions/handlers.CommentResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Create a comment
@@ -4647,23 +4489,23 @@ paths:
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found or not liked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unlike a review
@@ -4687,27 +4529,27 @@ paths:
         "400":
           description: Invalid review ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Review not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Already liked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Like a review
@@ -4735,27 +4577,27 @@ paths:
           description: User public profile
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.PublicUserResponse'
+                  $ref: '#/definitions/handlers.PublicUserResponse'
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found or banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -4792,21 +4634,21 @@ paths:
           description: Family roll-up with the target user's progress
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
+                    $ref: '#/definitions/handlers.AchievementResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID or category
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: List a user's achievements
@@ -4851,29 +4693,29 @@ paths:
           description: List of activities
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ActivityResponse'
+                    $ref: '#/definitions/handlers.ActivityResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found or banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user activities
@@ -4897,19 +4739,19 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User is not blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unblock a user
@@ -4933,23 +4775,23 @@ paths:
         "400":
           description: Invalid user ID or cannot block self
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Already blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Block a user
@@ -4990,25 +4832,25 @@ paths:
           description: List of collections
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.CollectionResponse'
+                    $ref: '#/definitions/handlers.CollectionResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID or TMDB ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user's collections
@@ -5030,7 +4872,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.CreateCollectionRequest'
+          $ref: '#/definitions/handlers.CreateCollectionRequest'
       produces:
       - application/json
       responses:
@@ -5038,31 +4880,31 @@ paths:
           description: Collection created
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CollectionResponse'
+                  $ref: '#/definitions/handlers.CollectionResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Collection with this name already exists
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Create a collection
@@ -5093,23 +4935,23 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete a collection
@@ -5141,27 +4983,27 @@ paths:
           description: Collection details
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CollectionResponse'
+                  $ref: '#/definitions/handlers.CollectionResponse'
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection not found or owner banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get collection by slug
@@ -5189,7 +5031,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateCollectionRequest'
+          $ref: '#/definitions/handlers.UpdateCollectionRequest'
       produces:
       - application/json
       responses:
@@ -5197,35 +5039,35 @@ paths:
           description: Updated collection
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.CollectionResponse'
+                  $ref: '#/definitions/handlers.CollectionResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Collection with this name already exists
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update a collection
@@ -5278,29 +5120,29 @@ paths:
           description: List of items with movie details and ratings
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.CollectionItemResponse'
+                    $ref: '#/definitions/handlers.CollectionItemResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection not found or owner banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get collection items
@@ -5328,38 +5170,38 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.AddItemRequest'
+          $ref: '#/definitions/handlers.AddItemRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Item added
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Item already in collection
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Add item to collection
@@ -5395,23 +5237,23 @@ paths:
         "400":
           description: Invalid user ID or TMDB ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Collection or item not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Remove item from collection
@@ -5435,19 +5277,19 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not following this user
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Unfollow a user
@@ -5471,27 +5313,27 @@ paths:
         "400":
           description: Invalid user ID or cannot follow self
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Already following
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Follow a user
@@ -5515,19 +5357,19 @@ paths:
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User is not following you
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Remove a follower
@@ -5566,21 +5408,21 @@ paths:
           description: List of followers
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.FollowUserResponse'
+                    $ref: '#/definitions/handlers.FollowUserResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get followers
@@ -5620,21 +5462,21 @@ paths:
           description: List of following
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.FollowUserResponse'
+                    $ref: '#/definitions/handlers.FollowUserResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get following
@@ -5689,29 +5531,29 @@ paths:
           description: List of reviews
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.ReviewResponse'
+                    $ref: '#/definitions/handlers.ReviewResponse'
                   type: array
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found or banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get reviews by user
@@ -5739,27 +5581,27 @@ paths:
           description: User statistics
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UserStatsResponse'
+                  $ref: '#/definitions/handlers.UserStatsResponse'
               type: object
         "400":
           description: Invalid user ID
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: User blocked
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found or banned
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user statistics
@@ -5779,19 +5621,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "403":
           description: Super-admin account cannot be deleted
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete current user
@@ -5809,23 +5651,23 @@ paths:
           description: User profile
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UserResponse'
+                  $ref: '#/definitions/handlers.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -5841,7 +5683,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.UpdateUserRequest'
+          $ref: '#/definitions/handlers.UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -5849,27 +5691,27 @@ paths:
           description: Updated user profile
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UserResponse'
+                  $ref: '#/definitions/handlers.UserResponse'
               type: object
         "400":
           description: Invalid request body
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "409":
           description: Username already taken
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update current user
@@ -5895,21 +5737,21 @@ paths:
           description: Recent unlocks
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.AchievementResponse'
+                    $ref: '#/definitions/handlers.AchievementResponse'
                   type: array
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Recent achievement unlocks for the current user
@@ -5925,19 +5767,19 @@ paths:
           description: Updated user profile without avatar
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UserResponse'
+                  $ref: '#/definitions/handlers.UserResponse'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Delete avatar
@@ -5961,23 +5803,23 @@ paths:
           description: Updated user profile with new avatar
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/internal_adapters_handlers.UserResponse'
+                  $ref: '#/definitions/handlers.UserResponse'
               type: object
         "400":
           description: Invalid file or file too large
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Upload or update avatar
@@ -6004,21 +5846,21 @@ paths:
           description: List of blocked users
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.BlockedUserResponse'
+                    $ref: '#/definitions/handlers.BlockedUserResponse'
                   type: array
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get blocked users
@@ -6038,11 +5880,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Export user data (GDPR)
@@ -6060,26 +5902,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_adapters_handlers.ChangePasswordRequest'
+          $ref: '#/definitions/handlers.ChangePasswordRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Password changed successfully
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "400":
           description: Invalid request body or password too short/long
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized or incorrect current password
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Change or set password
@@ -6124,21 +5966,21 @@ paths:
           description: Search results (admin view)
           schema:
             allOf:
-            - $ref: '#/definitions/duskforge-api_internal_adapters_response.PaginatedResponse'
+            - $ref: '#/definitions/response.PaginatedResponse'
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/internal_adapters_handlers.AdminSearchUserResponse'
+                    $ref: '#/definitions/handlers.AdminSearchUserResponse'
                   type: array
               type: object
         "400":
           description: Invalid query parameters
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/duskforge-api_internal_adapters_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Search users

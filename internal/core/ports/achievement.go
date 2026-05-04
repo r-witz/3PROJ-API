@@ -14,12 +14,7 @@ type AchievementListFilter struct {
 }
 
 type AchievementRepository interface {
-	Create(ctx context.Context, achievement *domain.Achievement) error
-	Update(ctx context.Context, achievement *domain.Achievement) error
-	Delete(ctx context.Context, id uuid.UUID) error
-
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Achievement, error)
-	GetByCode(ctx context.Context, code string) (*domain.Achievement, error)
 	List(ctx context.Context, filter AchievementListFilter) ([]*domain.Achievement, error)
 
 	GetUnlockedIDsByUser(ctx context.Context, userID uuid.UUID) (map[uuid.UUID]struct{}, error)

@@ -70,12 +70,7 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrNotificationNotFound: {http.StatusNotFound, "NOTIFICATION_NOT_FOUND", "Notification not found"},
 
 	// Achievement errors
-	domain.ErrAchievementNotFound:         {http.StatusNotFound, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"},
-	domain.ErrAchievementCodeExists:       {http.StatusConflict, "ACHIEVEMENT_CODE_EXISTS", "An achievement with this code already exists"},
-	domain.ErrAchievementInvalidCriterion: {http.StatusBadRequest, "ACHIEVEMENT_INVALID_CRITERION", "Invalid achievement criterion"},
-	domain.ErrAchievementInvalidTier:      {http.StatusBadRequest, "ACHIEVEMENT_INVALID_TIER", "Invalid achievement tier"},
-	domain.ErrAchievementInvalidCategory:  {http.StatusBadRequest, "ACHIEVEMENT_INVALID_CATEGORY", "Invalid achievement category"},
-	domain.ErrAchievementSystemLocked:     {http.StatusForbidden, "ACHIEVEMENT_SYSTEM_LOCKED", "Built-in achievements cannot be modified or deleted"},
+	domain.ErrAchievementNotFound: {http.StatusNotFound, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"},
 
 	// Review & comment errors
 	domain.ErrReviewNotFound:      {http.StatusNotFound, "REVIEW_NOT_FOUND", "Review not found"},
