@@ -8408,15 +8408,31 @@
                     "type": "string",
                     "example": "pending"
                 },
+                "target_comment_content": {
+                    "type": "string",
+                    "example": "I totally agree with this review."
+                },
                 "target_comment_id": {
                     "type": "string"
+                },
+                "target_review_content": {
+                    "type": "string",
+                    "example": "Great movie!"
                 },
                 "target_review_id": {
                     "type": "string"
                 },
+                "target_user_avatar_url": {
+                    "type": "string",
+                    "example": "https://cdn.example.com/avatars/johndoe.png"
+                },
                 "target_user_id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "target_user_username": {
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },

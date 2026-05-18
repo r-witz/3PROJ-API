@@ -757,12 +757,24 @@ definitions:
       status:
         example: pending
         type: string
+      target_comment_content:
+        example: I totally agree with this review.
+        type: string
       target_comment_id:
+        type: string
+      target_review_content:
+        example: Great movie!
         type: string
       target_review_id:
         type: string
+      target_user_avatar_url:
+        example: https://cdn.example.com/avatars/johndoe.png
+        type: string
       target_user_id:
         example: 550e8400-e29b-41d4-a716-446655440002
+        type: string
+      target_user_username:
+        example: johndoe
         type: string
     type: object
   handlers.RequestEmailChangeRequest:

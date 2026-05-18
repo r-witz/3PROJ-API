@@ -38,17 +38,21 @@ type CreateReportRequest struct {
 }
 
 type ReportResponse struct {
-	ID              string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	ReporterID      string  `json:"reporter_id" example:"550e8400-e29b-41d4-a716-446655440001"`
-	Reason          string  `json:"reason" example:"spam"`
-	Details         *string `json:"details,omitempty" example:"This review contains spam links"`
-	Status          string  `json:"status" example:"pending"`
-	TargetUserID    *string `json:"target_user_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
-	TargetReviewID  *string `json:"target_review_id,omitempty"`
-	TargetCommentID *string `json:"target_comment_id,omitempty"`
-	CreatedAt       string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
-	ResolvedAt      *string `json:"resolved_at,omitempty" example:"2024-01-16T10:30:00Z"`
-	ResolverID      *string `json:"resolver_id,omitempty"`
+	ID                   string  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	ReporterID           string  `json:"reporter_id" example:"550e8400-e29b-41d4-a716-446655440001"`
+	Reason               string  `json:"reason" example:"spam"`
+	Details              *string `json:"details,omitempty" example:"This review contains spam links"`
+	Status               string  `json:"status" example:"pending"`
+	TargetUserID         *string `json:"target_user_id,omitempty" example:"550e8400-e29b-41d4-a716-446655440002"`
+	TargetUserUsername   *string `json:"target_user_username,omitempty" example:"johndoe"`
+	TargetUserAvatarURL  *string `json:"target_user_avatar_url,omitempty" example:"https://cdn.example.com/avatars/johndoe.png"`
+	TargetReviewID       *string `json:"target_review_id,omitempty"`
+	TargetReviewContent  *string `json:"target_review_content,omitempty" example:"Great movie!"`
+	TargetCommentID      *string `json:"target_comment_id,omitempty"`
+	TargetCommentContent *string `json:"target_comment_content,omitempty" example:"I totally agree with this review."`
+	CreatedAt            string  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	ResolvedAt           *string `json:"resolved_at,omitempty" example:"2024-01-16T10:30:00Z"`
+	ResolverID           *string `json:"resolver_id,omitempty"`
 }
 
 type ResolveReportRequest struct {
@@ -89,6 +93,23 @@ func toReportResponse(r *domain.Report) ReportResponse {
 	if r.ResolverID != nil {
 		s := r.ResolverID.String()
 		resp.ResolverID = &s
+	}
+	return resp
+}
+
+func toReportResponseWithContext(rc *ports.ReportWithContext) ReportResponse {
+	resp := toReportResponse(rc.Report)
+	if rc.User != nil {
+		username := rc.User.Username
+		resp.TargetUserUsername = &username
+		resp.TargetUserAvatarURL = rc.User.AvatarURL
+	}
+	if rc.Review != nil {
+		resp.TargetReviewContent = rc.Review.Content
+	}
+	if rc.Comment != nil {
+		content := rc.Comment.Content
+		resp.TargetCommentContent = &content
 	}
 	return resp
 }
@@ -342,7 +363,7 @@ func (h *AdminHandler) ListReports(c *gin.Context) {
 
 	result := make([]ReportResponse, len(reports))
 	for i, r := range reports {
-		result[i] = toReportResponse(r)
+		result[i] = toReportResponseWithContext(r)
 	}
 
 	response.Success(c, result)
@@ -374,7 +395,7 @@ func (h *AdminHandler) GetReport(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toReportResponse(report))
+	response.Success(c, toReportResponseWithContext(report))
 }
 
 // @Summary      Resolve or dismiss a report

@@ -95,7 +95,7 @@ func (s *ReportService) Create(ctx context.Context, reporterID uuid.UUID, input 
 	return report, nil
 }
 
-func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Report, error) {
+func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*ports.ReportWithContext, error) {
 	report, err := s.reportRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -103,11 +103,51 @@ func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*domain.Repo
 	if report == nil {
 		return nil, domain.ErrReportNotFound
 	}
-	return report, nil
+	return s.enrich(ctx, report)
 }
 
-func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]*domain.Report, error) {
-	return s.reportRepo.List(ctx, filter)
+func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]*ports.ReportWithContext, error) {
+	reports, err := s.reportRepo.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*ports.ReportWithContext, 0, len(reports))
+	for _, r := range reports {
+		enriched, err := s.enrich(ctx, r)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, enriched)
+	}
+	return result, nil
+}
+
+func (s *ReportService) enrich(ctx context.Context, report *domain.Report) (*ports.ReportWithContext, error) {
+	ctxOut := &ports.ReportWithContext{Report: report}
+
+	if report.TargetUserID != nil {
+		user, err := s.userRepo.GetByID(ctx, *report.TargetUserID)
+		if err != nil {
+			return nil, err
+		}
+		ctxOut.User = user
+	}
+	if report.TargetReviewID != nil {
+		review, err := s.reviewRepo.GetByID(ctx, *report.TargetReviewID)
+		if err != nil {
+			return nil, err
+		}
+		ctxOut.Review = review
+	}
+	if report.TargetCommentID != nil {
+		comment, err := s.commentRepo.GetByID(ctx, *report.TargetCommentID)
+		if err != nil {
+			return nil, err
+		}
+		ctxOut.Comment = comment
+	}
+	return ctxOut, nil
 }
 
 func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ports.ResolveReportInput) (*domain.Report, error) {
