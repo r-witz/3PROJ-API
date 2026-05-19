@@ -446,7 +446,7 @@ func (h *AdminHandler) ResolveReport(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, toReportResponse(report))
+	response.Success(c, toReportResponseWithContext(report))
 }
 
 // @Summary      Delete a report

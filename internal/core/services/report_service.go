@@ -258,7 +258,7 @@ func (s *ReportService) enrich(ctx context.Context, report *domain.Report) (*por
 	return ctxOut, nil
 }
 
-func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ports.ResolveReportInput) (*domain.Report, error) {
+func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolverID uuid.UUID, input ports.ResolveReportInput) (*ports.ReportWithContext, error) {
 	report, err := s.reportRepo.GetByID(ctx, reportID)
 	if err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolve
 		return nil, err
 	}
 
-	return report, nil
+	return s.enrich(ctx, report)
 }
 
 func (s *ReportService) Delete(ctx context.Context, id uuid.UUID) error {
