@@ -112,13 +112,9 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 		return nil, err
 	}
 
-	userIDSet := make(map[uuid.UUID]struct{})
 	reviewIDSet := make(map[uuid.UUID]struct{})
 	commentIDSet := make(map[uuid.UUID]struct{})
 	for _, r := range reports {
-		if r.TargetUserID != nil {
-			userIDSet[*r.TargetUserID] = struct{}{}
-		}
 		if r.TargetReviewID != nil {
 			reviewIDSet[*r.TargetReviewID] = struct{}{}
 		}
@@ -127,10 +123,6 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 		}
 	}
 
-	userIDs := make([]uuid.UUID, 0, len(userIDSet))
-	for id := range userIDSet {
-		userIDs = append(userIDs, id)
-	}
 	reviewIDs := make([]uuid.UUID, 0, len(reviewIDSet))
 	for id := range reviewIDSet {
 		reviewIDs = append(reviewIDs, id)
@@ -138,17 +130,6 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 	commentIDs := make([]uuid.UUID, 0, len(commentIDSet))
 	for id := range commentIDSet {
 		commentIDs = append(commentIDs, id)
-	}
-
-	userMap := make(map[uuid.UUID]*domain.User)
-	if len(userIDs) > 0 {
-		users, err := s.userRepo.GetByIDs(ctx, userIDs)
-		if err != nil {
-			return nil, err
-		}
-		for _, u := range users {
-			userMap[u.ID] = u
-		}
 	}
 
 	reviewMap := make(map[uuid.UUID]*domain.Review)
@@ -173,17 +154,56 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 		}
 	}
 
+	userIDSet := make(map[uuid.UUID]struct{})
+	for _, r := range reports {
+		if r.TargetUserID != nil {
+			userIDSet[*r.TargetUserID] = struct{}{}
+		}
+		if r.TargetReviewID != nil {
+			if rv, ok := reviewMap[*r.TargetReviewID]; ok {
+				userIDSet[rv.UserID] = struct{}{}
+			}
+		}
+		if r.TargetCommentID != nil {
+			if c, ok := commentMap[*r.TargetCommentID]; ok {
+				userIDSet[c.UserID] = struct{}{}
+			}
+		}
+	}
+
+	userIDs := make([]uuid.UUID, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+
+	userMap := make(map[uuid.UUID]*domain.User)
+	if len(userIDs) > 0 {
+		users, err := s.userRepo.GetByIDs(ctx, userIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range users {
+			userMap[u.ID] = u
+		}
+	}
+
 	result := make([]*ports.ReportWithContext, 0, len(reports))
 	for _, r := range reports {
 		ctxOut := &ports.ReportWithContext{Report: r}
-		if r.TargetUserID != nil {
-			ctxOut.User = userMap[*r.TargetUserID]
-		}
 		if r.TargetReviewID != nil {
-			ctxOut.Review = reviewMap[*r.TargetReviewID]
+			if rv, ok := reviewMap[*r.TargetReviewID]; ok {
+				ctxOut.Review = rv
+				ctxOut.User = userMap[rv.UserID]
+			}
 		}
 		if r.TargetCommentID != nil {
-			ctxOut.Comment = commentMap[*r.TargetCommentID]
+			if c, ok := commentMap[*r.TargetCommentID]; ok {
+				ctxOut.Comment = c
+				ctxOut.User = userMap[c.UserID]
+			}
+		}
+		if r.TargetUserID != nil {
+			ctxOut.User = userMap[*r.TargetUserID]
 		}
 		result = append(result, ctxOut)
 	}
@@ -193,12 +213,9 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 func (s *ReportService) enrich(ctx context.Context, report *domain.Report) (*ports.ReportWithContext, error) {
 	ctxOut := &ports.ReportWithContext{Report: report}
 
+	var targetUserID *uuid.UUID
 	if report.TargetUserID != nil {
-		user, err := s.userRepo.GetByID(ctx, *report.TargetUserID)
-		if err != nil {
-			return nil, err
-		}
-		ctxOut.User = user
+		targetUserID = report.TargetUserID
 	}
 	if report.TargetReviewID != nil {
 		review, err := s.reviewRepo.GetByID(ctx, *report.TargetReviewID)
@@ -206,6 +223,9 @@ func (s *ReportService) enrich(ctx context.Context, report *domain.Report) (*por
 			return nil, err
 		}
 		ctxOut.Review = review
+		if review != nil && targetUserID == nil {
+			targetUserID = &review.UserID
+		}
 	}
 	if report.TargetCommentID != nil {
 		comment, err := s.commentRepo.GetByID(ctx, *report.TargetCommentID)
@@ -213,6 +233,16 @@ func (s *ReportService) enrich(ctx context.Context, report *domain.Report) (*por
 			return nil, err
 		}
 		ctxOut.Comment = comment
+		if comment != nil && targetUserID == nil {
+			targetUserID = &comment.UserID
+		}
+	}
+	if targetUserID != nil {
+		user, err := s.userRepo.GetByID(ctx, *targetUserID)
+		if err != nil {
+			return nil, err
+		}
+		ctxOut.User = user
 	}
 	return ctxOut, nil
 }
