@@ -54,6 +54,10 @@ func main() {
 
 	logger.InitLogger(cfg.LogLevel)
 
+	if err := database.RunMigrations(cfg.DatabaseURL); err != nil {
+		logger.Logger.Fatal("Failed to apply database migrations", zap.Error(err))
+	}
+
 	db, err := database.New(cfg.DatabaseURL)
 	if err != nil {
 		logger.Logger.Fatal("Failed to connect to database", zap.Error(err))
