@@ -1542,6 +1542,10 @@ paths:
         in: query
         name: user_id
         type: string
+      - description: Filter by target username
+        in: query
+        name: username
+        type: string
       produces:
       - application/json
       responses:
@@ -1566,6 +1570,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "403":
           description: Insufficient permissions
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
           schema:
             $ref: '#/definitions/response.Response'
         "500":

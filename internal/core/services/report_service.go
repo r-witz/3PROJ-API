@@ -107,6 +107,17 @@ func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*ports.Repor
 }
 
 func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]*ports.ReportWithContext, error) {
+	if filter.TargetUsername != nil && filter.TargetUserID == nil {
+		user, err := s.userRepo.GetByUsername(ctx, *filter.TargetUsername)
+		if err != nil {
+			return nil, err
+		}
+		if user == nil {
+			return nil, domain.ErrUserNotFound
+		}
+		filter.TargetUserID = &user.ID
+	}
+
 	reports, err := s.reportRepo.List(ctx, filter)
 	if err != nil {
 		return nil, err

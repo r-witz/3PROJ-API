@@ -332,10 +332,12 @@ func (h *AdminHandler) DeleteComment(c *gin.Context) {
 // @Security     BearerAuth
 // @Param        status query string false "Filter by status" Enums(pending, resolved, dismissed)
 // @Param        user_id query string false "Filter by target user ID" format(uuid)
+// @Param        username query string false "Filter by target username"
 // @Success      200 {object} response.Response{data=[]ReportResponse} "List of reports"
 // @Failure      400 {object} response.Response "Invalid parameters"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Insufficient permissions"
+// @Failure      404 {object} response.Response "User not found"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /admin/reports [get]
 func (h *AdminHandler) ListReports(c *gin.Context) {
@@ -353,6 +355,10 @@ func (h *AdminHandler) ListReports(c *gin.Context) {
 			return
 		}
 		filter.TargetUserID = &id
+	}
+
+	if username := c.Query("username"); username != "" {
+		filter.TargetUsername = &username
 	}
 
 	reports, err := h.reportService.List(c.Request.Context(), filter)

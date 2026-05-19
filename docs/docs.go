@@ -458,6 +458,12 @@ const docTemplate = `{
                         "description": "Filter by target user ID",
                         "name": "user_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by target username",
+                        "name": "username",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -496,6 +502,12 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Insufficient permissions",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
