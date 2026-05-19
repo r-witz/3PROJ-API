@@ -809,6 +809,7 @@ definitions:
         allOf:
         - $ref: '#/definitions/domain.ReportStatus'
         enum:
+        - pending
         - resolved
         - dismissed
         example: resolved
@@ -1674,7 +1675,8 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Update a report's status to resolved or dismissed
+      description: Update a report's status to pending, resolved, or dismissed. Reverting
+        to pending clears the resolver and resolved_at fields.
       parameters:
       - description: Report ID
         format: uuid
@@ -1716,17 +1718,13 @@ paths:
           description: Report not found
           schema:
             $ref: '#/definitions/response.Response'
-        "409":
-          description: Report already resolved
-          schema:
-            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Resolve or dismiss a report
+      summary: Update a report's status
       tags:
       - admin
   /admin/reviews/{reviewId}:

@@ -267,14 +267,15 @@ func (s *ReportService) Resolve(ctx context.Context, reportID uuid.UUID, resolve
 		return nil, domain.ErrReportNotFound
 	}
 
-	if report.Status != domain.ReportStatusPending {
-		return nil, domain.ErrReportAlreadyResolved
-	}
-
-	now := time.Now()
 	report.Status = input.Status
-	report.ResolvedAt = &now
-	report.ResolverID = &resolverID
+	if input.Status == domain.ReportStatusPending {
+		report.ResolvedAt = nil
+		report.ResolverID = nil
+	} else {
+		now := time.Now()
+		report.ResolvedAt = &now
+		report.ResolverID = &resolverID
+	}
 
 	if err := s.reportRepo.Update(ctx, report); err != nil {
 		return nil, err

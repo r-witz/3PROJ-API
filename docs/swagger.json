@@ -656,7 +656,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update a report's status to resolved or dismissed",
+                "description": "Update a report's status to pending, resolved, or dismissed. Reverting to pending clears the resolver and resolved_at fields.",
                 "consumes": [
                     "application/json"
                 ],
@@ -666,7 +666,7 @@
                 "tags": [
                     "admin"
                 ],
-                "summary": "Resolve or dismiss a report",
+                "summary": "Update a report's status",
                 "parameters": [
                     {
                         "type": "string",
@@ -725,12 +725,6 @@
                     },
                     "404": {
                         "description": "Report not found",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Report already resolved",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -8492,6 +8486,7 @@
             "properties": {
                 "status": {
                     "enum": [
+                        "pending",
                         "resolved",
                         "dismissed"
                     ],

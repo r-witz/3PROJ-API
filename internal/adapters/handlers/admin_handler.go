@@ -56,7 +56,7 @@ type ReportResponse struct {
 }
 
 type ResolveReportRequest struct {
-	Status domain.ReportStatus `json:"status" binding:"required,oneof=resolved dismissed" example:"resolved"`
+	Status domain.ReportStatus `json:"status" binding:"required,oneof=pending resolved dismissed" example:"resolved"`
 }
 
 type SetUserRoleRequest struct {
@@ -404,8 +404,8 @@ func (h *AdminHandler) GetReport(c *gin.Context) {
 	response.Success(c, toReportResponseWithContext(report))
 }
 
-// @Summary      Resolve or dismiss a report
-// @Description  Update a report's status to resolved or dismissed
+// @Summary      Update a report's status
+// @Description  Update a report's status to pending, resolved, or dismissed. Reverting to pending clears the resolver and resolved_at fields.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -417,7 +417,6 @@ func (h *AdminHandler) GetReport(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      403 {object} response.Response "Insufficient permissions"
 // @Failure      404 {object} response.Response "Report not found"
-// @Failure      409 {object} response.Response "Report already resolved"
 // @Failure      500 {object} response.Response "Internal server error"
 // @Router       /admin/reports/{reportId} [patch]
 func (h *AdminHandler) ResolveReport(c *gin.Context) {

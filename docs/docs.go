@@ -663,7 +663,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update a report's status to resolved or dismissed",
+                "description": "Update a report's status to pending, resolved, or dismissed. Reverting to pending clears the resolver and resolved_at fields.",
                 "consumes": [
                     "application/json"
                 ],
@@ -673,7 +673,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Resolve or dismiss a report",
+                "summary": "Update a report's status",
                 "parameters": [
                     {
                         "type": "string",
@@ -732,12 +732,6 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Report not found",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Report already resolved",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -8499,6 +8493,7 @@ const docTemplate = `{
             "properties": {
                 "status": {
                     "enum": [
+                        "pending",
                         "resolved",
                         "dismissed"
                     ],
