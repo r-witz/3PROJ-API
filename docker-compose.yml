@@ -1,10 +1,64 @@
 services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
+      GIN_MODE: release
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  migrate:
+    image: migrate/migrate:v4.19.1
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./migrations:/migrations
+    entrypoint: ["/bin/sh", "-c"]
+    command: ['migrate -path /migrations -database "postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@$$POSTGRES_HOST:$$POSTGRES_PORT/$$POSTGRES_DB?sslmode=$$POSTGRES_SSLMODE" up']
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18.4-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   redis:
-    image: redis:7-alpine
-    container_name: duskforge-redis-dev
+    image: redis:7.4.9-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -13,46 +67,21 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
-    build: .
-    ports:
-      - "8080:8080"
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgres://duskforge:password@db:5432/duskforge?sslmode=disable
-      - REDIS_URL=redis://redis:6379/0
-      - PORT=8080
-      - GIN_MODE=release
-      - BREVO_API_KEY=${BREVO_API_KEY}
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-      redis:
-        condition: service_healthy
-
-  migrate:
-    image: migrate/migrate:v4.19.1
-    volumes:
-      - ./migrations:/migrations
-    command: ["-path", "/migrations", "-database", "postgres://duskforge:password@db:5432/duskforge?sslmode=disable", "up"]
-    depends_on:
-      db:
-        condition: service_healthy
-
-  db:
-    image: postgres:18-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: duskforge
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: duskforge
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data
     ports:
-      - "5432:5432"
+      - "${MINIO_PORT}:9000"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - minio_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U duskforge"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -60,3 +89,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  minio_data:

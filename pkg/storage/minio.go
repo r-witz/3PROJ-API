@@ -32,6 +32,32 @@ func NewMinioStorage(endpoint, accessKey, secretKey, bucket string, useSSL bool,
 	}, nil
 }
 
+func (s *MinioStorage) EnsureBucket(ctx context.Context) error {
+	exists, err := s.client.BucketExists(ctx, s.bucket)
+	if err != nil {
+		return fmt.Errorf("failed to check bucket existence: %w", err)
+	}
+	if !exists {
+		if err := s.client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{}); err != nil {
+			return fmt.Errorf("failed to create bucket: %w", err)
+		}
+	}
+
+	policy := fmt.Sprintf(`{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": ["*"]},
+    "Action": ["s3:GetObject"],
+    "Resource": ["arn:aws:s3:::%s/*"]
+  }]
+}`, s.bucket)
+	if err := s.client.SetBucketPolicy(ctx, s.bucket, policy); err != nil {
+		return fmt.Errorf("failed to set bucket policy: %w", err)
+	}
+	return nil
+}
+
 func (s *MinioStorage) Upload(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (string, error) {
 	_, err := s.client.PutObject(ctx, s.bucket, objectName, reader, size, minio.PutObjectOptions{
 		ContentType: contentType,

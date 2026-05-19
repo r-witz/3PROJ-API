@@ -80,13 +80,8 @@ func main() {
 	banCache := repositories.NewBanCache(redisClient)
 	verificationRepo := repositories.NewVerificationCodeRepo(redisClient)
 
-	var emailSender ports.EmailSender
-	if cfg.BrevoAPIKey != "" {
-		emailSender = email.NewBrevoSender(cfg.BrevoAPIKey, cfg.EmailFromAddress, cfg.EmailFromName)
-		logger.Logger.Info("Brevo email sender initialized")
-	} else {
-		logger.Logger.Warn("BREVO_API_KEY not set, email sending disabled")
-	}
+	emailSender := email.NewBrevoSender(cfg.BrevoAPIKey, cfg.EmailFromAddress, cfg.EmailFromName)
+	logger.Logger.Info("Brevo email sender initialized")
 
 	userRepo := repositories.NewUserRepository(db)
 	sessionRepo := repositories.NewSessionRepository(db)
@@ -121,6 +116,9 @@ func main() {
 	)
 	if err != nil {
 		logger.Logger.Fatal("Failed to create MinIO storage client", zap.Error(err))
+	}
+	if err := minioStorage.EnsureBucket(context.Background()); err != nil {
+		logger.Logger.Fatal("Failed to ensure MinIO bucket", zap.Error(err))
 	}
 	logger.Logger.Info("MinIO storage client initialized", zap.String("endpoint", cfg.MinioEndpoint))
 
@@ -249,7 +247,6 @@ func main() {
 		banCache,
 	)
 
-	// Cleanup unverified accounts older than 24 hours, every hour
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {

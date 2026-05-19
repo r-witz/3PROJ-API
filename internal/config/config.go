@@ -1,14 +1,25 @@
 package config
 
 import (
+	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	ServerPort         string        `mapstructure:"SERVER_PORT"`
-	DatabaseURL        string        `mapstructure:"DATABASE_URL"`
+	ServerPort string `mapstructure:"SERVER_PORT"`
+
+	PostgresUser     string `mapstructure:"POSTGRES_USER"`
+	PostgresPassword string `mapstructure:"POSTGRES_PASSWORD"`
+	PostgresDB       string `mapstructure:"POSTGRES_DB"`
+	PostgresHost     string `mapstructure:"POSTGRES_HOST"`
+	PostgresPort     string `mapstructure:"POSTGRES_PORT"`
+	PostgresSSLMode  string `mapstructure:"POSTGRES_SSLMODE"`
+	DatabaseURL      string `mapstructure:"-"`
+
 	TMDBAPIKey         string        `mapstructure:"TMDB_API_KEY"`
 	LogLevel           string        `mapstructure:"LOG_LEVEL"`
 	AccessTokenSecret  string        `mapstructure:"ACCESS_TOKEN_SECRET"`
@@ -16,14 +27,19 @@ type Config struct {
 	RefreshTokenSecret string        `mapstructure:"REFRESH_TOKEN_SECRET"`
 	RefreshTokenExpiry time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRY"`
 
-	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
+	MinioHost      string `mapstructure:"MINIO_HOST"`
+	MinioPort      string `mapstructure:"MINIO_PORT"`
 	MinioAccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
 	MinioSecretKey string `mapstructure:"MINIO_SECRET_KEY"`
 	MinioBucket    string `mapstructure:"MINIO_BUCKET"`
 	MinioUseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
 	MinioPublicURL string `mapstructure:"MINIO_PUBLIC_URL"`
+	MinioEndpoint  string `mapstructure:"-"`
 
-	RedisURL string `mapstructure:"REDIS_URL"`
+	RedisHost string `mapstructure:"REDIS_HOST"`
+	RedisPort string `mapstructure:"REDIS_PORT"`
+	RedisDB   string `mapstructure:"REDIS_DB"`
+	RedisURL  string `mapstructure:"-"`
 
 	GitHubClientID     string `mapstructure:"GITHUB_CLIENT_ID"`
 	GitHubClientSecret string `mapstructure:"GITHUB_CLIENT_SECRET"`
@@ -43,43 +59,98 @@ type Config struct {
 	SeedAdminPassword string `mapstructure:"SEED_ADMIN_PASSWORD"`
 }
 
+var requiredEnvKeys = []string{
+	"SERVER_PORT",
+	"POSTGRES_USER",
+	"POSTGRES_PASSWORD",
+	"POSTGRES_DB",
+	"POSTGRES_HOST",
+	"POSTGRES_PORT",
+	"POSTGRES_SSLMODE",
+	"TMDB_API_KEY",
+	"LOG_LEVEL",
+	"ACCESS_TOKEN_SECRET",
+	"ACCESS_TOKEN_EXPIRY",
+	"REFRESH_TOKEN_SECRET",
+	"REFRESH_TOKEN_EXPIRY",
+	"MINIO_HOST",
+	"MINIO_PORT",
+	"MINIO_ACCESS_KEY",
+	"MINIO_SECRET_KEY",
+	"MINIO_BUCKET",
+	"MINIO_USE_SSL",
+	"MINIO_PUBLIC_URL",
+	"REDIS_HOST",
+	"REDIS_PORT",
+	"REDIS_DB",
+	"OAUTH_REDIRECT_BASE",
+	"CORS_ALLOWED_ORIGINS",
+	"EMAIL_FROM_ADDRESS",
+	"EMAIL_FROM_NAME",
+	"BREVO_API_KEY",
+	"SEED_ADMIN_EMAIL",
+	"SEED_ADMIN_USERNAME",
+	"SEED_ADMIN_PASSWORD",
+}
+
+var optionalEnvKeys = []string{
+	"GITHUB_CLIENT_ID",
+	"GITHUB_CLIENT_SECRET",
+	"GOOGLE_CLIENT_ID",
+	"GOOGLE_CLIENT_SECRET",
+	"OAUTH_STATE_SECRET",
+}
+
 func LoadConfig() (Config, error) {
 	viper.AutomaticEnv()
 
-	viper.BindEnv("DATABASE_URL")
-	viper.BindEnv("TMDB_API_KEY")
-	viper.BindEnv("ACCESS_TOKEN_SECRET")
-	viper.BindEnv("REFRESH_TOKEN_SECRET")
-	viper.BindEnv("MINIO_ACCESS_KEY")
-	viper.BindEnv("MINIO_SECRET_KEY")
-	viper.BindEnv("MINIO_PUBLIC_URL")
-	viper.BindEnv("GITHUB_CLIENT_ID")
-	viper.BindEnv("GITHUB_CLIENT_SECRET")
-	viper.BindEnv("GOOGLE_CLIENT_ID")
-	viper.BindEnv("GOOGLE_CLIENT_SECRET")
-	viper.BindEnv("OAUTH_STATE_SECRET")
-	viper.BindEnv("BREVO_API_KEY")
+	for _, key := range requiredEnvKeys {
+		_ = viper.BindEnv(key)
+	}
+	for _, key := range optionalEnvKeys {
+		_ = viper.BindEnv(key)
+	}
 
-	viper.SetDefault("SERVER_PORT", "8080")
-	viper.SetDefault("LOG_LEVEL", "info")
-	viper.SetDefault("ACCESS_TOKEN_EXPIRY", 15*time.Minute)
-	viper.SetDefault("REFRESH_TOKEN_EXPIRY", 7*24*time.Hour)
-	viper.SetDefault("MINIO_ENDPOINT", "minio:9000")
-	viper.SetDefault("MINIO_BUCKET", "duskforge")
-	viper.SetDefault("MINIO_USE_SSL", false)
-	viper.SetDefault("REDIS_URL", "redis://localhost:6379/0")
-	viper.SetDefault("OAUTH_REDIRECT_BASE", "http://localhost:8080")
-	viper.SetDefault("CORS_ALLOWED_ORIGINS", "*")
-	viper.SetDefault("EMAIL_FROM_ADDRESS", "noreply@duskforge.studio")
-	viper.SetDefault("EMAIL_FROM_NAME", "Duskforge")
-	viper.SetDefault("SEED_ADMIN_EMAIL", "admin@duskforge.studio")
-	viper.SetDefault("SEED_ADMIN_USERNAME", "superadmin")
-	viper.SetDefault("SEED_ADMIN_PASSWORD", "Admin123!")
+	var missing []string
+	for _, key := range requiredEnvKeys {
+		if strings.TrimSpace(viper.GetString(key)) == "" {
+			missing = append(missing, key)
+		}
+	}
+	if len(missing) > 0 {
+		return Config{}, fmt.Errorf("missing required environment variables: %s", strings.Join(missing, ", "))
+	}
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return config, err
 	}
 
+	config.DatabaseURL = buildPostgresURL(config)
+	config.RedisURL = buildRedisURL(config)
+	config.MinioEndpoint = config.MinioHost + ":" + config.MinioPort
+
 	return config, nil
+}
+
+func buildPostgresURL(c Config) string {
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(c.PostgresUser, c.PostgresPassword),
+		Host:   c.PostgresHost + ":" + c.PostgresPort,
+		Path:   "/" + c.PostgresDB,
+	}
+	q := u.Query()
+	q.Set("sslmode", c.PostgresSSLMode)
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+func buildRedisURL(c Config) string {
+	u := &url.URL{
+		Scheme: "redis",
+		Host:   c.RedisHost + ":" + c.RedisPort,
+		Path:   "/" + c.RedisDB,
+	}
+	return u.String()
 }
