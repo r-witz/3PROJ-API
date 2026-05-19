@@ -3,7 +3,10 @@ package websocket
 import (
 	"sync"
 
+	"duskforge-api/pkg/logger"
+
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type Hub struct {
@@ -23,26 +26,35 @@ func NewHub() *Hub {
 
 func (h *Hub) Run() {
 	for {
-		select {
-		case client := <-h.register:
-			h.mu.Lock()
-			if h.clients[client.UserID] == nil {
-				h.clients[client.UserID] = make(map[*Client]struct{})
-			}
-			h.clients[client.UserID][client] = struct{}{}
-			h.mu.Unlock()
-
-		case client := <-h.unregister:
-			h.mu.Lock()
-			if conns, ok := h.clients[client.UserID]; ok {
-				delete(conns, client)
-				if len(conns) == 0 {
-					delete(h.clients, client.UserID)
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Logger.Error("websocket-hub panic", zap.Any("panic", r))
 				}
+			}()
+			select {
+			case client := <-h.register:
+				h.mu.Lock()
+				if h.clients[client.UserID] == nil {
+					h.clients[client.UserID] = make(map[*Client]struct{})
+				}
+				h.clients[client.UserID][client] = struct{}{}
+				h.mu.Unlock()
+
+			case client := <-h.unregister:
+				h.mu.Lock()
+				if conns, ok := h.clients[client.UserID]; ok {
+					if _, present := conns[client]; present {
+						delete(conns, client)
+						if len(conns) == 0 {
+							delete(h.clients, client.UserID)
+						}
+						close(client.send)
+					}
+				}
+				h.mu.Unlock()
 			}
-			close(client.send)
-			h.mu.Unlock()
-		}
+		}()
 	}
 }
 

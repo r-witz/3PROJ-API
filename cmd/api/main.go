@@ -251,6 +251,11 @@ func main() {
 
 	// Cleanup unverified accounts older than 24 hours, every hour
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Logger.Error("unverified-cleanup panic", zap.Any("panic", r))
+			}
+		}()
 		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 		for range ticker.C {

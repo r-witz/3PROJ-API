@@ -266,7 +266,6 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Delete old avatar from storage if exists
 	user, err := h.userService.GetCurrentUser(ctx, userID)
 	if err != nil {
 		response.HandleError(c, err)
@@ -498,6 +497,14 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	response.Success(c, toPublicUserResponse(user, stats, isFollowing, isFollowedBy, callerIsSuperAdmin))
 }
 
+func formatBannedAt(bannedAt *time.Time) *string {
+	if bannedAt == nil {
+		return nil
+	}
+	formatted := bannedAt.Format(time.RFC3339)
+	return &formatted
+}
+
 func toUserResponse(user *domain.User, stats UserStats) UserResponse {
 	resp := UserResponse{
 		ID:        user.ID.String(),
@@ -515,10 +522,7 @@ func toUserResponse(user *domain.User, stats UserStats) UserResponse {
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
 	}
-	if user.BannedAt != nil {
-		bannedAt := user.BannedAt.Format(time.RFC3339)
-		resp.BannedAt = &bannedAt
-	}
+	resp.BannedAt = formatBannedAt(user.BannedAt)
 	return resp
 }
 
@@ -538,10 +542,7 @@ func toPublicUserResponse(user *domain.User, stats UserStats, isFollowing, isFol
 		role := string(user.Role)
 		resp.Role = &role
 	}
-	if user.BannedAt != nil {
-		bannedAt := user.BannedAt.Format(time.RFC3339)
-		resp.BannedAt = &bannedAt
-	}
+	resp.BannedAt = formatBannedAt(user.BannedAt)
 	return resp
 }
 
@@ -564,10 +565,7 @@ func toAdminSearchUserResponse(user *domain.User) AdminSearchUserResponse {
 		Role:      string(user.Role),
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 	}
-	if user.BannedAt != nil {
-		bannedAt := user.BannedAt.Format(time.RFC3339)
-		resp.BannedAt = &bannedAt
-	}
+	resp.BannedAt = formatBannedAt(user.BannedAt)
 	return resp
 }
 
@@ -590,8 +588,8 @@ func (h *UserHandler) Search(c *gin.Context) {
 	searchQuery := c.Query("query")
 
 	params, err := query.Parse(c, query.Config{
-		DefaultLimit: 20,
-		MaxLimit:     100,
+		DefaultLimit: query.DefaultLimit,
+		MaxLimit:     query.MaxLimit,
 		AllowedSorts: []string{"username", "created_at"},
 	})
 	if err != nil {

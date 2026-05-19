@@ -54,7 +54,7 @@ func (p *GitHubProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://github.com/login/oauth/access_token", strings.NewReader(data.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubTokenExchange, err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -62,7 +62,7 @@ func (p *GitHubProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubTokenExchange, err)
 	}
 	defer resp.Body.Close()
 
@@ -80,7 +80,7 @@ func (p *GitHubProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubTokenExchange, err)
 	}
 
 	if tokenResp.Error != "" {
@@ -124,7 +124,7 @@ type githubUser struct {
 func (p *GitHubProvider) getUserProfile(ctx context.Context, accessToken string) (*githubUser, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user", nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -132,7 +132,7 @@ func (p *GitHubProvider) getUserProfile(ctx context.Context, accessToken string)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 	defer resp.Body.Close()
 
@@ -143,7 +143,7 @@ func (p *GitHubProvider) getUserProfile(ctx context.Context, accessToken string)
 
 	var user githubUser
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 
 	return &user, nil
@@ -158,7 +158,7 @@ type githubEmail struct {
 func (p *GitHubProvider) getPrimaryEmail(ctx context.Context, accessToken string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user/emails", nil)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -166,7 +166,7 @@ func (p *GitHubProvider) getPrimaryEmail(ctx context.Context, accessToken string
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 	defer resp.Body.Close()
 
@@ -177,7 +177,7 @@ func (p *GitHubProvider) getPrimaryEmail(ctx context.Context, accessToken string
 
 	var emails []githubEmail
 	if err := json.NewDecoder(resp.Body).Decode(&emails); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGitHubUserInfo, err)
+		return "", fmt.Errorf("%w: %w", ErrGitHubUserInfo, err)
 	}
 
 	for _, e := range emails {

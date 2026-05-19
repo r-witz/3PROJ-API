@@ -11,8 +11,10 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	"duskforge-api/pkg/logger"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 var slugRegex = regexp.MustCompile(`[^a-z0-9-]+`)
@@ -45,7 +47,7 @@ func (s *collectionService) CreateDefaultCollections(ctx context.Context, userID
 		ID:         uuid.New(),
 		UserID:     userID,
 		Name:       "Watched",
-		Slug:       "watched",
+		Slug:       domain.SystemCollectionWatched,
 		Type:       domain.CollectionTypeSystem,
 		Visibility: domain.CollectionVisibilityPublic,
 		CreatedAt:  now,
@@ -149,7 +151,7 @@ func (s *collectionService) GetByUserID(ctx context.Context, userID uuid.UUID, r
 
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
-	var visible []*domain.Collection
+	visible := make([]*domain.Collection, 0, len(collections))
 	for _, c := range collections {
 		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
 			continue
@@ -198,7 +200,7 @@ func (s *collectionService) GetByUserIDAndTMDBID(ctx context.Context, userID uui
 
 	isOwner := requestingUserID != nil && *requestingUserID == userID
 
-	var visible []*domain.Collection
+	visible := make([]*domain.Collection, 0, len(allCollections))
 	for _, c := range allCollections {
 		if !isOwner && c.Visibility != domain.CollectionVisibilityPublic {
 			continue
@@ -464,6 +466,11 @@ func (s *collectionService) buildCollectionItemResults(ctx context.Context, item
 		wg.Add(1)
 		go func(idx int, tmdbID int) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Logger.Error("collection-build-worker panic", zap.Any("panic", r))
+				}
+			}()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 

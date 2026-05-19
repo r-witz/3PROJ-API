@@ -23,7 +23,7 @@ type Client struct {
 	apiKeys     []string
 	keyIndex    atomic.Uint64
 	httpClient  *http.Client
-	imageURLs   *ImageURLBuilder
+	imageURLs   atomic.Pointer[ImageURLBuilder]
 	baseURL     string
 	configReady atomic.Bool
 	retryCancel context.CancelFunc
@@ -62,7 +62,7 @@ func New(apiKeys string, opts ...ClientOption) (*Client, error) {
 		opt(c)
 	}
 
-	c.imageURLs = NewImageURLBuilder("")
+	c.imageURLs.Store(NewImageURLBuilder(""))
 
 	logger.Logger.Info("TMDB client initialized",
 		zap.String("base_url", c.baseURL),
@@ -100,7 +100,7 @@ func (c *Client) InitializeConfiguration(ctx context.Context) error {
 	}
 
 	c.configReady.Store(true)
-	c.imageURLs = NewImageURLBuilder(config.Images.SecureBaseURL)
+	c.imageURLs.Store(NewImageURLBuilder(config.Images.SecureBaseURL))
 	logger.Logger.Info("TMDB configuration loaded",
 		zap.String("image_base_url", config.Images.SecureBaseURL),
 	)
@@ -113,6 +113,11 @@ func (c *Client) startConfigRetry() {
 	c.retryCancel = cancel
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Logger.Error("tmdb-config-retry panic", zap.Any("panic", r))
+			}
+		}()
 		delay := 10 * time.Second
 		maxDelay := 5 * time.Minute
 
@@ -132,7 +137,7 @@ func (c *Client) startConfigRetry() {
 				}
 
 				c.configReady.Store(true)
-				c.imageURLs = NewImageURLBuilder(config.Images.SecureBaseURL)
+				c.imageURLs.Store(NewImageURLBuilder(config.Images.SecureBaseURL))
 				logger.Logger.Info("TMDB configuration loaded after retry",
 					zap.String("image_base_url", config.Images.SecureBaseURL),
 				)
@@ -143,7 +148,7 @@ func (c *Client) startConfigRetry() {
 }
 
 func (c *Client) ImageURLs() *ImageURLBuilder {
-	return c.imageURLs
+	return c.imageURLs.Load()
 }
 
 func isTransientError(err error) bool {
@@ -213,9 +218,8 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 			)
 			return nil, &RequestError{Operation: endpoint, Err: err}
 		}
-		defer resp.Body.Close()
-
 		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
 		if err != nil {
 			return nil, &RequestError{Operation: endpoint, Err: err}
 		}

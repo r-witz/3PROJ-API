@@ -180,6 +180,35 @@ func (r *ReviewRepository) GetByUserIDAndTMDBID(ctx context.Context, userID uuid
 	return review, err
 }
 
+func (r *ReviewRepository) GetByUserIDAndTMDBIDs(ctx context.Context, userID uuid.UUID, tmdbIDs []int) (map[int]*domain.Review, error) {
+	result := make(map[int]*domain.Review, len(tmdbIDs))
+	if len(tmdbIDs) == 0 {
+		return result, nil
+	}
+
+	query := `
+		SELECT id, user_id, tmdb_id, rating, content, contains_spoilers, featured_at, created_at, updated_at
+		FROM reviews WHERE user_id = $1 AND tmdb_id = ANY($2)
+	`
+	rows, err := r.db.Pool.Query(ctx, query, userID, tmdbIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		review := &domain.Review{}
+		if err := rows.Scan(
+			&review.ID, &review.UserID, &review.TMDBID, &review.Rating, &review.Content,
+			&review.ContainsSpoilers, &review.FeaturedAt, &review.CreatedAt, &review.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		result[review.TMDBID] = review
+	}
+	return result, rows.Err()
+}
+
 func (r *ReviewRepository) CountByTMDBID(ctx context.Context, tmdbID int, excludeUserID *uuid.UUID) (int, error) {
 	var count int
 	if excludeUserID != nil {

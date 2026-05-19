@@ -9,6 +9,7 @@ import (
 	"duskforge-api/internal/adapters/response"
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	"duskforge-api/pkg/query"
 	ws "duskforge-api/pkg/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -603,7 +604,7 @@ func toReviewResponse(review *domain.Review, likeCount int, commentCount int, li
 
 func parsePagination(c *gin.Context) (offset, limit int) {
 	offset = 0
-	limit = 20
+	limit = query.DefaultLimit
 
 	if v := c.Query("offset"); v != "" {
 		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
@@ -611,7 +612,7 @@ func parsePagination(c *gin.Context) (offset, limit int) {
 		}
 	}
 	if v := c.Query("limit"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= 100 {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= query.MaxLimit {
 			limit = parsed
 		}
 	}

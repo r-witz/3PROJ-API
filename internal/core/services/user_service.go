@@ -7,6 +7,7 @@ import (
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
 	"duskforge-api/pkg/auth"
+	"duskforge-api/pkg/query"
 
 	"github.com/google/uuid"
 )
@@ -184,10 +185,10 @@ func (s *userService) SearchUsers(ctx context.Context, input ports.SearchUsersIn
 		input.Offset = 0
 	}
 	if input.Limit < 1 {
-		input.Limit = 20
+		input.Limit = query.DefaultLimit
 	}
-	if input.Limit > 100 {
-		input.Limit = 100
+	if input.Limit > query.MaxLimit {
+		input.Limit = query.MaxLimit
 	}
 
 	searchParams := ports.UserSearchParams{

@@ -415,7 +415,7 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 			CollectionID: &item.CollectionID,
 			TMDBID:       &req.TMDBID,
 		})
-	case "watched":
+	case domain.SystemCollectionWatched:
 		// Watched is a system collection we deliberately keep off the activity
 		// feed; SuppressLog still fires the watching-category evaluation so
 		// watched_count / watched_runtime unlock.
@@ -564,7 +564,7 @@ func (h *CollectionHandler) RemoveItem(c *gin.Context) {
 			UserID: userID,
 			TMDBID: &tmdbID,
 		})
-	} else if slug != "watched" {
+	} else if slug != domain.SystemCollectionWatched {
 		middleware.QueueActivity(c, middleware.ActivityEvent{
 			Action: middleware.ActivityDelete,
 			Type:   domain.ActivityTypeCollectionItemAdded,

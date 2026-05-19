@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -46,7 +47,7 @@ func (r *VerificationCodeRepo) Store(ctx context.Context, code *domain.Verificat
 
 func (r *VerificationCodeRepo) Get(ctx context.Context, email string, purpose domain.VerificationCodePurpose) (*domain.VerificationCode, error) {
 	data, err := r.client.Get(ctx, codeKey(purpose, email)).Bytes()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return nil, nil
 	}
 	if err != nil {
@@ -69,7 +70,6 @@ func cooldownKey(purpose domain.VerificationCodePurpose, email string) string {
 }
 
 func (r *VerificationCodeRepo) CanRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose) (bool, error) {
-	// Check per-request cooldown (1 minute between requests)
 	exists, err := r.client.Exists(ctx, cooldownKey(purpose, email)).Result()
 	if err != nil {
 		return false, fmt.Errorf("failed to check cooldown: %w", err)
@@ -78,9 +78,8 @@ func (r *VerificationCodeRepo) CanRequest(ctx context.Context, email string, pur
 		return false, nil
 	}
 
-	// Check window limit (3 per 15 minutes)
 	count, err := r.client.Get(ctx, rateKey(purpose, email)).Int()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return true, nil
 	}
 	if err != nil {
@@ -115,7 +114,7 @@ func (r *VerificationCodeRepo) StorePendingEmail(ctx context.Context, userID uui
 
 func (r *VerificationCodeRepo) GetPendingEmail(ctx context.Context, userID uuid.UUID) (string, error) {
 	email, err := r.client.Get(ctx, pendingEmailKey(userID)).Result()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return "", nil
 	}
 	if err != nil {
@@ -130,11 +129,9 @@ func (r *VerificationCodeRepo) DeletePendingEmail(ctx context.Context, userID uu
 
 func (r *VerificationCodeRepo) RecordRequest(ctx context.Context, email string, purpose domain.VerificationCodePurpose, window time.Duration) error {
 	pipe := r.client.Pipeline()
-	// Window counter (3 per 15 minutes)
 	key := rateKey(purpose, email)
 	pipe.Incr(ctx, key)
 	pipe.Expire(ctx, key, window)
-	// Per-request cooldown (60 seconds)
 	pipe.Set(ctx, cooldownKey(purpose, email), 1, cooldownDuration)
 	_, err := pipe.Exec(ctx)
 	return err

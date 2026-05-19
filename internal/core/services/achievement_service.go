@@ -237,13 +237,29 @@ func (s *achievementService) hydrateUnlocks(ctx context.Context, unlocks []*doma
 		return []*ports.UnlockedAchievement{}, nil
 	}
 
+	seen := make(map[uuid.UUID]struct{}, len(unlocks))
+	ids := make([]uuid.UUID, 0, len(unlocks))
+	for _, ua := range unlocks {
+		if _, ok := seen[ua.AchievementID]; ok {
+			continue
+		}
+		seen[ua.AchievementID] = struct{}{}
+		ids = append(ids, ua.AchievementID)
+	}
+
+	achievements, err := s.achievementRepo.GetByIDs(ctx, ids)
+	if err != nil {
+		return nil, domain.ErrInternal
+	}
+	byID := make(map[uuid.UUID]*domain.Achievement, len(achievements))
+	for _, a := range achievements {
+		byID[a.ID] = a
+	}
+
 	out := make([]*ports.UnlockedAchievement, 0, len(unlocks))
 	for _, ua := range unlocks {
-		a, err := s.achievementRepo.GetByID(ctx, ua.AchievementID)
-		if err != nil {
-			return nil, domain.ErrInternal
-		}
-		if a == nil {
+		a, ok := byID[ua.AchievementID]
+		if !ok {
 			continue
 		}
 		out = append(out, &ports.UnlockedAchievement{Achievement: a, UnlockedAt: ua})

@@ -33,6 +33,7 @@ type ReviewRepository interface {
 	GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, offset, limit int, sort ReviewSort) ([]*domain.Review, error)
 	GetByTMDBID(ctx context.Context, tmdbID int, excludeUserID *uuid.UUID, offset, limit int, sort ReviewSort) ([]*domain.Review, error)
 	GetByUserIDAndTMDBID(ctx context.Context, userID uuid.UUID, tmdbID int) (*domain.Review, error)
+	GetByUserIDAndTMDBIDs(ctx context.Context, userID uuid.UUID, tmdbIDs []int) (map[int]*domain.Review, error)
 	GetAverageRatingsByTMDBIDs(ctx context.Context, tmdbIDs []int) (map[int]float64, error)
 	GetRatingsByUserIDAndTMDBIDs(ctx context.Context, userID uuid.UUID, tmdbIDs []int) (map[int]float64, error)
 	GetRatingStatsByTMDBIDs(ctx context.Context, tmdbIDs []int) (map[int]RatingStats, error)

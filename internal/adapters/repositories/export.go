@@ -157,15 +157,56 @@ func (r *ExportRepository) getCollections(ctx context.Context, userID uuid.UUID)
 		return nil, err
 	}
 
-	for i := range collections {
-		items, err := r.getCollectionItems(ctx, collections[i].Collection.ID)
+	if len(collections) > 0 {
+		seen := make(map[uuid.UUID]struct{}, len(collections))
+		ids := make([]uuid.UUID, 0, len(collections))
+		for i := range collections {
+			id := collections[i].Collection.ID
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			ids = append(ids, id)
+		}
+
+		itemsByCollection, err := r.getCollectionItemsByCollectionIDs(ctx, ids)
 		if err != nil {
 			return nil, err
 		}
-		collections[i].Items = items
+		for i := range collections {
+			collections[i].Items = itemsByCollection[collections[i].Collection.ID]
+		}
 	}
 
 	return collections, nil
+}
+
+func (r *ExportRepository) getCollectionItemsByCollectionIDs(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]domain.CollectionItem, error) {
+	result := make(map[uuid.UUID][]domain.CollectionItem, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	query := `
+		SELECT collection_id, tmdb_id, added_at, runtime, metadata
+		FROM collection_items WHERE collection_id = ANY($1) ORDER BY collection_id, added_at
+	`
+	rows, err := r.db.Pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item domain.CollectionItem
+		var metadata []byte
+		if err := rows.Scan(&item.CollectionID, &item.TMDBID, &item.AddedAt, &item.Runtime, &metadata); err != nil {
+			return nil, err
+		}
+		item.Metadata = json.RawMessage(metadata)
+		result[item.CollectionID] = append(result[item.CollectionID], item)
+	}
+	return result, rows.Err()
 }
 
 func (r *ExportRepository) getCollectionItems(ctx context.Context, collectionID uuid.UUID) ([]domain.CollectionItem, error) {

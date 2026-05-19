@@ -46,6 +46,28 @@ func (r *AchievementRepository) GetByID(ctx context.Context, id uuid.UUID) (*dom
 	return a, nil
 }
 
+func (r *AchievementRepository) GetByIDs(ctx context.Context, ids []uuid.UUID) ([]*domain.Achievement, error) {
+	if len(ids) == 0 {
+		return []*domain.Achievement{}, nil
+	}
+	rows, err := r.db.Pool.Query(ctx,
+		`SELECT `+achievementColumns+` FROM achievements WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []*domain.Achievement
+	for rows.Next() {
+		a := &domain.Achievement{}
+		if err := scanAchievement(rows, a); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
 func (r *AchievementRepository) List(ctx context.Context, filter ports.AchievementListFilter) ([]*domain.Achievement, error) {
 	query := `SELECT ` + achievementColumns + ` FROM achievements`
 	args := []any{}

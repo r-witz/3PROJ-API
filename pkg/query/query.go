@@ -9,6 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	DefaultLimit = 20
+	MaxLimit     = 100
+)
+
 type Params struct {
 	Offset    int
 	Limit     int
@@ -30,10 +35,10 @@ func Parse(c *gin.Context, config Config) (*Params, error) {
 	}
 
 	if config.DefaultLimit == 0 {
-		params.Limit = 20
+		params.Limit = DefaultLimit
 	}
 	if config.MaxLimit == 0 {
-		config.MaxLimit = 100
+		config.MaxLimit = MaxLimit
 	}
 
 	if offsetStr := c.Query("offset"); offsetStr != "" {

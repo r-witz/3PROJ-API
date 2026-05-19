@@ -20,6 +20,8 @@ const (
 	CollectionVisibilityPrivate CollectionVisibility = "private"
 )
 
+const SystemCollectionWatched = "watched"
+
 type Collection struct {
 	ID          uuid.UUID            `json:"id" db:"id"`
 	UserID      uuid.UUID            `json:"user_id" db:"user_id"`

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"math/big"
@@ -260,7 +261,7 @@ func (s *authService) VerifyEmail(ctx context.Context, email string, code string
 	if err != nil {
 		return domain.ErrInternal
 	}
-	if stored == nil || stored.Code != code {
+	if stored == nil || subtle.ConstantTimeCompare([]byte(stored.Code), []byte(code)) != 1 {
 		return domain.ErrVerificationCodeInvalid
 	}
 
@@ -323,7 +324,7 @@ func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswo
 	if err != nil {
 		return domain.ErrInternal
 	}
-	if stored == nil || stored.Code != input.Code {
+	if stored == nil || subtle.ConstantTimeCompare([]byte(stored.Code), []byte(input.Code)) != 1 {
 		return domain.ErrVerificationCodeInvalid
 	}
 
@@ -427,7 +428,7 @@ func (s *authService) ConfirmEmailChange(ctx context.Context, userID uuid.UUID, 
 	if err != nil {
 		return domain.ErrInternal
 	}
-	if stored == nil || stored.Code != code || stored.UserID != userID {
+	if stored == nil || subtle.ConstantTimeCompare([]byte(stored.Code), []byte(code)) != 1 || stored.UserID != userID {
 		return domain.ErrVerificationCodeInvalid
 	}
 

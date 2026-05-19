@@ -95,7 +95,6 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 	args := []interface{}{}
 	argIndex := 1
 
-	// Build WHERE clause
 	conditions := []string{}
 
 	if params.Query != "" {
@@ -126,7 +125,6 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 		}
 	}
 
-	// Count query
 	var total int
 	countQuery := "SELECT COUNT(*) FROM users" + whereClause
 	err := r.db.Pool.QueryRow(ctx, countQuery, args...).Scan(&total)
@@ -134,7 +132,6 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 		return nil, 0, err
 	}
 
-	// Sort
 	orderBy := "username ASC"
 	if params.SortField != "" {
 		if col, ok := allowedSortColumns[params.SortField]; ok {
@@ -146,7 +143,6 @@ func (r *UserRepository) SearchByUsername(ctx context.Context, params ports.User
 		}
 	}
 
-	// Select query
 	limitArg := argIndex
 	offsetArg := argIndex + 1
 	args = append(args, params.Limit, params.Offset)

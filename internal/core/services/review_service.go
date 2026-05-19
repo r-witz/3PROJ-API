@@ -70,7 +70,7 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 		return nil, domain.ErrInternal
 	}
 
-	_, err = s.collectionSvc.AddItem(ctx, userID, "watched", tmdbID)
+	_, err = s.collectionSvc.AddItem(ctx, userID, domain.SystemCollectionWatched, tmdbID)
 	if err != nil && !errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
 		// silently ignore — non-critical
 	}

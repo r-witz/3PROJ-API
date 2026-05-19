@@ -62,14 +62,14 @@ func (p *GoogleProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 
 	req, err := http.NewRequestWithContext(ctx, "POST", "https://oauth2.googleapis.com/token", strings.NewReader(data.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGoogleTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGoogleTokenExchange, err)
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGoogleTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGoogleTokenExchange, err)
 	}
 	defer resp.Body.Close()
 
@@ -89,7 +89,7 @@ func (p *GoogleProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrGoogleTokenExchange, err)
+		return "", fmt.Errorf("%w: %w", ErrGoogleTokenExchange, err)
 	}
 
 	if tokenResp.Error != "" {
@@ -102,14 +102,14 @@ func (p *GoogleProvider) ExchangeCode(ctx context.Context, code, redirectURI str
 func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGoogleUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGoogleUserInfo, err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := p.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGoogleUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGoogleUserInfo, err)
 	}
 	defer resp.Body.Close()
 
@@ -129,7 +129,7 @@ func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&userResp); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrGoogleUserInfo, err)
+		return nil, fmt.Errorf("%w: %w", ErrGoogleUserInfo, err)
 	}
 
 	if !userResp.VerifiedEmail {

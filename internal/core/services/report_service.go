@@ -112,13 +112,80 @@ func (s *ReportService) List(ctx context.Context, filter ports.ReportFilter) ([]
 		return nil, err
 	}
 
-	result := make([]*ports.ReportWithContext, 0, len(reports))
+	userIDSet := make(map[uuid.UUID]struct{})
+	reviewIDSet := make(map[uuid.UUID]struct{})
+	commentIDSet := make(map[uuid.UUID]struct{})
 	for _, r := range reports {
-		enriched, err := s.enrich(ctx, r)
+		if r.TargetUserID != nil {
+			userIDSet[*r.TargetUserID] = struct{}{}
+		}
+		if r.TargetReviewID != nil {
+			reviewIDSet[*r.TargetReviewID] = struct{}{}
+		}
+		if r.TargetCommentID != nil {
+			commentIDSet[*r.TargetCommentID] = struct{}{}
+		}
+	}
+
+	userIDs := make([]uuid.UUID, 0, len(userIDSet))
+	for id := range userIDSet {
+		userIDs = append(userIDs, id)
+	}
+	reviewIDs := make([]uuid.UUID, 0, len(reviewIDSet))
+	for id := range reviewIDSet {
+		reviewIDs = append(reviewIDs, id)
+	}
+	commentIDs := make([]uuid.UUID, 0, len(commentIDSet))
+	for id := range commentIDSet {
+		commentIDs = append(commentIDs, id)
+	}
+
+	userMap := make(map[uuid.UUID]*domain.User)
+	if len(userIDs) > 0 {
+		users, err := s.userRepo.GetByIDs(ctx, userIDs)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, enriched)
+		for _, u := range users {
+			userMap[u.ID] = u
+		}
+	}
+
+	reviewMap := make(map[uuid.UUID]*domain.Review)
+	if len(reviewIDs) > 0 {
+		reviews, err := s.reviewRepo.GetByIDs(ctx, reviewIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, rv := range reviews {
+			reviewMap[rv.ID] = rv
+		}
+	}
+
+	commentMap := make(map[uuid.UUID]*domain.Comment)
+	if len(commentIDs) > 0 {
+		comments, err := s.commentRepo.GetByIDs(ctx, commentIDs)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range comments {
+			commentMap[c.ID] = c
+		}
+	}
+
+	result := make([]*ports.ReportWithContext, 0, len(reports))
+	for _, r := range reports {
+		ctxOut := &ports.ReportWithContext{Report: r}
+		if r.TargetUserID != nil {
+			ctxOut.User = userMap[*r.TargetUserID]
+		}
+		if r.TargetReviewID != nil {
+			ctxOut.Review = reviewMap[*r.TargetReviewID]
+		}
+		if r.TargetCommentID != nil {
+			ctxOut.Comment = commentMap[*r.TargetCommentID]
+		}
+		result = append(result, ctxOut)
 	}
 	return result, nil
 }

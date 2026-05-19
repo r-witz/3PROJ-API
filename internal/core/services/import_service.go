@@ -15,10 +15,12 @@ import (
 
 	"duskforge-api/internal/core/domain"
 	"duskforge-api/internal/core/ports"
+	"duskforge-api/pkg/logger"
 	"duskforge-api/pkg/tmdb"
 	ws "duskforge-api/pkg/websocket"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type importService struct {
@@ -145,7 +147,14 @@ func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.U
 	s.setProgress(userID, progress)
 
 	// Launch the import in the background
-	go s.processImport(userID, uniqueFilms, watched, ratings, reviews, watchlist)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Logger.Error("import-processor panic", zap.Any("panic", r))
+			}
+		}()
+		s.processImport(userID, uniqueFilms, watched, ratings, reviews, watchlist)
+	}()
 
 	return progress, nil
 }
@@ -215,7 +224,7 @@ func (s *importService) processImport(
 		Failed: failed,
 	}
 
-	watchedCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, "watched")
+	watchedCol, err := s.collectionRepo.GetByUserIDAndSlug(ctx, userID, domain.SystemCollectionWatched)
 	if err != nil || watchedCol == nil {
 		s.setProgress(userID, &ports.ImportProgress{
 			Status: ports.ImportStatusFailed,
@@ -285,6 +294,25 @@ func (s *importService) processImport(
 	}
 
 	now := time.Now()
+
+	// Pre-fetch existing reviews in one query.
+	tmdbIDSet := make(map[int]struct{}, len(merged))
+	for key, m := range merged {
+		film, ok := resolved[key]
+		if !ok {
+			continue
+		}
+		if m.Rating < 0.5 || m.Rating > 5.0 {
+			continue
+		}
+		tmdbIDSet[film.tmdbID] = struct{}{}
+	}
+	tmdbIDs := make([]int, 0, len(tmdbIDSet))
+	for id := range tmdbIDSet {
+		tmdbIDs = append(tmdbIDs, id)
+	}
+	existingReviews, batchErr := s.reviewRepo.GetByUserIDAndTMDBIDs(ctx, userID, tmdbIDs)
+
 	for key, m := range merged {
 		film, ok := resolved[key]
 		if !ok {
@@ -295,9 +323,16 @@ func (s *importService) processImport(
 			continue
 		}
 
-		existing, err := s.reviewRepo.GetByUserIDAndTMDBID(ctx, userID, film.tmdbID)
-		if err != nil {
-			continue
+		var existing *domain.Review
+		if batchErr != nil {
+			// Fallback preserves original silent-skip-on-error semantics.
+			e, err := s.reviewRepo.GetByUserIDAndTMDBID(ctx, userID, film.tmdbID)
+			if err != nil {
+				continue
+			}
+			existing = e
+		} else {
+			existing = existingReviews[film.tmdbID]
 		}
 
 		hasReviewText := m.Review != ""
@@ -427,6 +462,11 @@ func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, 
 		wg.Add(1)
 		go func(it backfillItem) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Logger.Error("import-backfill-worker panic", zap.Any("panic", r))
+				}
+			}()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
@@ -467,6 +507,11 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 		wg.Add(1)
 		go func(key string, film watchedEntry) {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Logger.Error("import-resolve-worker panic", zap.Any("panic", r))
+				}
+			}()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
@@ -596,7 +641,7 @@ func parseWatched(archive *zip.Reader) []watchedEntry {
 		return nil
 	}
 
-	var entries []watchedEntry
+	entries := make([]watchedEntry, 0, len(records)-1)
 	for _, row := range records[1:] {
 		if len(row) < 3 {
 			continue
@@ -628,7 +673,7 @@ func parseRatings(archive *zip.Reader) []ratingEntry {
 		return nil
 	}
 
-	var entries []ratingEntry
+	entries := make([]ratingEntry, 0, len(records)-1)
 	for _, row := range records[1:] {
 		if len(row) < 5 {
 			continue
@@ -665,7 +710,7 @@ func parseReviews(archive *zip.Reader) []reviewEntry {
 		return nil
 	}
 
-	var entries []reviewEntry
+	entries := make([]reviewEntry, 0, len(records)-1)
 	for _, row := range records[1:] {
 		if len(row) < 7 {
 			continue
@@ -704,7 +749,7 @@ func parseWatchlist(archive *zip.Reader) []watchlistEntry {
 		return nil
 	}
 
-	var entries []watchlistEntry
+	entries := make([]watchlistEntry, 0, len(records)-1)
 	for _, row := range records[1:] {
 		if len(row) < 3 {
 			continue

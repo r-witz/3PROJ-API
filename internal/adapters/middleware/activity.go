@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"duskforge-api/internal/core/domain"
@@ -131,7 +130,7 @@ func ActivityLogger(activityRepo ports.ActivityRepository, achievementSvc ports.
 				_ = activityRepo.DeleteByFields(ctx, event.UserID, event.Type,
 					event.ReviewID, event.CollectionID, event.CommentID, event.TMDBID)
 			default:
-				fmt.Printf("unknown activity event action: %s\n", event.Action)
+				logger.Logger.Warn("unknown activity event action", zap.String("action", string(event.Action)))
 			}
 		}
 
@@ -143,6 +142,11 @@ func ActivityLogger(activityRepo ports.ActivityRepository, achievementSvc ports.
 		// downstream DB work. Using context.Background() keeps them alive past
 		// the request lifecycle.
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					logger.Logger.Error("achievement-evaluator panic", zap.Any("panic", r))
+				}
+			}()
 			bg := context.Background()
 			for uc := range evalSet {
 				if _, err := achievementSvc.EvaluateForEvent(bg, uc.userID, uc.category); err != nil {
