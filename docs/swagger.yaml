@@ -1485,46 +1485,6 @@ paths:
       summary: Search actors by name
       tags:
       - actors
-  /admin/comments/{commentId}:
-    delete:
-      description: Delete any comment by its ID, regardless of ownership
-      parameters:
-      - description: Comment ID to delete
-        format: uuid
-        in: path
-        name: commentId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Comment deleted successfully
-        "400":
-          description: Invalid comment ID
-          schema:
-            $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "403":
-          description: Insufficient permissions
-          schema:
-            $ref: '#/definitions/response.Response'
-        "404":
-          description: Comment not found
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete a comment (admin)
-      tags:
-      - admin
   /admin/reports:
     get:
       description: List reports with optional filters. Filter by status and/or target
@@ -1725,46 +1685,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Update a report's status
-      tags:
-      - admin
-  /admin/reviews/{reviewId}:
-    delete:
-      description: Delete any review by its ID, regardless of ownership
-      parameters:
-      - description: Review ID to delete
-        format: uuid
-        in: path
-        name: reviewId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Review deleted successfully
-        "400":
-          description: Invalid review ID
-          schema:
-            $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "403":
-          description: Insufficient permissions
-          schema:
-            $ref: '#/definitions/response.Response'
-        "404":
-          description: Review not found
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Delete a review (admin)
       tags:
       - admin
   /admin/users/{userId}/ban:

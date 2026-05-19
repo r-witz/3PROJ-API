@@ -112,6 +112,14 @@ func GetRole(c *gin.Context) (string, bool) {
 	return role, ok
 }
 
+func IsAdmin(c *gin.Context) bool {
+	role, ok := GetRole(c)
+	if !ok {
+		return false
+	}
+	return role == "admin" || role == "superadmin"
+}
+
 func IsAuthenticated(c *gin.Context) bool {
 	_, exists := c.Get(ContextKeyUserID)
 	return exists

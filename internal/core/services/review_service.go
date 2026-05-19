@@ -144,7 +144,7 @@ func (s *reviewService) GetByUserID(ctx context.Context, userID uuid.UUID, tmdbI
 	return result, total, nil
 }
 
-func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateReviewInput) (*ports.ReviewWithMeta, error) {
+func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool, input ports.UpdateReviewInput) (*ports.ReviewWithMeta, error) {
 	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -153,7 +153,7 @@ func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UU
 		return nil, domain.ErrReviewNotFound
 	}
 
-	if review.UserID != userID {
+	if review.UserID != userID && !isAdmin {
 		return nil, domain.ErrForbidden
 	}
 
@@ -193,7 +193,7 @@ func (s *reviewService) Update(ctx context.Context, id uuid.UUID, userID uuid.UU
 	return enriched, nil
 }
 
-func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool) error {
 	review, err := s.reviewRepo.GetByID(ctx, id)
 	if err != nil {
 		return domain.ErrInternal
@@ -202,7 +202,7 @@ func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UU
 		return domain.ErrReviewNotFound
 	}
 
-	if review.UserID != userID {
+	if review.UserID != userID && !isAdmin {
 		return domain.ErrForbidden
 	}
 

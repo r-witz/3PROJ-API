@@ -372,7 +372,7 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 		ContainsSpoilers: req.ContainsSpoilers,
 	}
 
-	result, err := h.reviewService.Update(c.Request.Context(), reviewID, userID, input)
+	result, err := h.reviewService.Update(c.Request.Context(), reviewID, userID, middleware.IsAdmin(c), input)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -417,7 +417,7 @@ func (h *ReviewHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.reviewService.Delete(c.Request.Context(), reviewID, userID); err != nil {
+	if err := h.reviewService.Delete(c.Request.Context(), reviewID, userID, middleware.IsAdmin(c)); err != nil {
 		response.HandleError(c, err)
 		return
 	}

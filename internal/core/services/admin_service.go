@@ -14,23 +14,17 @@ import (
 
 type AdminService struct {
 	userRepo    ports.UserRepository
-	reviewRepo  ports.ReviewRepository
-	commentRepo ports.CommentRepository
 	sessionRepo ports.SessionRepository
 	banCache    ports.BanCache
 }
 
 func NewAdminService(
 	userRepo ports.UserRepository,
-	reviewRepo ports.ReviewRepository,
-	commentRepo ports.CommentRepository,
 	sessionRepo ports.SessionRepository,
 	banCache ports.BanCache,
 ) *AdminService {
 	return &AdminService{
 		userRepo:    userRepo,
-		reviewRepo:  reviewRepo,
-		commentRepo: commentRepo,
 		sessionRepo: sessionRepo,
 		banCache:    banCache,
 	}
@@ -92,28 +86,6 @@ func (s *AdminService) UnbanUser(ctx context.Context, adminID uuid.UUID, targetU
 
 	_ = s.banCache.RemoveBanned(ctx, targetUserID)
 	return nil
-}
-
-func (s *AdminService) DeleteReview(ctx context.Context, reviewID uuid.UUID) error {
-	review, err := s.reviewRepo.GetByID(ctx, reviewID)
-	if err != nil {
-		return err
-	}
-	if review == nil {
-		return domain.ErrReviewNotFound
-	}
-	return s.reviewRepo.Delete(ctx, reviewID)
-}
-
-func (s *AdminService) DeleteComment(ctx context.Context, commentID uuid.UUID) error {
-	comment, err := s.commentRepo.GetByID(ctx, commentID)
-	if err != nil {
-		return err
-	}
-	if comment == nil {
-		return domain.ErrCommentNotFound
-	}
-	return s.commentRepo.Delete(ctx, commentID)
 }
 
 func (s *AdminService) SetUserRole(ctx context.Context, superAdminID uuid.UUID, targetUserID uuid.UUID, newRole domain.UserRole) error {

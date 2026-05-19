@@ -17,8 +17,6 @@ type SeedSuperAdminInput struct {
 type AdminService interface {
 	BanUser(ctx context.Context, adminID uuid.UUID, targetUserID uuid.UUID) error
 	UnbanUser(ctx context.Context, adminID uuid.UUID, targetUserID uuid.UUID) error
-	DeleteReview(ctx context.Context, reviewID uuid.UUID) error
-	DeleteComment(ctx context.Context, commentID uuid.UUID) error
 	SetUserRole(ctx context.Context, superAdminID uuid.UUID, targetUserID uuid.UUID, newRole domain.UserRole) error
 	SeedSuperAdmin(ctx context.Context, input SeedSuperAdminInput) error
 }

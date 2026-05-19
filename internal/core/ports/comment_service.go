@@ -30,8 +30,8 @@ type CommentService interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Comment, error)
 	GetByIDWithMeta(ctx context.Context, id uuid.UUID, requestingUserID *uuid.UUID) (*CommentWithMeta, error)
 	GetByReviewID(ctx context.Context, reviewID uuid.UUID, requestingUserID *uuid.UUID, offset, limit int) ([]*CommentWithMeta, int, error)
-	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input UpdateCommentInput) (*CommentWithMeta, error)
-	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool, input UpdateCommentInput) (*CommentWithMeta, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool) error
 	Like(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) error
 	Unlike(ctx context.Context, commentID uuid.UUID, userID uuid.UUID) error
 }

@@ -183,7 +183,7 @@ func (s *commentService) GetByReviewID(ctx context.Context, reviewID uuid.UUID, 
 	return result, total, nil
 }
 
-func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input ports.UpdateCommentInput) (*ports.CommentWithMeta, error) {
+func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool, input ports.UpdateCommentInput) (*ports.CommentWithMeta, error) {
 	comment, err := s.commentRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, domain.ErrInternal
@@ -192,7 +192,7 @@ func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.U
 		return nil, domain.ErrCommentNotFound
 	}
 
-	if comment.UserID != userID {
+	if comment.UserID != userID && !isAdmin {
 		return nil, domain.ErrForbidden
 	}
 
@@ -237,7 +237,7 @@ func (s *commentService) Update(ctx context.Context, id uuid.UUID, userID uuid.U
 	}, nil
 }
 
-func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool) error {
 	comment, err := s.commentRepo.GetByID(ctx, id)
 	if err != nil {
 		return domain.ErrInternal
@@ -246,7 +246,7 @@ func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.U
 		return domain.ErrCommentNotFound
 	}
 
-	if comment.UserID != userID {
+	if comment.UserID != userID && !isAdmin {
 		return domain.ErrForbidden
 	}
 

@@ -143,7 +143,7 @@ func main() {
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
-	adminService := services.NewAdminService(userRepo, reviewRepo, commentRepo, sessionRepo, banCache)
+	adminService := services.NewAdminService(userRepo, sessionRepo, banCache)
 	notifService := services.NewNotificationService(notifRepo, notifPrefRepo)
 	exportService := services.NewExportService(exportRepo)
 

@@ -265,64 +265,6 @@ func (h *AdminHandler) UnbanUser(c *gin.Context) {
 	c.Status(204)
 }
 
-// --- Admin: Content Moderation ---
-
-// @Summary      Delete a review (admin)
-// @Description  Delete any review by its ID, regardless of ownership
-// @Tags         admin
-// @Produce      json
-// @Security     BearerAuth
-// @Param        reviewId path string true "Review ID to delete" format(uuid)
-// @Success      204 "Review deleted successfully"
-// @Failure      400 {object} response.Response "Invalid review ID"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient permissions"
-// @Failure      404 {object} response.Response "Review not found"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/reviews/{reviewId} [delete]
-func (h *AdminHandler) DeleteReview(c *gin.Context) {
-	reviewID, err := uuid.Parse(c.Param("reviewId"))
-	if err != nil {
-		response.BadRequest(c, "Invalid review ID", nil)
-		return
-	}
-
-	if err := h.adminService.DeleteReview(c.Request.Context(), reviewID); err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	c.Status(204)
-}
-
-// @Summary      Delete a comment (admin)
-// @Description  Delete any comment by its ID, regardless of ownership
-// @Tags         admin
-// @Produce      json
-// @Security     BearerAuth
-// @Param        commentId path string true "Comment ID to delete" format(uuid)
-// @Success      204 "Comment deleted successfully"
-// @Failure      400 {object} response.Response "Invalid comment ID"
-// @Failure      401 {object} response.Response "Unauthorized"
-// @Failure      403 {object} response.Response "Insufficient permissions"
-// @Failure      404 {object} response.Response "Comment not found"
-// @Failure      500 {object} response.Response "Internal server error"
-// @Router       /admin/comments/{commentId} [delete]
-func (h *AdminHandler) DeleteComment(c *gin.Context) {
-	commentID, err := uuid.Parse(c.Param("commentId"))
-	if err != nil {
-		response.BadRequest(c, "Invalid comment ID", nil)
-		return
-	}
-
-	if err := h.adminService.DeleteComment(c.Request.Context(), commentID); err != nil {
-		response.HandleError(c, err)
-		return
-	}
-
-	c.Status(204)
-}
-
 // --- Admin: Report Management ---
 
 // @Summary      List reports

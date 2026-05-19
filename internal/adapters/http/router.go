@@ -297,8 +297,6 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 		{
 			adminOrSuper.POST("/users/:userId/ban", r.adminHandler.BanUser)
 			adminOrSuper.DELETE("/users/:userId/ban", r.adminHandler.UnbanUser)
-			adminOrSuper.DELETE("/reviews/:reviewId", r.adminHandler.DeleteReview)
-			adminOrSuper.DELETE("/comments/:commentId", r.adminHandler.DeleteComment)
 			adminOrSuper.GET("/reports", r.adminHandler.ListReports)
 			adminOrSuper.GET("/reports/:reportId", r.adminHandler.GetReport)
 			adminOrSuper.PATCH("/reports/:reportId", r.adminHandler.ResolveReport)

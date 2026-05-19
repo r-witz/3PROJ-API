@@ -259,7 +259,7 @@ func (h *CommentHandler) Update(c *gin.Context) {
 		ContainsSpoilers: req.ContainsSpoilers,
 	}
 
-	result, err := h.commentService.Update(c.Request.Context(), commentID, userID, input)
+	result, err := h.commentService.Update(c.Request.Context(), commentID, userID, middleware.IsAdmin(c), input)
 	if err != nil {
 		response.HandleError(c, err)
 		return
@@ -294,7 +294,7 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.commentService.Delete(c.Request.Context(), commentID, userID); err != nil {
+	if err := h.commentService.Delete(c.Request.Context(), commentID, userID, middleware.IsAdmin(c)); err != nil {
 		response.HandleError(c, err)
 		return
 	}

@@ -33,8 +33,8 @@ type ReviewService interface {
 	GetByID(ctx context.Context, id uuid.UUID, requestingUserID *uuid.UUID) (*ReviewWithMeta, error)
 	GetByTMDBID(ctx context.Context, tmdbID int, requestingUserID *uuid.UUID, offset, limit int, sort ReviewSort) ([]*ReviewWithMeta, int, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID, tmdbID *int, requestingUserID *uuid.UUID, offset, limit int, sort ReviewSort) ([]*ReviewWithMeta, int, error)
-	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, input UpdateReviewInput) (*ReviewWithMeta, error)
-	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool, input UpdateReviewInput) (*ReviewWithMeta, error)
+	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID, isAdmin bool) error
 	Like(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID) error
 	Unlike(ctx context.Context, reviewID uuid.UUID, userID uuid.UUID) error
 }
