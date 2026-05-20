@@ -8297,12 +8297,20 @@ const docTemplate = `{
                     "type": "string",
                     "example": "pending"
                 },
+                "target_comment_contains_spoilers": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "target_comment_content": {
                     "type": "string",
                     "example": "I totally agree with this review."
                 },
                 "target_comment_id": {
                     "type": "string"
+                },
+                "target_review_contains_spoilers": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "target_review_content": {
                     "type": "string",
@@ -8318,6 +8326,10 @@ const docTemplate = `{
                 "target_user_id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440002"
+                },
+                "target_user_is_banned": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "target_user_username": {
                     "type": "string",
