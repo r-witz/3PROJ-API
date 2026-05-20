@@ -25,7 +25,6 @@ type AchievementRepository interface {
 
 	Unlock(ctx context.Context, userID, achievementID uuid.UUID) (bool, error)
 
-	// Signals used by the criterion registry.
 	CountCommentsByUser(ctx context.Context, userID uuid.UUID) (int, error)
 	CountWrittenReviewsByUser(ctx context.Context, userID uuid.UUID) (int, error)
 	CountReviewsByUserWithRating(ctx context.Context, userID uuid.UUID, rating float64) (int, error)

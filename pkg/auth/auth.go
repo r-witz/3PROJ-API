@@ -6,7 +6,7 @@ const (
 	MaxBcryptCost     = 14
 
 	MinPasswordLength = 8
-	MaxPasswordLength = 72 // bcrypt limitation
+	MaxPasswordLength = 72
 )
 
 type TokenType string

@@ -22,7 +22,7 @@ import (
 	"duskforge-api/pkg/tmdb"
 	ws "duskforge-api/pkg/websocket"
 
-	_ "duskforge-api/docs" // Import generated docs
+	_ "duskforge-api/docs"
 
 	"go.uber.org/zap"
 )
@@ -140,14 +140,14 @@ func main() {
 
 	followService := services.NewFollowService(followRepo, userRepo)
 	blockService := services.NewBlockService(blockRepo, followRepo, userRepo, convStateRepo)
-	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo)
-	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo)
+	reviewService := services.NewReviewService(reviewRepo, reviewLikeRepo, commentRepo, collectionService, userRepo, blockRepo, reportRepo)
+	commentService := services.NewCommentService(commentRepo, commentLikeRepo, reviewRepo, userRepo, blockRepo, reportRepo)
 	activityService := services.NewActivityService(activityRepo, userRepo, reviewRepo, collectionRepo, commentRepo)
 	messageService := services.NewMessageService(messageRepo, followRepo, userRepo, blockRepo, attachmentRepo, reactionRepo, convStateRepo, minioStorage)
 	movieService := services.NewMovieService(cachedTMDB, reviewRepo)
 	actorService := services.NewActorService(cachedTMDB, reviewRepo)
 	reportService := services.NewReportService(reportRepo, userRepo, reviewRepo, commentRepo)
-	adminService := services.NewAdminService(userRepo, sessionRepo, banCache)
+	adminService := services.NewAdminService(userRepo, sessionRepo, banCache, reportRepo)
 	notifService := services.NewNotificationService(notifRepo, notifPrefRepo)
 	exportService := services.NewExportService(exportRepo)
 

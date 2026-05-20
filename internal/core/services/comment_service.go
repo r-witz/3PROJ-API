@@ -16,6 +16,7 @@ type commentService struct {
 	reviewRepo      ports.ReviewRepository
 	userRepo        ports.UserRepository
 	blockRepo       ports.BlockRepository
+	reportRepo      ports.ReportRepository
 }
 
 func NewCommentService(
@@ -24,6 +25,7 @@ func NewCommentService(
 	reviewRepo ports.ReviewRepository,
 	userRepo ports.UserRepository,
 	blockRepo ports.BlockRepository,
+	reportRepo ports.ReportRepository,
 ) ports.CommentService {
 	return &commentService{
 		commentRepo:     commentRepo,
@@ -31,6 +33,7 @@ func NewCommentService(
 		reviewRepo:      reviewRepo,
 		userRepo:        userRepo,
 		blockRepo:       blockRepo,
+		reportRepo:      reportRepo,
 	}
 }
 
@@ -248,6 +251,20 @@ func (s *commentService) Delete(ctx context.Context, id uuid.UUID, userID uuid.U
 
 	if comment.UserID != userID && !isAdmin {
 		return domain.ErrForbidden
+	}
+
+	reports, err := s.reportRepo.List(ctx, ports.ReportFilter{TargetCommentID: &id})
+	if err != nil {
+		return domain.ErrInternal
+	}
+	now := time.Now()
+	for _, r := range reports {
+		r.Status = domain.ReportStatusResolved
+		r.ResolvedAt = &now
+		r.ResolverID = nil
+		if err := s.reportRepo.Update(ctx, r); err != nil {
+			return domain.ErrInternal
+		}
 	}
 
 	if err := s.commentRepo.Delete(ctx, id); err != nil {

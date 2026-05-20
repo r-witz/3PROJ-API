@@ -18,6 +18,7 @@ type reviewService struct {
 	collectionSvc  ports.CollectionService
 	userRepo       ports.UserRepository
 	blockRepo      ports.BlockRepository
+	reportRepo     ports.ReportRepository
 }
 
 func NewReviewService(
@@ -27,6 +28,7 @@ func NewReviewService(
 	collectionSvc ports.CollectionService,
 	userRepo ports.UserRepository,
 	blockRepo ports.BlockRepository,
+	reportRepo ports.ReportRepository,
 ) ports.ReviewService {
 	return &reviewService{
 		reviewRepo:     reviewRepo,
@@ -35,6 +37,7 @@ func NewReviewService(
 		collectionSvc:  collectionSvc,
 		userRepo:       userRepo,
 		blockRepo:      blockRepo,
+		reportRepo:     reportRepo,
 	}
 }
 
@@ -72,12 +75,12 @@ func (s *reviewService) Create(ctx context.Context, userID uuid.UUID, tmdbID int
 
 	_, err = s.collectionSvc.AddItem(ctx, userID, domain.SystemCollectionWatched, tmdbID)
 	if err != nil && !errors.Is(err, domain.ErrCollectionItemAlreadyExists) {
-		// silently ignore — non-critical
+		_ = err
 	}
 
 	err = s.collectionSvc.RemoveItem(ctx, userID, "to-watch", tmdbID)
 	if err != nil && !errors.Is(err, domain.ErrCollectionItemNotFound) {
-		// silently ignore — non-critical
+		_ = err
 	}
 
 	return review, nil
@@ -204,6 +207,20 @@ func (s *reviewService) Delete(ctx context.Context, id uuid.UUID, userID uuid.UU
 
 	if review.UserID != userID && !isAdmin {
 		return domain.ErrForbidden
+	}
+
+	reports, err := s.reportRepo.List(ctx, ports.ReportFilter{TargetReviewID: &id})
+	if err != nil {
+		return domain.ErrInternal
+	}
+	now := time.Now()
+	for _, r := range reports {
+		r.Status = domain.ReportStatusResolved
+		r.ResolvedAt = &now
+		r.ResolverID = nil
+		if err := s.reportRepo.Update(ctx, r); err != nil {
+			return domain.ErrInternal
+		}
 	}
 
 	if err := s.reviewRepo.Delete(ctx, id); err != nil {

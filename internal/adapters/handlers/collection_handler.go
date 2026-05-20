@@ -416,9 +416,6 @@ func (h *CollectionHandler) AddItem(c *gin.Context) {
 			TMDBID:       &req.TMDBID,
 		})
 	case domain.SystemCollectionWatched:
-		// Watched is a system collection we deliberately keep off the activity
-		// feed; SuppressLog still fires the watching-category evaluation so
-		// watched_count / watched_runtime unlock.
 		middleware.QueueActivity(c, middleware.ActivityEvent{
 			Action:       middleware.ActivityCreate,
 			Type:         domain.ActivityTypeCollectionItemAdded,

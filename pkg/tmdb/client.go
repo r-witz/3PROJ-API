@@ -83,7 +83,6 @@ func parseAPIKeys(raw string) []string {
 	return keys
 }
 
-// nextKey returns the next API key using round-robin.
 func (c *Client) nextKey() string {
 	idx := c.keyIndex.Add(1) - 1
 	return c.apiKeys[idx%uint64(len(c.apiKeys))]
@@ -172,7 +171,6 @@ func (c *Client) buildURL(endpoint, apiKey string, params url.Values) string {
 }
 
 func (c *Client) doRequest(ctx context.Context, method, endpoint string, params url.Values) ([]byte, error) {
-	// Try up to len(apiKeys) different keys on 429, then one final wait+retry.
 	maxAttempts := len(c.apiKeys) + 1
 	var lastErr error
 	var retryAfter time.Duration
@@ -181,7 +179,6 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 		apiKey := c.nextKey()
 		fullURL := c.buildURL(endpoint, apiKey, params)
 
-		// If the previous attempt got a 429 and we've exhausted all keys, wait before retrying.
 		if attempt == len(c.apiKeys) && retryAfter > 0 {
 			logger.Logger.Warn("TMDB all keys rate limited, waiting",
 				zap.String("endpoint", endpoint),
@@ -243,8 +240,6 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, params 
 	return nil, &RequestError{Operation: endpoint, Err: lastErr}
 }
 
-// parseRetryAfter parses the Retry-After header value (in seconds).
-// Falls back to 1 second if missing or unparseable.
 func parseRetryAfter(header string) time.Duration {
 	if header == "" {
 		return 1 * time.Second

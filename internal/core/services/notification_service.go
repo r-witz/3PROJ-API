@@ -26,8 +26,6 @@ func NewNotificationService(
 }
 
 func (s *notificationService) Notify(ctx context.Context, input ports.NotifyInput) (*domain.Notification, error) {
-	// System and achievement notifications are self-sourced; for peer-triggered
-	// types we skip notifying the actor about themselves.
 	peerTriggered := input.Type != domain.NotificationTypeSystem &&
 		input.Type != domain.NotificationTypeAchievementUnlocked
 	if peerTriggered && input.ActorID == input.UserID {

@@ -28,11 +28,11 @@ func NewWebSocketHandler(hub *ws.Hub, accessTokenSecret string) *WebSocketHandle
 }
 
 // @Summary      WebSocket connection
-// @Description  Establishes a WebSocket connection for real-time notifications. The connection is read-only — actions are performed via REST endpoints. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, conversation.closed, conversation.reopened, messaging.blocked, messaging.unblocked, import.progress, user.banned, notification.new. The import.progress event is sent during a Letterboxd import with fields: status (processing|completed|failed), phase (resolving|importing|done), resolved, total, and result (when completed). The conversation.closed and conversation.reopened events are sent when a user closes or reopens a conversation, with payload: { other_user_id: string }.
+// @Description  Establishes a WebSocket connection for real-time notifications. The connection is read-only - actions are performed via REST endpoints. Events pushed: message.new, message.updated, message.deleted, reaction.added, reaction.removed, conversation.read, conversation.closed, conversation.reopened, messaging.blocked, messaging.unblocked, import.progress, user.banned, notification.new. The import.progress event is sent during a Letterboxd import with fields: status (processing|completed|failed), phase (resolving|importing|done), resolved, total, and result (when completed). The conversation.closed and conversation.reopened events are sent when a user closes or reopens a conversation, with payload: { other_user_id: string }.
 // @Tags         websocket
 // @Produce      json
 // @Param        token query string true "JWT access token"
-// @Success      101 "Switching Protocols — WebSocket connection established"
+// @Success      101 "Switching Protocols - WebSocket connection established"
 // @Failure      401 {string} string "Missing or invalid token"
 // @Router       /ws [get]
 func (h *WebSocketHandler) Connect(c *gin.Context) {

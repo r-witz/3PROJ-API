@@ -20,22 +20,11 @@ func NewAchievementHandler(achievementSvc ports.AchievementService) *Achievement
 	return &AchievementHandler{achievementSvc: achievementSvc}
 }
 
-// AchievementProgressResponse represents the caller's progress toward an
-// achievement. Current is capped at Target so progress bars never overflow.
 type AchievementProgressResponse struct {
 	Current int `json:"current" example:"3"`
 	Target  int `json:"target" example:"25"`
 }
 
-// AchievementResponse is the canonical achievement payload returned everywhere
-// achievements are surfaced (list, detail, profile, recent unlocks). Progress
-// and unlock fields are populated only when the request is authenticated.
-//
-// On the catalog List endpoint each entry is a family roll-up: the object
-// describes the highest tier the caller has unlocked in that ladder (or the
-// bronze tier when nothing is unlocked yet), and `progress.target` is the
-// threshold of the next tier — or the current tier's threshold once the
-// ladder is maxed out.
 type AchievementResponse struct {
 	ID          string                       `json:"id" example:"018f1234-1234-7abc-8def-123456789abc" format:"uuid"`
 	Code        string                       `json:"code" example:"first_review"`
@@ -53,8 +42,8 @@ type AchievementResponse struct {
 }
 
 // @Summary      List achievements
-// @Description  Returns one entry per progression ladder (family) — not one per tier. A family groups every achievement that shares the same progression signal (e.g. all four `review_count` tiers roll up into a single entry). Each entry describes the caller's state on that ladder:
-// @Description  • `family` is a stable string identifier for the ladder (e.g. `review_count`, `watched_runtime`, `rating_given:5`) — use it to key rows in the UI, since `id` changes as the caller climbs tiers.
+// @Description  Returns one entry per progression ladder (family) - not one per tier. A family groups every achievement that shares the same progression signal (e.g. all four `review_count` tiers roll up into a single entry). Each entry describes the caller's state on that ladder:
+// @Description  • `family` is a stable string identifier for the ladder (e.g. `review_count`, `watched_runtime`, `rating_given:5`) - use it to key rows in the UI, since `id` changes as the caller climbs tiers.
 // @Description  • The top-level achievement fields (`id`, `code`, `name`, `description`, `tier`, `icon_url`) describe the **highest tier the caller has unlocked** in that family. When nothing is unlocked yet, the bronze tier is returned.
 // @Description  • `unlocked` is `true` whenever the returned tier has been earned (every case except "nothing unlocked yet"). `unlocked_at` carries the timestamp of that unlock.
 // @Description  • `progress.target` is the threshold of the **next tier** to work toward. When the ladder is maxed out (platinum unlocked) `target` stays on the platinum threshold and `current == target`. When nothing is unlocked yet, `target` is the bronze threshold.
@@ -129,7 +118,7 @@ func (h *AchievementHandler) GetByID(c *gin.Context) {
 }
 
 // @Summary      List a user's achievements
-// @Description  Returns the family roll-up for the given user — same shape as `GET /achievements`, but with unlock state and progress evaluated against the target user instead of the caller. Intended for public profile pages so visitors can see another user's badges and progression toward the next tier. Secret achievements the target user has not unlocked are hidden.
+// @Description  Returns the family roll-up for the given user - same shape as `GET /achievements`, but with unlock state and progress evaluated against the target user instead of the caller. Intended for public profile pages so visitors can see another user's badges and progression toward the next tier. Secret achievements the target user has not unlocked are hidden.
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth

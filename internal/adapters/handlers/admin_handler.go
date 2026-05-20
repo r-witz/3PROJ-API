@@ -27,7 +27,6 @@ func NewAdminHandler(adminService ports.AdminService, reportService ports.Report
 	}
 }
 
-// --- Request / Response DTOs ---
 
 type CreateReportRequest struct {
 	Reason          domain.ReportReason `json:"reason" binding:"required,oneof=spam harassment spoiler inappropriate other" example:"spam"`
@@ -66,7 +65,6 @@ type SetUserRoleRequest struct {
 	Role domain.UserRole `json:"role" binding:"required,oneof=user admin superadmin" example:"admin"`
 }
 
-// --- Helpers ---
 
 func toReportResponse(r *domain.Report) ReportResponse {
 	resp := ReportResponse{
@@ -121,7 +119,6 @@ func toReportResponseWithContext(rc *ports.ReportWithContext) ReportResponse {
 	return resp
 }
 
-// --- User-facing: Submit Report ---
 
 // @Summary      Submit a report
 // @Description  Report a user, review, or comment for moderation. Exactly one target must be specified.
@@ -188,7 +185,6 @@ func (h *AdminHandler) SubmitReport(c *gin.Context) {
 	response.Created(c, toReportResponse(report))
 }
 
-// --- Admin: User Management ---
 
 // @Summary      Ban a user
 // @Description  Ban a user by their ID. Admins cannot ban other admins or super-admins. A "user.banned" WebSocket event is sent to all users who have a conversation with the banned user.
@@ -272,7 +268,6 @@ func (h *AdminHandler) UnbanUser(c *gin.Context) {
 	c.Status(204)
 }
 
-// --- Admin: Report Management ---
 
 // @Summary      List reports
 // @Description  List reports with optional filters. Filter by status and/or target user ID.
@@ -426,7 +421,6 @@ func (h *AdminHandler) DeleteReport(c *gin.Context) {
 	c.Status(204)
 }
 
-// --- Super-Admin: Role Management ---
 
 // @Summary      Set user role
 // @Description  Change a user's role. Only super-admins can use this endpoint.

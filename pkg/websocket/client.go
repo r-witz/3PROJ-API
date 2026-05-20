@@ -32,8 +32,6 @@ func NewClient(hub *Hub, conn *gorillaws.Conn, userID uuid.UUID) *Client {
 	}
 }
 
-// ReadPump detects disconnection and handles pong frames.
-// Incoming messages are discarded (WS is read-only).
 func (c *Client) ReadPump() {
 	defer func() {
 		c.hub.Unregister(c)
@@ -54,7 +52,6 @@ func (c *Client) ReadPump() {
 	}
 }
 
-// WritePump sends events from the send channel and periodic pings.
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {

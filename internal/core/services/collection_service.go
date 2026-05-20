@@ -386,7 +386,6 @@ func (s *collectionService) GetItems(ctx context.Context, userID uuid.UUID, slug
 		return nil, 0, domain.ErrInternal
 	}
 
-	// Fast path: default sort by added_at uses SQL-level pagination.
 	if sortField == ports.CollectionItemSortByAddedAt && !sortOpt.Asc {
 		items, err := s.collectionItemRepo.GetByCollectionIDPaginated(ctx, collection.ID, offset, limit)
 		if err != nil {
@@ -554,7 +553,6 @@ func sortCollectionItemResults(results []ports.MovieSearchResult, addedAtByID ma
 	})
 }
 
-// cmpFloatPtr reports whether a should come before b. Nil values always sink to the bottom regardless of direction.
 func cmpFloatPtr(a, b *float64, asc bool) bool {
 	if a == nil && b == nil {
 		return false
@@ -571,7 +569,6 @@ func cmpFloatPtr(a, b *float64, asc bool) bool {
 	return *a > *b
 }
 
-// cmpString orders empty strings last regardless of direction.
 func cmpString(a, b string, asc bool) bool {
 	if a == "" && b == "" {
 		return false

@@ -60,11 +60,9 @@ func (s *blockService) BlockUser(ctx context.Context, blockerID, blockedID uuid.
 		return domain.ErrInternal
 	}
 
-	// Remove follows in both directions
 	_ = s.followRepo.Delete(ctx, blockerID, blockedID)
 	_ = s.followRepo.Delete(ctx, blockedID, blockerID)
 
-	// Close conversations for both users
 	now := time.Now()
 	_ = s.convStateRepo.Upsert(ctx, &domain.ConversationState{
 		UserID:      blockerID,

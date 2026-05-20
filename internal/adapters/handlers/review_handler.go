@@ -123,10 +123,6 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 		UserID:   userID,
 		ReviewID: &review.ID,
 	})
-	// Creating a review auto-adds the movie to the watched collection.
-	// We suppress the feed log so users don't see two events, but we still
-	// fire the watching-category evaluation so watched_count / watched_runtime
-	// achievements can unlock.
 	middleware.QueueActivity(c, middleware.ActivityEvent{
 		Action:      middleware.ActivityCreate,
 		Type:        domain.ActivityTypeCollectionItemAdded,

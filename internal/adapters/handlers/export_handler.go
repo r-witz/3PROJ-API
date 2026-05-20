@@ -21,7 +21,6 @@ func NewExportHandler(exportService ports.ExportService) *ExportHandler {
 	return &ExportHandler{exportService: exportService}
 }
 
-// ExportUserData godoc
 // @Summary      Export user data (GDPR)
 // @Description  Export all personal data associated with the authenticated user as a JSON file download. Data is generated on-the-fly and not stored on disk.
 // @Tags         export

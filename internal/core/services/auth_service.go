@@ -227,7 +227,7 @@ func (s *authService) SendVerificationCode(ctx context.Context, email string) er
 		return domain.ErrInternal
 	}
 	if user == nil {
-		return nil // silent success to prevent email enumeration
+		return nil
 	}
 
 	if user.EmailVerified {
@@ -279,7 +279,7 @@ func (s *authService) RequestPasswordReset(ctx context.Context, email string) er
 		return domain.ErrInternal
 	}
 	if user == nil {
-		return nil // silent success to prevent email enumeration
+		return nil
 	}
 
 	canRequest, err := s.verificationRepo.CanRequest(ctx, email, domain.VerificationCodePurposePasswordReset)
@@ -351,7 +351,6 @@ func (s *authService) ResetPassword(ctx context.Context, input ports.ResetPasswo
 }
 
 func (s *authService) RequestEmailChange(ctx context.Context, userID uuid.UUID, newEmail string) error {
-	// Check the new email isn't already taken
 	existing, err := s.userRepo.GetByEmail(ctx, newEmail)
 	if err != nil {
 		return domain.ErrInternal
@@ -412,10 +411,6 @@ func (s *authService) ConfirmEmailChange(ctx context.Context, userID uuid.UUID, 
 		return domain.ErrInternal
 	}
 
-	// Find the pending email change code for this user
-	// We need to scan all email_change keys for this user, but we stored the code keyed by the NEW email.
-	// The code contains the userID, so we retrieve it by iterating... but that's not efficient.
-	// Instead, we store a pointer from userID -> newEmail in Redis alongside the code.
 	newEmail, err := s.verificationRepo.GetPendingEmail(ctx, userID)
 	if err != nil {
 		return domain.ErrInternal
@@ -432,7 +427,6 @@ func (s *authService) ConfirmEmailChange(ctx context.Context, userID uuid.UUID, 
 		return domain.ErrVerificationCodeInvalid
 	}
 
-	// Check the new email is still available
 	existing, err := s.userRepo.GetByEmail(ctx, newEmail)
 	if err != nil {
 		return domain.ErrInternal

@@ -7,8 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// LocaleFromAcceptLanguage parses the Accept-Language header and returns the
-// best matching UserLocale, defaulting to UserLocaleEN.
 func LocaleFromAcceptLanguage(acceptLang string) UserLocale {
 	if acceptLang == "" {
 		return UserLocaleEN

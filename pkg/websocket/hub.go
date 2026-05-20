@@ -79,7 +79,6 @@ func (h *Hub) SendToUser(userID uuid.UUID, event Event) {
 		select {
 		case client.send <- event:
 		default:
-			// Drop message if client buffer is full
 		}
 	}
 }

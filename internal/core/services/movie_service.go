@@ -305,7 +305,6 @@ func (s *movieService) GetTrailer(ctx context.Context, movieID int, language str
 		return nil, domain.ErrTMDBError
 	}
 
-	// Find best YouTube trailer (prefer official trailers)
 	var bestTrailer *tmdb.Video
 	for i := range videos.Results {
 		v := &videos.Results[i]
@@ -319,7 +318,6 @@ func (s *movieService) GetTrailer(ctx context.Context, movieID int, language str
 		}
 	}
 
-	// Fallback to any YouTube video if no trailer found
 	if bestTrailer == nil {
 		for i := range videos.Results {
 			v := &videos.Results[i]

@@ -29,9 +29,6 @@ type criterionSpec struct {
 	Params json.RawMessage `json:"params"`
 }
 
-// categoryForCriterion returns which category signal cluster a given criterion
-// belongs to. It lets EvaluateForEvent evaluate only criteria relevant to the
-// triggering activity category.
 func categoryForCriterion(kind criterionKind) domain.AchievementCategory {
 	switch kind {
 	case criterionReviewCount, criterionRatingGiven:
@@ -47,8 +44,6 @@ func categoryForCriterion(kind criterionKind) domain.AchievementCategory {
 	}
 }
 
-// evalContext holds shared signals for a single EvaluateForEvent call so
-// multiple criteria reuse the same queries.
 type evalContext struct {
 	ctx             context.Context
 	userID          uuid.UUID
@@ -96,8 +91,6 @@ type ratingGivenParams struct {
 	Threshold int     `json:"threshold"`
 }
 
-// evaluateCriterion resolves the current/target for one achievement against
-// the caller's signals. Returns (current, target, done, error).
 func evaluateCriterion(e *evalContext, raw json.RawMessage) (int, int, bool, error) {
 	var spec criterionSpec
 	if err := json.Unmarshal(raw, &spec); err != nil {
@@ -207,10 +200,6 @@ func evaluateCriterion(e *evalContext, raw json.RawMessage) (int, int, bool, err
 	}
 }
 
-// familyKeyForCriterion derives a grouping key so every tier of the same
-// progression ladder rolls up into one entry. Criterion kind is usually
-// enough, but rating_given is keyed by rating too so admins can run
-// separate ladders per star value.
 func familyKeyForCriterion(raw json.RawMessage) (string, error) {
 	var spec criterionSpec
 	if err := json.Unmarshal(raw, &spec); err != nil {

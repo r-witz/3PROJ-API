@@ -31,8 +31,7 @@ type importService struct {
 	hub                *ws.Hub
 	achievementSvc     ports.AchievementService
 
-	// In-memory progress tracking per user
-	progress sync.Map // map[uuid.UUID]*ports.ImportProgress
+	progress sync.Map
 }
 
 func NewImportService(
@@ -91,7 +90,6 @@ func filmKey(name string, year int) string {
 }
 
 func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.UUID, zipReader io.ReaderAt, zipSize int64) (*ports.ImportProgress, error) {
-	// Check if an import is already running for this user
 	if existing, ok := s.progress.Load(userID); ok {
 		p := existing.(*ports.ImportProgress)
 		if p.Status == ports.ImportStatusProcessing {
@@ -104,13 +102,11 @@ func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.U
 		return nil, domain.ErrInvalidImportFile
 	}
 
-	// Parse CSVs synchronously (fast, no API calls)
 	watched := parseWatched(archive)
 	ratings := parseRatings(archive)
 	reviews := parseReviews(archive)
 	watchlist := parseWatchlist(archive)
 
-	// Collect all unique films
 	uniqueFilms := make(map[string]watchedEntry)
 	for _, w := range watched {
 		key := filmKey(w.Name, w.Year)
@@ -146,7 +142,6 @@ func (s *importService) StartImportLetterboxd(ctx context.Context, userID uuid.U
 	}
 	s.setProgress(userID, progress)
 
-	// Launch the import in the background
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -166,7 +161,6 @@ func (s *importService) GetImportStatus(userID uuid.UUID) *ports.ImportProgress 
 	return nil
 }
 
-// setProgress stores progress in memory (for polling) and pushes it via WebSocket.
 func (s *importService) setProgress(userID uuid.UUID, p *ports.ImportProgress) {
 	s.progress.Store(userID, p)
 	s.hub.SendToUser(userID, ws.Event{
@@ -175,8 +169,6 @@ func (s *importService) setProgress(userID uuid.UUID, p *ports.ImportProgress) {
 	})
 }
 
-// setProgressQuiet stores progress in memory for polling but does NOT push via WebSocket.
-// Use this for high-frequency incremental updates to avoid spamming the client.
 func (s *importService) setProgressQuiet(userID uuid.UUID, p *ports.ImportProgress) {
 	s.progress.Store(userID, p)
 }
@@ -194,9 +186,6 @@ func (s *importService) processImport(
 
 	total := len(uniqueFilms)
 
-	// Phase 1: Resolve all films to TMDB IDs (runtime is backfilled later)
-	// Throttle WebSocket events to ~1% increments to avoid spamming the client.
-	// In-memory progress is always up to date for polling via GET /status.
 	wsInterval := max(total/100, 1)
 	resolved, failed := s.resolveFilms(ctx, uniqueFilms, func(count int) {
 		p := &ports.ImportProgress{
@@ -219,7 +208,6 @@ func (s *importService) processImport(
 		Resolved: len(resolved),
 	})
 
-	// Phase 2: Import into collections and create reviews
 	result := &ports.ImportResult{
 		Failed: failed,
 	}
@@ -245,7 +233,6 @@ func (s *importService) processImport(
 		return
 	}
 
-	// Import watched films
 	for _, w := range watched {
 		key := filmKey(w.Name, w.Year)
 		film, ok := resolved[key]
@@ -259,7 +246,6 @@ func (s *importService) processImport(
 		}
 	}
 
-	// Import watchlist
 	for _, w := range watchlist {
 		key := filmKey(w.Name, w.Year)
 		film, ok := resolved[key]
@@ -273,7 +259,6 @@ func (s *importService) processImport(
 		}
 	}
 
-	// Merge ratings and reviews by film key
 	type mergedReview struct {
 		Rating float64
 		Review string
@@ -295,7 +280,6 @@ func (s *importService) processImport(
 
 	now := time.Now()
 
-	// Pre-fetch existing reviews in one query.
 	tmdbIDSet := make(map[int]struct{}, len(merged))
 	for key, m := range merged {
 		film, ok := resolved[key]
@@ -325,7 +309,6 @@ func (s *importService) processImport(
 
 		var existing *domain.Review
 		if batchErr != nil {
-			// Fallback preserves original silent-skip-on-error semantics.
 			e, err := s.reviewRepo.GetByUserIDAndTMDBID(ctx, userID, film.tmdbID)
 			if err != nil {
 				continue
@@ -369,7 +352,6 @@ func (s *importService) processImport(
 			result.Ratings.Imported++
 		}
 
-		// Ensure reviewed films are in the watched collection
 		s.addCollectionItem(ctx, watchedCol.ID, film.tmdbID, film.runtime)
 	}
 
@@ -377,15 +359,10 @@ func (s *importService) processImport(
 		result.Failed = []ports.ImportFailure{}
 	}
 
-	// Bulk writes here bypassed the ActivityLogger middleware, so achievement
-	// evaluation never fired per item. Run a single sweep across all
-	// categories now that the data is in — newly-eligible badges unlock and
-	// the user gets notifications before they see "done".
 	if s.achievementSvc != nil {
 		_, _ = s.achievementSvc.EvaluateAllForUser(ctx, userID)
 	}
 
-	// Mark as completed — user sees their films immediately
 	s.setProgress(userID, &ports.ImportProgress{
 		Status:   ports.ImportStatusCompleted,
 		Phase:    "done",
@@ -394,8 +371,6 @@ func (s *importService) processImport(
 		Result:   result,
 	})
 
-	// Phase 3: Backfill runtimes at lower priority so interactive users aren't impacted.
-	// Collect all (collectionID, tmdbID) pairs that need runtime.
 	seen := make(map[int]bool)
 	var backfillItems []backfillItem
 
@@ -421,8 +396,6 @@ func (s *importService) processImport(
 	s.backfillRuntimes(ctx, userID, backfillItems)
 }
 
-// addCollectionItem adds a film to a collection directly.
-// Returns true if the item was added, false if it already existed or on error.
 func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid.UUID, tmdbID int, runtime int16) bool {
 	existing, err := s.collectionItemRepo.GetByCollectionIDAndTMDBID(ctx, collectionID, tmdbID)
 	if err != nil || existing != nil {
@@ -443,8 +416,6 @@ func (s *importService) addCollectionItem(ctx context.Context, collectionID uuid
 	return true
 }
 
-// backfillRuntimes fetches movie details and updates runtimes at lower concurrency.
-// This runs after the import is already marked "completed" so the user isn't waiting.
 func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, items []backfillItem) {
 	if len(items) == 0 {
 		return
@@ -456,7 +427,7 @@ func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, 
 	})
 
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 5) // Lower concurrency to leave headroom for interactive users
+	sem := make(chan struct{}, 5)
 
 	for _, item := range items {
 		wg.Add(1)
@@ -484,17 +455,11 @@ func (s *importService) backfillRuntimes(ctx context.Context, userID uuid.UUID, 
 
 	wg.Wait()
 
-	// Runtime-based criteria (watched_runtime) saw 0 minutes during the first
-	// evaluation pass because rows were inserted with runtime=0. Now that real
-	// runtimes are populated, re-evaluate the watching category so those badges
-	// finally unlock.
 	if s.achievementSvc != nil {
 		_, _ = s.achievementSvc.EvaluateForEvent(ctx, userID, domain.AchievementCategoryWatching)
 	}
 }
 
-// resolveFilms resolves film names to TMDB IDs concurrently using scored matching.
-// Runtime is NOT fetched here — it is backfilled in a separate lower-priority phase.
 func (s *importService) resolveFilms(ctx context.Context, films map[string]watchedEntry, onProgress func(int)) (map[string]resolvedFilm, []ports.ImportFailure) {
 	resolved := make(map[string]resolvedFilm)
 	var failed []ports.ImportFailure
@@ -542,10 +507,7 @@ func (s *importService) resolveFilms(ctx context.Context, films map[string]watch
 	return resolved, failed
 }
 
-// searchAndMatch searches TMDB for a film using scored matching with year fallback.
-// Returns the best matching TMDB ID and true, or 0 and false if no good match.
 func (s *importService) searchAndMatch(ctx context.Context, title string, year int) (int, bool) {
-	// First attempt: search with title + primary_release_year
 	resp, err := s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
 		Query:              title,
 		PrimaryReleaseYear: year,
@@ -558,7 +520,6 @@ func (s *importService) searchAndMatch(ctx context.Context, title string, year i
 		}
 	}
 
-	// Fallback: search without year filter for year-mismatch cases
 	resp, err = s.tmdbClient.SearchMovies(ctx, tmdb.SearchMoviesParams{
 		Query:    title,
 		Language: "en-US",
@@ -573,16 +534,13 @@ func (s *importService) searchAndMatch(ctx context.Context, title string, year i
 	return 0, false
 }
 
-// CSV parsing helpers
 
 func findFileInZip(archive *zip.Reader, filename string) *zip.File {
-	// Prefer exact root-level match first
 	for _, f := range archive.File {
 		if strings.EqualFold(f.Name, filename) {
 			return f
 		}
 	}
-	// Fallback: match by filename in any subdirectory
 	for _, f := range archive.File {
 		if idx := strings.LastIndex(f.Name, "/"); idx >= 0 {
 			if strings.EqualFold(f.Name[idx+1:], filename) {
@@ -605,7 +563,6 @@ func readCSV(f *zip.File) ([][]string, error) {
 		return nil, err
 	}
 
-	// Strip UTF-8 BOM
 	data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
 
 	reader := csv.NewReader(bytes.NewReader(data))
@@ -613,7 +570,6 @@ func readCSV(f *zip.File) ([][]string, error) {
 	return reader.ReadAll()
 }
 
-// validLetterboxdHeader checks that the CSV header contains the expected Letterboxd columns.
 func validLetterboxdHeader(header []string, expected []string) bool {
 	if len(header) < len(expected) {
 		return false

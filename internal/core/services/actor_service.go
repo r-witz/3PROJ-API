@@ -132,7 +132,6 @@ func (s *actorService) GetFilmography(ctx context.Context, input ports.GetActorF
 		return nil, domain.ErrTMDBError
 	}
 
-	// Combine cast and crew credits, deduplicating by movie ID
 	movieMap := make(map[int]*ports.ActorFilmCredit)
 
 	for _, cast := range credits.Cast {
@@ -239,7 +238,6 @@ func sortFilmography(credits []ports.ActorFilmCredit, sortOption string) {
 		case "release_date":
 			less = credits[i].ReleaseDate < credits[j].ReleaseDate
 		case "popularity":
-			// Use TMDB rating as proxy for popularity in credits (not ideal but needed)
 			ri := float64(0)
 			rj := float64(0)
 			if credits[i].TMDBRating != nil {

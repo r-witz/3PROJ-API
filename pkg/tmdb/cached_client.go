@@ -18,7 +18,6 @@ import (
 
 const cachePrefix = "tmdb:"
 
-// TTLs for cached TMDB responses.
 const (
 	ttlConfiguration    = 7 * 24 * time.Hour
 	ttlMovieMetadata    = 24 * time.Hour
@@ -39,7 +38,6 @@ func NewCachedClient(client *Client, redisClient *redis.Client) *CachedClient {
 	}
 }
 
-// cacheGet tries to retrieve a cached value. Returns false on miss or error.
 func cacheGet[T any](ctx context.Context, c *CachedClient, key string, dest *T) bool {
 	data, err := c.redis.Get(ctx, key).Bytes()
 	if err != nil {
@@ -56,7 +54,6 @@ func cacheGet[T any](ctx context.Context, c *CachedClient, key string, dest *T) 
 	return true
 }
 
-// cacheSet stores a value in Redis. Errors are logged but not returned.
 func cacheSet(ctx context.Context, c *CachedClient, key string, value any, ttl time.Duration) {
 	data, err := json.Marshal(value)
 	if err != nil {
@@ -68,9 +65,6 @@ func cacheSet(ctx context.Context, c *CachedClient, key string, value any, ttl t
 	}
 }
 
-// withCache wraps a fetch call with cache get/set semantics. On cache hit the
-// cached value is returned; on miss fetch is invoked and the result cached.
-// Cache errors are non-fatal.
 func withCache[T any](ctx context.Context, c *CachedClient, key string, ttl time.Duration, fetch func() (T, error)) (T, error) {
 	var cached T
 	if cacheGet(ctx, c, key, &cached) {

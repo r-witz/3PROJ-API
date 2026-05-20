@@ -183,9 +183,6 @@ func (r *AchievementRepository) CountUnlockedByUser(ctx context.Context, userID 
 	return count, err
 }
 
-// Unlock inserts a user_achievements row idempotently. Returns true when the
-// row is newly inserted (i.e. this caller caused the unlock), false if it
-// already existed.
 func (r *AchievementRepository) Unlock(ctx context.Context, userID, achievementID uuid.UUID) (bool, error) {
 	tag, err := r.db.Pool.Exec(ctx, `
 		INSERT INTO user_achievements (user_id, achievement_id, unlocked_at)

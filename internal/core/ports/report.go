@@ -9,9 +9,11 @@ import (
 )
 
 type ReportFilter struct {
-	Status         *domain.ReportStatus
-	TargetUserID   *uuid.UUID
-	TargetUsername *string
+	Status           *domain.ReportStatus
+	TargetUserID     *uuid.UUID
+	TargetUsername   *string
+	TargetReviewID   *uuid.UUID
+	TargetCommentID  *uuid.UUID
 }
 
 type ReportRepository interface {

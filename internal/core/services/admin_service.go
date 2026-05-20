@@ -16,17 +16,20 @@ type AdminService struct {
 	userRepo    ports.UserRepository
 	sessionRepo ports.SessionRepository
 	banCache    ports.BanCache
+	reportRepo  ports.ReportRepository
 }
 
 func NewAdminService(
 	userRepo ports.UserRepository,
 	sessionRepo ports.SessionRepository,
 	banCache ports.BanCache,
+	reportRepo ports.ReportRepository,
 ) *AdminService {
 	return &AdminService{
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
 		banCache:    banCache,
+		reportRepo:  reportRepo,
 	}
 }
 
@@ -60,6 +63,20 @@ func (s *AdminService) BanUser(ctx context.Context, adminID uuid.UUID, targetUse
 	}
 
 	_ = s.banCache.SetBanned(ctx, targetUserID)
+
+	reports, err := s.reportRepo.List(ctx, ports.ReportFilter{TargetUserID: &targetUserID})
+	if err != nil {
+		return err
+	}
+	now = time.Now()
+	for _, r := range reports {
+		r.Status = domain.ReportStatusResolved
+		r.ResolvedAt = &now
+		r.ResolverID = nil
+		if err := s.reportRepo.Update(ctx, r); err != nil {
+			return err
+		}
+	}
 
 	return s.sessionRepo.DeleteByUserID(ctx, targetUserID)
 }

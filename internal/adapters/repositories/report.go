@@ -71,6 +71,18 @@ func (r *ReportRepository) List(ctx context.Context, filter ports.ReportFilter) 
 		argIndex++
 	}
 
+	if filter.TargetReviewID != nil {
+		conditions = append(conditions, fmt.Sprintf("target_review_id = $%d", argIndex))
+		args = append(args, *filter.TargetReviewID)
+		argIndex++
+	}
+
+	if filter.TargetCommentID != nil {
+		conditions = append(conditions, fmt.Sprintf("target_comment_id = $%d", argIndex))
+		args = append(args, *filter.TargetCommentID)
+		argIndex++
+	}
+
 	whereClause := ""
 	if len(conditions) > 0 {
 		whereClause = " WHERE " + conditions[0]

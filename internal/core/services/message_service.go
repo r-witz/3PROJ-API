@@ -140,7 +140,6 @@ func (s *messageService) SendMessage(ctx context.Context, senderID, receiverID u
 		}
 	}
 
-	// Auto-reopen conversation for both users if closed
 	_ = s.convStateRepo.ClearClosedAt(ctx, receiverID, senderID)
 	_ = s.convStateRepo.ClearClosedAt(ctx, senderID, receiverID)
 
@@ -156,7 +155,6 @@ func (s *messageService) GetConversations(ctx context.Context, userID uuid.UUID,
 	var total int
 	var err error
 
-	// Always exclude blocked users from conversation list
 	excludeIDs := make(map[uuid.UUID]struct{})
 	if blockerIDs, berr := s.blockRepo.GetBlockerIDs(ctx, userID); berr == nil {
 		for _, id := range blockerIDs {
@@ -258,7 +256,6 @@ func (s *messageService) DeleteMessage(ctx context.Context, messageID, userID uu
 		return nil, domain.ErrForbidden
 	}
 
-	// Delete attachments from storage
 	attachments, err := s.attachmentRepo.DeleteByMessageID(ctx, messageID)
 	if err != nil {
 		return nil, domain.ErrInternal

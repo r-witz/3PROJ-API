@@ -38,7 +38,6 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrNoPasswordSet:      {http.StatusConflict, "NO_PASSWORD_SET", "No password set for this account"},
 	domain.ErrIncorrectPassword:  {http.StatusUnauthorized, "INCORRECT_PASSWORD", "Current password is incorrect"},
 
-	// Password validation errors
 	domain.ErrPasswordRequired:      {http.StatusBadRequest, "PASSWORD_REQUIRED", "Password is required"},
 	domain.ErrPasswordTooShort:      {http.StatusBadRequest, "PASSWORD_TOO_SHORT", "Password must be at least 8 characters"},
 	domain.ErrPasswordTooLong:       {http.StatusBadRequest, "PASSWORD_TOO_LONG", "Password must be at most 72 characters"},
@@ -51,14 +50,12 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrActorNotFound:      {http.StatusNotFound, "ACTOR_NOT_FOUND", "Actor not found"},
 	domain.ErrTMDBError:             {http.StatusBadGateway, "EXTERNAL_SERVICE_ERROR", "Movie service is temporarily unavailable"},
 
-	// OAuth errors
 	domain.ErrOAuthAccountNotFound:      {http.StatusNotFound, "OAUTH_NOT_FOUND", "OAuth account not found"},
 	domain.ErrOAuthAccountAlreadyLinked: {http.StatusConflict, "OAUTH_ALREADY_LINKED", "OAuth account is already linked to another user"},
 	domain.ErrOAuthProviderNotSupported: {http.StatusBadRequest, "OAUTH_PROVIDER_INVALID", "OAuth provider not supported"},
 	domain.ErrOAuthStateMismatch:        {http.StatusBadRequest, "OAUTH_STATE_INVALID", "Invalid OAuth state parameter"},
 	domain.ErrCannotUnlinkOnlyAuth:      {http.StatusBadRequest, "CANNOT_UNLINK", "Cannot remove the only authentication method"},
 
-	// Collection errors
 	domain.ErrCollectionNotFound:           {http.StatusNotFound, "COLLECTION_NOT_FOUND", "Collection not found"},
 	domain.ErrCollectionAlreadyExists:      {http.StatusConflict, "COLLECTION_EXISTS", "A collection with this name already exists"},
 	domain.ErrCannotModifySystemCollection: {http.StatusForbidden, "SYSTEM_COLLECTION", "Cannot modify a system collection"},
@@ -66,53 +63,43 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrCollectionItemAlreadyExists:  {http.StatusConflict, "ITEM_EXISTS", "Item already exists in this collection"},
 	domain.ErrCollectionItemNotFound:       {http.StatusNotFound, "ITEM_NOT_FOUND", "Item not found in this collection"},
 
-	// Notification errors
 	domain.ErrNotificationNotFound: {http.StatusNotFound, "NOTIFICATION_NOT_FOUND", "Notification not found"},
 
-	// Achievement errors
 	domain.ErrAchievementNotFound: {http.StatusNotFound, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"},
 
-	// Review & comment errors
 	domain.ErrReviewNotFound:      {http.StatusNotFound, "REVIEW_NOT_FOUND", "Review not found"},
 	domain.ErrReviewAlreadyExists: {http.StatusConflict, "REVIEW_EXISTS", "You have already reviewed this movie"},
 	domain.ErrCommentNotFound:     {http.StatusNotFound, "COMMENT_NOT_FOUND", "Comment not found"},
 	domain.ErrAlreadyLiked:        {http.StatusConflict, "ALREADY_LIKED", "Already liked"},
 	domain.ErrNotLiked:            {http.StatusNotFound, "NOT_LIKED", "Not liked"},
 
-	// Follow errors
 	domain.ErrCannotFollowSelf: {http.StatusBadRequest, "CANNOT_FOLLOW_SELF", "Cannot follow yourself"},
 	domain.ErrAlreadyFollowing: {http.StatusConflict, "ALREADY_FOLLOWING", "Already following this user"},
 	domain.ErrNotFollowing:     {http.StatusNotFound, "NOT_FOLLOWING", "Not following this user"},
 
-	// Message errors
 	domain.ErrNotMutualFollow:   {http.StatusForbidden, "NOT_MUTUAL_FOLLOW", "Users must follow each other to message"},
 	domain.ErrMessageNotFound:   {http.StatusNotFound, "MESSAGE_NOT_FOUND", "Message not found"},
 	domain.ErrCannotMessageSelf: {http.StatusBadRequest, "CANNOT_MESSAGE_SELF", "Cannot send a message to yourself"},
 
-	// Block errors
 	domain.ErrCannotBlockSelf:  {http.StatusBadRequest, "CANNOT_BLOCK_SELF", "Cannot block yourself"},
 	domain.ErrCannotBlockAdmin: {http.StatusForbidden, "CANNOT_BLOCK_ADMIN", "Cannot block an admin or super-admin"},
 	domain.ErrAlreadyBlocked:   {http.StatusConflict, "ALREADY_BLOCKED", "User is already blocked"},
 	domain.ErrNotBlocked:      {http.StatusNotFound, "NOT_BLOCKED", "User is not blocked"},
 	domain.ErrUserBlocked:     {http.StatusForbidden, "USER_BLOCKED", "Action blocked due to user block"},
 
-	// Attachment errors
 	domain.ErrNoContent:             {http.StatusBadRequest, "NO_CONTENT", "Message must have content or attachments"},
 	domain.ErrTooManyAttachments:    {http.StatusBadRequest, "TOO_MANY_ATTACHMENTS", "Too many attachments"},
 	domain.ErrAttachmentTooLarge:    {http.StatusBadRequest, "ATTACHMENT_TOO_LARGE", "Attachment file is too large"},
 	domain.ErrInvalidAttachmentType: {http.StatusBadRequest, "INVALID_ATTACHMENT_TYPE", "Invalid attachment content type"},
 
-	// Reaction errors
 	domain.ErrReactionAlreadyExists: {http.StatusConflict, "REACTION_EXISTS", "Reaction already exists"},
 	domain.ErrReactionNotFound:      {http.StatusNotFound, "REACTION_NOT_FOUND", "Reaction not found"},
 	domain.ErrNotParticipant:        {http.StatusForbidden, "NOT_PARTICIPANT", "User is not a participant of this conversation"},
 	domain.ErrTooManyReactionTypes:  {http.StatusBadRequest, "TOO_MANY_REACTION_TYPES", "Maximum of 5 different emoji reactions per message"},
 
-	// Conversation state errors
 	domain.ErrConversationAlreadyClosed: {http.StatusConflict, "CONVERSATION_ALREADY_CLOSED", "Conversation is already closed"},
 	domain.ErrConversationNotClosed:     {http.StatusConflict, "CONVERSATION_NOT_CLOSED", "Conversation is not closed"},
 
-	// Admin/moderation errors
 	domain.ErrCannotDeleteSuperAdmin: {http.StatusForbidden, "CANNOT_DELETE_SUPERADMIN", "Super-admin account cannot be deleted"},
 	domain.ErrCannotBanAdmin:         {http.StatusForbidden, "CANNOT_BAN_ADMIN", "Cannot ban an admin or super-admin"},
 	domain.ErrCannotBanSelf:         {http.StatusBadRequest, "CANNOT_BAN_SELF", "Cannot ban yourself"},
@@ -125,12 +112,10 @@ var errorMappings = map[error]ErrorMapping{
 	domain.ErrReportAlreadyResolved: {http.StatusConflict, "REPORT_ALREADY_RESOLVED", "Report is already resolved or dismissed"},
 	domain.ErrInvalidReportTarget:   {http.StatusBadRequest, "INVALID_REPORT_TARGET", "Report must target exactly one entity"},
 
-	// Import errors
 	domain.ErrInvalidImportFile:  {http.StatusBadRequest, "INVALID_IMPORT_FILE", "Invalid import file"},
 	domain.ErrImportFileTooLarge: {http.StatusBadRequest, "IMPORT_FILE_TOO_LARGE", "Import file exceeds maximum size"},
 	domain.ErrImportFileEmpty:    {http.StatusBadRequest, "IMPORT_FILE_EMPTY", "Zip file contains no Letterboxd data (expected watched.csv, ratings.csv, reviews.csv, or watchlist.csv)"},
 
-	// Email verification errors
 	domain.ErrEmailAlreadyVerified:      {http.StatusConflict, "EMAIL_ALREADY_VERIFIED", "Email is already verified"},
 	domain.ErrVerificationCodeInvalid:   {http.StatusBadRequest, "INVALID_CODE", "Invalid or expired verification code"},
 	domain.ErrVerificationCodeRateLimit: {http.StatusTooManyRequests, "RATE_LIMIT", "Too many code requests, please try again later"},

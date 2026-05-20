@@ -10,8 +10,6 @@ import (
 
 const matchThreshold = 80
 
-// bestMatch finds the highest-scoring movie from TMDB search results.
-// Returns the best match and its score. Score < matchThreshold means no good match.
 func bestMatch(query string, queryYear int, results []tmdb.MovieSummary) (tmdb.MovieSummary, int) {
 	var best tmdb.MovieSummary
 	bestScore := -1
@@ -34,8 +32,6 @@ func scoreMatch(query string, queryYear int, result tmdb.MovieSummary) int {
 	return titleScore + yearScore + confidenceScore
 }
 
-// scoreTitleMatch scores how well the result title matches the query.
-// Returns 0-100.
 func scoreTitleMatch(query, title, originalTitle string) int {
 	qNorm := normalizeTitle(query)
 	tNorm := normalizeTitle(title)
@@ -48,7 +44,6 @@ func scoreTitleMatch(query, title, originalTitle string) int {
 		return 95
 	}
 
-	// Strip punctuation and compare
 	qStripped := stripPunctuation(qNorm)
 	tStripped := stripPunctuation(tNorm)
 	otStripped := stripPunctuation(otNorm)
@@ -57,13 +52,10 @@ func scoreTitleMatch(query, title, originalTitle string) int {
 		return 85
 	}
 
-	// Check if one is a prefix of the other (handles subtitle truncation,
-	// e.g. "Wake Up Dead Man" vs "Wake Up Dead Man: A Knives Out Mystery")
 	if isPrefixMatch(qStripped, tStripped) || isPrefixMatch(qStripped, otStripped) {
 		return 70
 	}
 
-	// Check if one contains the other with high length ratio
 	if containsWithHighRatio(qStripped, tStripped) || containsWithHighRatio(qStripped, otStripped) {
 		return 60
 	}
@@ -71,7 +63,6 @@ func scoreTitleMatch(query, title, originalTitle string) int {
 	return 0
 }
 
-// scoreYearMatch scores year proximity. Returns 0-50.
 func scoreYearMatch(queryYear, resultYear int) int {
 	if resultYear == 0 || queryYear == 0 {
 		return 0
@@ -92,8 +83,6 @@ func scoreYearMatch(queryYear, resultYear int) int {
 	}
 }
 
-// scoreConfidence adds a small tiebreaker based on vote count and popularity.
-// Returns 0-10.
 func scoreConfidence(voteCount int, popularity float64) int {
 	score := 0
 	if voteCount >= 100 {
@@ -130,13 +119,6 @@ func stripPunctuation(s string) string {
 	return b.String()
 }
 
-// isPrefixMatch checks if one string is a word-boundary prefix of the other
-// AND covers a significant portion of the full title (ratio > 0.3).
-// Handles subtitle truncation (e.g. "Glass Onion" is a prefix of
-// "Glass Onion A Knives Out Mystery" — ratio 0.34, passes).
-// Rejects short-word false positives (e.g. "Dolly" prefix of
-// "Dolly Parton LAmérique réconciliée" — ratio 0.16, rejected;
-// "Guru" prefix of "Guru Nanak Jahaz" — ratio 0.27, rejected).
 func isPrefixMatch(a, b string) bool {
 	if len(a) == 0 || len(b) == 0 {
 		return false
@@ -151,18 +133,14 @@ func isPrefixMatch(a, b string) bool {
 		return false
 	}
 
-	// Ensure the prefix ends at a word boundary (next char must be a space)
 	if len(longer) > len(shorter) && longer[len(shorter)] != ' ' {
 		return false
 	}
 
-	// Require the prefix to cover a meaningful portion of the full title
 	ratio := float64(len(shorter)) / float64(len(longer))
 	return ratio > 0.3
 }
 
-// containsWithHighRatio checks if one string contains the other
-// and they are similar in length (ratio > 0.7).
 func containsWithHighRatio(a, b string) bool {
 	if len(a) == 0 || len(b) == 0 {
 		return false

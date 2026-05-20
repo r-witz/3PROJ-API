@@ -35,7 +35,6 @@ func NewAchievementService(
 	}
 }
 
-// --- Read ---
 
 func (s *achievementService) List(ctx context.Context, requesterID *uuid.UUID, category *domain.AchievementCategory) ([]*ports.AchievementWithProgress, error) {
 	all, err := s.achievementRepo.List(ctx, ports.AchievementListFilter{
@@ -111,10 +110,6 @@ func (s *achievementService) List(ctx context.Context, requesterID *uuid.UUID, c
 			}
 		}
 
-		// Representative: the badge to display. It's the highest unlocked tier
-		// (so the caller sees what they've earned), or bronze when they have
-		// nothing yet. Progress target: the next tier's threshold, or the
-		// current tier's threshold when the ladder is maxed out.
 		var (
 			representative   familyMember
 			representativeOK bool
@@ -267,7 +262,6 @@ func (s *achievementService) hydrateUnlocks(ctx context.Context, unlocks []*doma
 	return out, nil
 }
 
-// --- Evaluation ---
 
 func (s *achievementService) EvaluateAllForUser(ctx context.Context, userID uuid.UUID) ([]*domain.Achievement, error) {
 	categories := []domain.AchievementCategory{
@@ -368,7 +362,6 @@ func (s *achievementService) emitUnlockNotification(ctx context.Context, userID 
 	})
 }
 
-// --- Helpers ---
 
 func extractTarget(raw json.RawMessage) (int, error) {
 	var spec criterionSpec

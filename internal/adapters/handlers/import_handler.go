@@ -21,12 +21,10 @@ func NewImportHandler(importService ports.ImportService) *ImportHandler {
 	return &ImportHandler{importService: importService}
 }
 
-const maxImportSize = 10 << 20 // 10MB
+const maxImportSize = 10 << 20
 
-// ImportLetterboxdResponse represents the progress returned to the client.
 type ImportLetterboxdResponse = ports.ImportProgress
 
-// ImportLetterboxd godoc
 // @Summary      Import Letterboxd data
 // @Description  Start importing watched films, watchlist, ratings, and reviews from a Letterboxd export zip file. Processing runs in the background. Real-time progress is pushed via WebSocket (event: import.progress). Use GET /import/letterboxd/status as a fallback to poll progress.
 // @Tags         import
@@ -81,7 +79,6 @@ func (h *ImportHandler) ImportLetterboxd(c *gin.Context) {
 	})
 }
 
-// GetImportStatus godoc
 // @Summary      Get Letterboxd import status
 // @Description  Get the current progress of a Letterboxd import. Returns the resolution progress during processing, and the full import result once completed.
 // @Tags         import

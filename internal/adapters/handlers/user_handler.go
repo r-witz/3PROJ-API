@@ -244,7 +244,7 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	}
 	defer file.Close()
 
-	const maxSize = 5 << 20 // 5MB
+	const maxSize = 5 << 20
 	if header.Size > maxSize {
 		response.BadRequest(c, "File too large, maximum size is 5MB", nil)
 		return

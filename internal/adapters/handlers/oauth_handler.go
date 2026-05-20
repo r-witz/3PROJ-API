@@ -149,19 +149,16 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
-	// Link mode: redirect with link result (no tokens)
 	if result.LinkedProvider != "" {
 		h.redirectWithLinkResult(c, result)
 		return
 	}
 
-	// If frontend redirect URI was provided, redirect with tokens in fragment
 	if result.FrontendRedirectURI != "" {
 		h.redirectWithTokens(c, result)
 		return
 	}
 
-	// Otherwise return JSON response
 	response.Success(c, OAuthTokensResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
@@ -257,19 +254,16 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Link mode: redirect with link result (no tokens)
 	if result.LinkedProvider != "" {
 		h.redirectWithLinkResult(c, result)
 		return
 	}
 
-	// If frontend redirect URI was provided, redirect with tokens in fragment
 	if result.FrontendRedirectURI != "" {
 		h.redirectWithTokens(c, result)
 		return
 	}
 
-	// Otherwise return JSON response
 	response.Success(c, OAuthTokensResponse{
 		AccessToken:  result.Tokens.AccessToken,
 		RefreshToken: result.Tokens.RefreshToken,
@@ -432,7 +426,6 @@ func (h *OAuthHandler) GetLinkedProviders(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// redirectWithTokens redirects to the frontend URL with tokens in the URL fragment
 func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *ports.OAuthAuthResult) {
 	fragment := url.Values{}
 	fragment.Set("access_token", result.Tokens.AccessToken)
@@ -445,7 +438,6 @@ func (h *OAuthHandler) redirectWithTokens(c *gin.Context, result *ports.OAuthAut
 	c.Redirect(http.StatusFound, redirectURL)
 }
 
-// redirectWithLinkResult redirects to the frontend URL with link result in the URL fragment
 func (h *OAuthHandler) redirectWithLinkResult(c *gin.Context, result *ports.OAuthAuthResult) {
 	fragment := url.Values{}
 	fragment.Set("linked", "true")
@@ -455,7 +447,6 @@ func (h *OAuthHandler) redirectWithLinkResult(c *gin.Context, result *ports.OAut
 	c.Redirect(http.StatusFound, redirectURL)
 }
 
-// getRequestOrigin extracts the origin from the request's Origin or Referer header
 func getRequestOrigin(c *gin.Context) string {
 	if origin := c.GetHeader("Origin"); origin != "" {
 		return origin
@@ -470,7 +461,6 @@ func getRequestOrigin(c *gin.Context) string {
 	return ""
 }
 
-// validateRedirectURI checks that the redirect URI matches the request origin
 func validateRedirectURI(redirectURI, requestOrigin string) error {
 	if redirectURI == "" {
 		return nil
