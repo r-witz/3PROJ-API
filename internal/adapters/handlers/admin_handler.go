@@ -132,6 +132,7 @@ func toReportResponseWithContext(rc *ports.ReportWithContext) ReportResponse {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "Target not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reports [post]
 func (h *AdminHandler) SubmitReport(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

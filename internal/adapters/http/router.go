@@ -179,27 +179,27 @@ func (r *Router) setupUserRoutes(rg *gin.RouterGroup) {
 		users.GET("/:userId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.userHandler.GetByID)
 		users.GET("/:userId/stats", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.statsHandler.GetUserStats)
 		users.GET("/:userId/reviews", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.GetByUserID)
-		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.followHandler.Follow)
-		users.DELETE("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.followHandler.Unfollow)
-		users.DELETE("/:userId/followers", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.followHandler.RemoveFollower)
+		users.POST("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.followHandler.Follow)
+		users.DELETE("/:userId/follow", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.followHandler.Unfollow)
+		users.DELETE("/:userId/followers", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.followHandler.RemoveFollower)
 		users.GET("/:userId/followers", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.followHandler.GetFollowers)
 		users.GET("/:userId/following", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.followHandler.GetFollowing)
-		users.POST("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.blockHandler.BlockUser)
-		users.DELETE("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.blockHandler.UnblockUser)
+		users.POST("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.blockHandler.BlockUser)
+		users.DELETE("/:userId/block", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.blockHandler.UnblockUser)
 		users.GET("/me/achievements/recent", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.achievementHandler.RecentForMe)
 		users.GET("/:userId/activities", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.activityHandler.GetByUserID)
 		users.GET("/:userId/achievements", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.achievementHandler.ListForUser)
 
 		collections := users.Group("/:userId/collections")
 		{
-			collections.POST("", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.Create)
+			collections.POST("", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.collectionHandler.Create)
 			collections.GET("", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.GetByUserID)
 			collections.GET("/:slug", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.GetBySlug)
-			collections.PATCH("/:slug", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.Update)
-			collections.DELETE("/:slug", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.Delete)
-			collections.POST("/:slug/items", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.AddItem)
+			collections.PATCH("/:slug", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.collectionHandler.Update)
+			collections.DELETE("/:slug", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.collectionHandler.Delete)
+			collections.POST("/:slug/items", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.collectionHandler.AddItem)
 			collections.GET("/:slug/items", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.GetItems)
-			collections.DELETE("/:slug/items/:tmdbId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.collectionHandler.RemoveItem)
+			collections.DELETE("/:slug/items/:tmdbId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.collectionHandler.RemoveItem)
 		}
 	}
 }
@@ -219,7 +219,7 @@ func (r *Router) setupMovieRoutes(rg *gin.RouterGroup) {
 		movies.GET("/:id/cast", r.movieHandler.GetCast)
 		movies.GET("/:id/release-dates", r.movieHandler.GetReleaseDates)
 		movies.GET("/:id/reviews", r.reviewHandler.GetByMovieID)
-		movies.POST("/:id/reviews", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Create)
+		movies.POST("/:id/reviews", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.reviewHandler.Create)
 	}
 }
 
@@ -239,12 +239,12 @@ func (r *Router) setupReviewRoutes(rg *gin.RouterGroup) {
 	reviews.Use(middleware.Locale(r.userService))
 	{
 		reviews.GET("/:reviewId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.GetByID)
-		reviews.PATCH("/:reviewId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Update)
-		reviews.DELETE("/:reviewId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Delete)
-		reviews.POST("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Like)
-		reviews.DELETE("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.reviewHandler.Unlike)
+		reviews.PATCH("/:reviewId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.reviewHandler.Update)
+		reviews.DELETE("/:reviewId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.reviewHandler.Delete)
+		reviews.POST("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.reviewHandler.Like)
+		reviews.DELETE("/:reviewId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.reviewHandler.Unlike)
 		reviews.GET("/:reviewId/comments", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.GetByReviewID)
-		reviews.POST("/:reviewId/comments", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Create)
+		reviews.POST("/:reviewId/comments", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.commentHandler.Create)
 	}
 }
 
@@ -252,10 +252,10 @@ func (r *Router) setupCommentRoutes(rg *gin.RouterGroup) {
 	comments := rg.Group("/comments")
 	{
 		comments.GET("/:commentId", middleware.OptionalAuth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.GetByID)
-		comments.PATCH("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Update)
-		comments.DELETE("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Delete)
-		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Like)
-		comments.DELETE("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), r.commentHandler.Unlike)
+		comments.PATCH("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.commentHandler.Update)
+		comments.DELETE("/:commentId", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.commentHandler.Delete)
+		comments.POST("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.commentHandler.Like)
+		comments.DELETE("/:commentId/like", middleware.Auth(r.config.AccessTokenSecret, r.banCache), middleware.RequireVerified(), r.commentHandler.Unlike)
 	}
 }
 
@@ -266,6 +266,7 @@ func (r *Router) setupActivityRoutes(rg *gin.RouterGroup) {
 func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 	messages := rg.Group("/messages")
 	messages.Use(middleware.Auth(r.config.AccessTokenSecret, r.banCache))
+	messages.Use(middleware.RequireVerified())
 	{
 		messages.GET("", r.messageHandler.GetConversations)
 		messages.GET("/:id", r.messageHandler.GetConversation)
@@ -283,6 +284,7 @@ func (r *Router) setupMessageRoutes(rg *gin.RouterGroup) {
 func (r *Router) setupReportRoutes(rg *gin.RouterGroup) {
 	reports := rg.Group("/reports")
 	reports.Use(middleware.Auth(r.config.AccessTokenSecret, r.banCache))
+	reports.Use(middleware.RequireVerified())
 	{
 		reports.POST("", r.adminHandler.SubmitReport)
 	}
@@ -314,6 +316,7 @@ func (r *Router) setupAdminRoutes(rg *gin.RouterGroup) {
 func (r *Router) setupImportRoutes(rg *gin.RouterGroup) {
 	importGroup := rg.Group("/import")
 	importGroup.Use(middleware.Auth(r.config.AccessTokenSecret, r.banCache))
+	importGroup.Use(middleware.RequireVerified())
 	{
 		importGroup.POST("/letterboxd", r.importHandler.ImportLetterboxd)
 		importGroup.GET("/letterboxd/status", r.importHandler.GetImportStatus)

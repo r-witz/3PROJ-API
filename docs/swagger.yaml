@@ -2604,7 +2604,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -2703,7 +2703,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -2744,7 +2744,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -2784,7 +2784,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -2890,6 +2890,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
@@ -2917,6 +2921,10 @@ paths:
               type: object
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -2966,6 +2974,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
@@ -2999,7 +3011,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden - not the sender
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -3053,7 +3065,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden - not the sender
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -3098,6 +3110,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -3148,7 +3164,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Not a participant or user blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -3211,6 +3227,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
@@ -3261,7 +3281,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Not mutual follow or user blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -3301,6 +3321,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conversation is not closed
           schema:
@@ -3338,6 +3362,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "409":
           description: Conversation already closed
           schema:
@@ -3372,6 +3400,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "500":
@@ -3593,6 +3625,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "409":
@@ -4154,6 +4190,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "404":
           description: Target not found
           schema:
@@ -4191,7 +4231,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4297,7 +4337,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4401,7 +4441,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4442,7 +4482,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4482,7 +4522,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4691,6 +4731,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
+          schema:
+            $ref: '#/definitions/response.Response'
         "404":
           description: User is not blocked
           schema:
@@ -4725,6 +4769,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -4841,7 +4889,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "409":
@@ -4888,7 +4936,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5000,7 +5048,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5134,7 +5182,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5190,7 +5238,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5227,6 +5275,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5266,7 +5318,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: User blocked
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":
@@ -5307,6 +5359,10 @@ paths:
             $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Email not verified
           schema:
             $ref: '#/definitions/response.Response'
         "404":

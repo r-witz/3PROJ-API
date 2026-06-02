@@ -36,6 +36,7 @@ type ImportLetterboxdResponse = ports.ImportProgress
 // @Failure      400 {object} response.Response "Invalid file or zip contains no Letterboxd data"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /import/letterboxd [post]
 func (h *ImportHandler) ImportLetterboxd(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -87,6 +88,7 @@ func (h *ImportHandler) ImportLetterboxd(c *gin.Context) {
 // @Success      200 {object} response.Response{data=ImportLetterboxdResponse} "Import progress"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "No import found"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /import/letterboxd/status [get]
 func (h *ImportHandler) GetImportStatus(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

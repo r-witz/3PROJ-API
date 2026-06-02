@@ -85,6 +85,7 @@ type ReviewResponse struct {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      409 {object} response.Response "Review already exists for this movie"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /movies/{id}/reviews [post]
 func (h *ReviewHandler) Create(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -342,6 +343,7 @@ func (h *ReviewHandler) GetByUserID(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reviews/{reviewId} [patch]
 func (h *ReviewHandler) Update(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -399,6 +401,7 @@ func (h *ReviewHandler) Update(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reviews/{reviewId} [delete]
 func (h *ReviewHandler) Delete(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -441,6 +444,7 @@ func (h *ReviewHandler) Delete(c *gin.Context) {
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      409 {object} response.Response "Already liked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reviews/{reviewId}/like [post]
 func (h *ReviewHandler) Like(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -503,6 +507,7 @@ func (h *ReviewHandler) Like(c *gin.Context) {
 // @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found or not liked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reviews/{reviewId}/like [delete]
 func (h *ReviewHandler) Unlike(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

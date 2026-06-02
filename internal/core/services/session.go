@@ -22,7 +22,7 @@ func createSession(ctx context.Context, sessionRepo ports.SessionRepository, use
 	sessionID := uuid.New()
 
 	accessToken, err := auth.GenerateAccessToken(
-		user.ID, string(user.Role), config.AccessTokenSecret, config.AccessTokenExpiry,
+		user.ID, string(user.Role), user.EmailVerified, config.AccessTokenSecret, config.AccessTokenExpiry,
 	)
 	if err != nil {
 		return nil, domain.ErrInternal

@@ -63,6 +63,7 @@ type CommentResponse struct {
 // @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Review not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /reviews/{reviewId}/comments [post]
 func (h *CommentHandler) Create(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -234,6 +235,7 @@ func (h *CommentHandler) GetByReviewID(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Comment not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /comments/{commentId} [patch]
 func (h *CommentHandler) Update(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -280,6 +282,7 @@ func (h *CommentHandler) Update(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Comment not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /comments/{commentId} [delete]
 func (h *CommentHandler) Delete(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -322,6 +325,7 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 // @Failure      404 {object} response.Response "Comment not found"
 // @Failure      409 {object} response.Response "Already liked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /comments/{commentId}/like [post]
 func (h *CommentHandler) Like(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -384,6 +388,7 @@ func (h *CommentHandler) Like(c *gin.Context) {
 // @Failure      403 {object} response.Response "User blocked"
 // @Failure      404 {object} response.Response "Comment not found or not liked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /comments/{commentId}/like [delete]
 func (h *CommentHandler) Unlike(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

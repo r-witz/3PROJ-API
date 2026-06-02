@@ -6,8 +6,9 @@ import (
 )
 
 type AccessTokenClaims struct {
-	UserID uuid.UUID `json:"user_id"`
-	Role   string    `json:"role"`
+	UserID        uuid.UUID `json:"user_id"`
+	Role          string    `json:"role"`
+	EmailVerified bool      `json:"email_verified"`
 	jwt.RegisteredClaims
 }
 

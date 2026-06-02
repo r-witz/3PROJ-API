@@ -69,6 +69,7 @@ type CollectionResponse struct {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      409 {object} response.Response "Collection with this name already exists"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/collections [post]
 func (h *CollectionHandler) Create(c *gin.Context) {
 	authUserID, ok := middleware.GetUserID(c)
@@ -266,6 +267,7 @@ func (h *CollectionHandler) GetByUserID(c *gin.Context) {
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      409 {object} response.Response "Collection with this name already exists"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/collections/{slug} [patch]
 func (h *CollectionHandler) Update(c *gin.Context) {
 	authUserID, ok := middleware.GetUserID(c)
@@ -322,6 +324,7 @@ func (h *CollectionHandler) Update(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/collections/{slug} [delete]
 func (h *CollectionHandler) Delete(c *gin.Context) {
 	authUserID, ok := middleware.GetUserID(c)
@@ -373,6 +376,7 @@ func (h *CollectionHandler) Delete(c *gin.Context) {
 // @Failure      404 {object} response.Response "Collection not found"
 // @Failure      409 {object} response.Response "Item already in collection"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/collections/{slug}/items [post]
 func (h *CollectionHandler) AddItem(c *gin.Context) {
 	authUserID, ok := middleware.GetUserID(c)
@@ -521,6 +525,7 @@ func (h *CollectionHandler) GetItems(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden"
 // @Failure      404 {object} response.Response "Collection or item not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/collections/{slug}/items/{tmdbId} [delete]
 func (h *CollectionHandler) RemoveItem(c *gin.Context) {
 	authUserID, ok := middleware.GetUserID(c)

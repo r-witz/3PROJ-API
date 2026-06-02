@@ -182,7 +182,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (*ports.
 	}
 
 	accessToken, err := auth.GenerateAccessToken(
-		user.ID, string(user.Role), s.config.AccessTokenSecret, s.config.AccessTokenExpiry,
+		user.ID, string(user.Role), user.EmailVerified, s.config.AccessTokenSecret, s.config.AccessTokenExpiry,
 	)
 	if err != nil {
 		return nil, domain.ErrInternal

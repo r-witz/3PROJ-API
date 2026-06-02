@@ -38,6 +38,7 @@ type BlockedUserResponse struct {
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      409 {object} response.Response "Already blocked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/block [post]
 func (h *BlockHandler) BlockUser(c *gin.Context) {
 	blockerID, ok := middleware.GetUserID(c)
@@ -86,6 +87,7 @@ func (h *BlockHandler) BlockUser(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "User is not blocked"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/block [delete]
 func (h *BlockHandler) UnblockUser(c *gin.Context) {
 	blockerID, ok := middleware.GetUserID(c)

@@ -8,12 +8,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func GenerateAccessToken(userID uuid.UUID, role string, secret string, expiry time.Duration) (string, error) {
+func GenerateAccessToken(userID uuid.UUID, role string, emailVerified bool, secret string, expiry time.Duration) (string, error) {
 	now := time.Now()
 
 	claims := AccessTokenClaims{
-		UserID: userID,
-		Role:   role,
+		UserID:        userID,
+		Role:          role,
+		EmailVerified: emailVerified,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
 			IssuedAt:  jwt.NewNumericDate(now),

@@ -88,6 +88,7 @@ type ConversationListResponse struct {
 // @Failure      403 {object} response.Response "Not mutual follow or user blocked"
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{userId} [post]
 func (h *MessageHandler) SendMessage(c *gin.Context) {
 	senderID, ok := middleware.GetUserID(c)
@@ -176,6 +177,7 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{userId} [get]
 func (h *MessageHandler) GetConversation(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -235,6 +237,7 @@ func (h *MessageHandler) GetConversation(c *gin.Context) {
 // @Success      200 {object} response.PaginatedResponse{data=[]ConversationListResponse} "List of conversations"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages [get]
 func (h *MessageHandler) GetConversations(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -288,6 +291,7 @@ func (h *MessageHandler) GetConversations(c *gin.Context) {
 // @Failure      400 {object} response.Response "Invalid user ID"
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{userId}/read [put]
 func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -331,6 +335,7 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden - not the sender"
 // @Failure      404 {object} response.Response "Message not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{messageId} [patch]
 func (h *MessageHandler) UpdateMessage(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -377,6 +382,7 @@ func (h *MessageHandler) UpdateMessage(c *gin.Context) {
 // @Failure      403 {object} response.Response "Forbidden - not the sender"
 // @Failure      404 {object} response.Response "Message not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{messageId} [delete]
 func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -423,6 +429,7 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 // @Failure      404 {object} response.Response "Message not found"
 // @Failure      409 {object} response.Response "Reaction already exists"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{messageId}/reactions [post]
 func (h *MessageHandler) AddReaction(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -477,6 +484,7 @@ func (h *MessageHandler) AddReaction(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "Reaction not found"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{messageId}/reactions [delete]
 func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -528,6 +536,7 @@ func (h *MessageHandler) RemoveReaction(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      409 {object} response.Response "Conversation already closed"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{userId}/close [post]
 func (h *MessageHandler) CloseConversation(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)
@@ -568,6 +577,7 @@ func (h *MessageHandler) CloseConversation(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      409 {object} response.Response "Conversation is not closed"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /messages/{userId}/close [delete]
 func (h *MessageHandler) ReopenConversation(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

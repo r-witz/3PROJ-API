@@ -2146,7 +2146,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2233,7 +2233,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2295,7 +2295,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2361,7 +2361,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2519,6 +2519,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -2564,6 +2570,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2643,6 +2655,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -2694,7 +2712,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - not the sender",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2781,7 +2799,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - not the sender",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2858,7 +2876,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Not a participant or user blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2931,6 +2949,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3023,6 +3047,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -3102,7 +3132,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Not mutual follow or user blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3163,6 +3193,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "409": {
                         "description": "Conversation already closed",
                         "schema": {
@@ -3213,6 +3249,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3269,6 +3311,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3922,6 +3970,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "409": {
                         "description": "Review already exists for this movie",
                         "schema": {
@@ -4476,6 +4530,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "404": {
                         "description": "Target not found",
                         "schema": {
@@ -4608,7 +4668,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4701,7 +4761,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4864,7 +4924,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4926,7 +4986,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4992,7 +5052,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -5908,6 +5968,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "404": {
                         "description": "User not found",
                         "schema": {
@@ -5964,6 +6030,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6137,7 +6209,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6288,7 +6360,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6382,7 +6454,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6580,7 +6652,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6665,7 +6737,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6727,7 +6799,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6788,6 +6860,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6924,6 +7002,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

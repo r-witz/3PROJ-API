@@ -44,6 +44,7 @@ type FollowUserResponse struct {
 // @Failure      404 {object} response.Response "User not found"
 // @Failure      409 {object} response.Response "Already following"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/follow [post]
 func (h *FollowHandler) Follow(c *gin.Context) {
 	followerID, ok := middleware.GetUserID(c)
@@ -119,6 +120,7 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "Not following this user"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/follow [delete]
 func (h *FollowHandler) Unfollow(c *gin.Context) {
 	followerID, ok := middleware.GetUserID(c)
@@ -167,6 +169,7 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 // @Failure      401 {object} response.Response "Unauthorized"
 // @Failure      404 {object} response.Response "User is not following you"
 // @Failure      500 {object} response.Response "Internal server error"
+// @Failure      403 {object} response.Response "Email not verified"
 // @Router       /users/{userId}/followers [delete]
 func (h *FollowHandler) RemoveFollower(c *gin.Context) {
 	userID, ok := middleware.GetUserID(c)

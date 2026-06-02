@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	ContextKeyUserID = "userID"
-	ContextKeyRole   = "role"
+	ContextKeyUserID        = "userID"
+	ContextKeyRole          = "role"
+	ContextKeyEmailVerified = "emailVerified"
 )
 
 func Auth(secret string, banCache ports.BanCache) gin.HandlerFunc {
@@ -43,6 +44,7 @@ func Auth(secret string, banCache ports.BanCache) gin.HandlerFunc {
 
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyRole, claims.Role)
+		c.Set(ContextKeyEmailVerified, claims.EmailVerified)
 		c.Next()
 	}
 }
@@ -74,6 +76,7 @@ func OptionalAuth(secret string, banCache ports.BanCache) gin.HandlerFunc {
 
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyRole, claims.Role)
+		c.Set(ContextKeyEmailVerified, claims.EmailVerified)
 		c.Next()
 	}
 }
@@ -123,6 +126,31 @@ func IsAdmin(c *gin.Context) bool {
 func IsAuthenticated(c *gin.Context) bool {
 	_, exists := c.Get(ContextKeyUserID)
 	return exists
+}
+
+func IsVerified(c *gin.Context) bool {
+	val, exists := c.Get(ContextKeyEmailVerified)
+	if !exists {
+		return false
+	}
+	verified, ok := val.(bool)
+	return ok && verified
+}
+
+func RequireVerified() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !IsVerified(c) {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"error": gin.H{
+					"code":    "EMAIL_NOT_VERIFIED",
+					"message": "You must verify your email address before performing this action",
+				},
+			})
+			return
+		}
+		c.Next()
+	}
 }
 
 func RequireRole(allowedRoles ...string) gin.HandlerFunc {

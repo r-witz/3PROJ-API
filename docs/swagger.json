@@ -2139,7 +2139,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2226,7 +2226,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2288,7 +2288,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2354,7 +2354,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2512,6 +2512,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -2557,6 +2563,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2636,6 +2648,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -2687,7 +2705,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden - not the sender",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2774,7 +2792,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden - not the sender",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2851,7 +2869,7 @@
                         }
                     },
                     "403": {
-                        "description": "Not a participant or user blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2924,6 +2942,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3016,6 +3040,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -3095,7 +3125,7 @@
                         }
                     },
                     "403": {
-                        "description": "Not mutual follow or user blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3156,6 +3186,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "409": {
                         "description": "Conversation already closed",
                         "schema": {
@@ -3206,6 +3242,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3262,6 +3304,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3915,6 +3963,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "409": {
                         "description": "Review already exists for this movie",
                         "schema": {
@@ -4469,6 +4523,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "404": {
                         "description": "Target not found",
                         "schema": {
@@ -4601,7 +4661,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4694,7 +4754,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4857,7 +4917,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4919,7 +4979,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -4985,7 +5045,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -5901,6 +5961,12 @@
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "404": {
                         "description": "User not found",
                         "schema": {
@@ -5957,6 +6023,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6130,7 +6202,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6281,7 +6353,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6375,7 +6447,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6573,7 +6645,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6658,7 +6730,7 @@
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6720,7 +6792,7 @@
                         }
                     },
                     "403": {
-                        "description": "User blocked",
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6781,6 +6853,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -6917,6 +6995,12 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
